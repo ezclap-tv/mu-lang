@@ -124,18 +124,12 @@ loop {
 }
 ```
 
-Functions (generics, return, throw, call)
+Functions (generics, return, throw, UFCS, trailing closures)
 ```rust
 fn name(a0, a1: A, b: B, *, c: C) -> T { /* body */ }
 fn generic[T](v: T) -> T { /* ... */ }
 fn generic[T: InlineBound](v: T) -> T { /* ... */ }
-fn generic[T](v: T) -> T
-where
-  T: ComplexBound
-{
-  /* ... */
-}
-// 
+fn generic[T](v: T) -> T where T: ComplexBound { /* ... */ }
 
 // last expression in the body is returned
 fn identity[T](v: T) -> T { v }
@@ -148,6 +142,9 @@ fn fib(n: int) -> int {
 }
 
 // `throw` may be used to return an error
+// note that these are *not* exceptions, they do not unwind the stack,
+// nor do they automatically propagate until caught. every error must
+// be explicitly handled or propagated.
 // before you can do this, the function must be declared as fallible with `!`
 fn fallible0(v: bool) -> ! {
   if v { throw "error-like" }
@@ -165,10 +162,37 @@ fn fallible2() -> ! A | B {
   if C() { throw C() } // error: this function may only throw `A` or `B`
 }
 
-// note that these are *not* exceptions, they do not unwind the stack,
-// nor do they automatically propagate until caught. every error must
-// be explicitly handled or propagated.
-// error handling is explained in more depth later.
+// UFCS
+v := [0, 1, 2]
+v.len
+v.len()
+len(v)
+
+
+fn split(s: string, sep: string) -> string[] {
+  out: string[] = []
+  current := ""
+  for ch in s {
+    if ch == sep {
+      out.push(current)
+      current = ""
+    } else {
+      current += ch
+    }
+  }
+  out.push(current)
+  return out
+}
+
+v := "a,b,c"
+v.split(",")
+split(v, ",")
+v.split "," // single arg = can omit parentheses
+
+// trailing closures
+v := [0, 1, 2, 3]
+  .map { #0 * #0 } // parameters are declared implicitly, numbered based on ordering
+  .filter { #0 % 2 == 0 }
 ```
 
 Types, type traits (+ field/index access)
