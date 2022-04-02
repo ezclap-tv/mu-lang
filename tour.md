@@ -115,6 +115,13 @@ loop {
   if v == 5 { break } 
   v += 1
 }
+
+// labelled loops (applies to `for` and `while`, too)
+'a: loop {
+  'b: loop {
+    break 'a
+  }
+}
 ```
 
 Functions (generics, return, throw, call)
