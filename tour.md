@@ -1,6 +1,12 @@
+### Goals
+- Easily extendable with native functions, types, and configuration options
+- Optimized for IO performance
+- Statically typed but easy to use
+- Embeddable
+
 ### Type System
 
-- static: types are checked at compile-time 
+- static: types are checked at compile-time
 - nominal: equivalence of types is defined as the equivalence of their identities
 - strict: no none reference errors
 - strong: all type conversions are explicit
@@ -29,6 +35,16 @@ name := 0
 // explicit type
 // this declaration shadows the previous one, so its type may differ
 name: string = "value"
+
+// Optional types are denoted with a question mark.
+// An optional value cannot be used unless guarded with a type asserion.
+optinoal? := 0
+optional: string? = none
+
+optional += "a" // error, optional may be none
+if optional != none {
+    optional += "b" // ok, optional narrowed to `string`
+}
 ```
 
 Operators
@@ -112,7 +128,7 @@ while v >= 0 {
 
 v := 0
 loop {
-  if v == 5 { break } 
+  if v == 5 { break }
   v += 1
 }
 
@@ -336,4 +352,70 @@ v := match fallible() {
   err A { ... } -> {/*...*/}
   err B { ... } -> {/*...*/}
 }
+```
+
+Command block
+```rust
+// Command blocks allow the user to specify how a given Herring program, or command, should be executed by the native implementation.
+// They contain YAML and can be customized.
+command {
+  # The list of platforms on which the command is supported.
+  platforms:
+    - twitch
+    - youtube
+    - custom
+
+  # The name, alias, and description of the command
+  name: default_name
+  alias: an_alias
+  description: >
+    A text description for the command
+
+  # The limits that are checked before executing the command.
+  limits:
+    user: 30s
+    channel: 5s
+
+  # Nested config values can be specified inline
+  limits.global: 1s
+
+  # The list of events that can trigger the command. As all other command block values,
+  # they're contributed by the runtime.
+  triggers:
+    # Call the command by name.
+    - name
+
+    # Call the command every 20 messages with a 30% chance.
+    - message
+      every: 20
+      chance: 30%
+
+    # Automatically call the command every 10 minutes
+    schedule = 10m
+
+    # And any other events
+    - Twitch.Subscription.Tier3
+    - Youtube.Superchat.Red
+
+  # Command args, automatically parsed and validated before the command is executed.
+  # Types from the program can be used here.
+  args:
+    count:
+      - desc: The desired count
+      - type: int
+    intensity:
+      - desc: The intensity of the action
+      - type: Intensity?
+      - default: Intensity.Medium
+}
+
+enum Intensity {
+  None,
+  Low,
+  Medium,
+  High
+}
+
+{ count, intensity } := ctx.args
+...
 ```
