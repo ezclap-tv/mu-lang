@@ -36,7 +36,7 @@ name = 0
 
 // explicit type
 // this declaration shadows the previous one, so its type may differ
-name: string = "value"
+name: String = "value"
 ```
 
 Operators
@@ -45,6 +45,7 @@ Operators
 - Comparison (`>`, `>=`, `<`, `<=`)
 - Boolean (`not`/`!`, `and`/`&&`, `or`/`||`)
 - Bitwise (`&`, `|`, `^`, `~`)
+- Pipeline (`|>`)
 ```rust
 2 + 2
 2 - 2
@@ -67,6 +68,7 @@ false || true
 0 | 1
 0 ^ 1
 ~0
+a |> b
 ```
 
 Assignment and compound assignments
@@ -101,7 +103,7 @@ do:
 v0 = if v: "a" else: "c"
 v1 = do: "value"
 // to ensure that nothing is returned, put a semicolon after the last expression
-v2: none = do: "value";
+v2: None = do: "value";
 ```
 
 Loops (for, while, loop), continue/break
@@ -132,7 +134,7 @@ loop:
     break 'a
 ```
 
-Functions (generics, return, throw, UFCS, trailing closures)
+Functions (generics, return, throw, UFCS, pipeline operator)
 ```rust
 fn name(a, b, c): ...
 fn name(a A, b B, c C): ...
@@ -146,7 +148,7 @@ sum 1, 2, 3
 sum(1, 2, 3)
 sum(c: 3, b: 2, a: 1)
 
-fn generic(v: 'T) -> 'T where 'T: Bound: v
+fn generic(v 'T) -> 'T where 'T: Bound: v
 
 fn fib(n):
   match n:
@@ -162,7 +164,7 @@ fn test(): return
 // nor do they automatically propagate until caught. every error must
 // be explicitly handled or propagated.
 // before you can do this, the function must be declared as fallible with `!`
-fn fallible0(v: bool) -> !:
+fn fallible0(v  Bool) -> !:
   if v: throw "error-like"
 
 // fallible functions collect thrown error types into an anonymous enum
@@ -185,8 +187,8 @@ len v
 len(v)
 
 
-fn split(s: string, sep: string) -> string[]:
-  out: string[] = []
+fn split(s String, sep String) -> String[]:
+  out: String[] = []
   current = ""
   for ch in s:
     if ch == sep:
@@ -203,10 +205,19 @@ v.split ","
 split(v, ",")
 split v, ","
 
-// pipe
-v = [0, 1, 2, 3]
-  map \x = x * x
-  filter \x = x % 2 == 0
+// pipeline operator simplifies nested calls
+print [0, 1, 2, 3]
+  |> map \x: x*x
+  |> filter \x: x == 0
+  |> sum
+
+fn square(a Int, b Int) -> Int: a + b
+
+print [1, 2, 4, 8]
+  // `#` character can be used as a placeholder in the right-side expression
+  // it is only evaluated once
+  |> square(#, #)
+  |> sum
 ```
 
 Types, traits (+ field/index access)
@@ -274,7 +285,7 @@ enum Name:
   TagValue (A, B)
 
 // each variant is also a type
-fn use(v: Name) -> Name.Tag { /* ... */ }
+fn use(v Name) -> Name.Tag { /* ... */ }
 
 // instantiation does not require specifying enum name if it can be inferred
 v: Name = .Tag // equivalent to x = Name.Tag
@@ -332,11 +343,12 @@ type File:
   fid: Int
 
 def File:
-  fn open(path: string) -> File: /* ... */
-  fn close(file: File): /* ... */
+  fn open(path String) -> File: /* ... */
+  fn close(file File): /* ... */
 
 def Disposable for File:
-  fn dispose(self): self.close()
+  fn dispose(self):
+    self.close()
 
 // only `Disposable`s may be used in `with`
 with File.open("test.json") as f:
@@ -349,7 +361,7 @@ Errors (throw, handling, propagation, unwrapping, + match)
 type A: /*...*/
 type B: /*...*/
 
-fn fallible(v: bool) -> !:
+fn fallible(v Bool) -> !:
   if v: throw A
   else: throw B
 
