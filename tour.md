@@ -209,7 +209,7 @@ v = [0, 1, 2, 3]
   filter \x = x % 2 == 0
 ```
 
-Types, type traits (+ field/index access)
+Types, traits (+ field/index access)
 ```rust
 type Name:
   a A
@@ -225,6 +225,29 @@ type Name[T] where T: Bound:
 
 trait Any:
   fn typeid() -> TypeId
+
+// an associated type is essentially a type parameter,
+// but may not differ between definitions for the same type
+trait AssociatedType:
+  type Test: Default
+  fn test() -> Self.Test:
+    Self.Test.default()
+
+trait NotAssociatedType[T] where T: Default:
+  fn test() -> T:
+    T.default()
+
+type Test: pass
+
+def NotAssociatedType[Int] for Test: pass
+def NotAssociatedType[String] for Test: pass
+Test.test() // does this return an Int or a String?
+
+def AssociatedType for Test:
+  type Test = Int
+// assuming the above definitions for NotAssociatedType don't exist
+// this definitely returns an Int, and we cannot define it a second time
+Test.test()
 
 v = [0, 1, 2]
 print v[0]
