@@ -375,3 +375,14 @@ v := match fallible():
   Err A -> /*...*/
   Err B -> /*...*/
 ```
+
+Optional values
+```rust
+fn test[T](v: T?) -> T? =
+  print v
+
+v: String? = none
+test(v)
+v = "test"
+test(v)
+```
