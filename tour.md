@@ -270,6 +270,16 @@ print(
   |> square(#, #)
   |> sum
 )
+
+// if the right-side is not a function with arity=1 or a call expression
+// using one, it *must* include the `#` character to specify where the
+// left-side should should be placed.
+
+[1, 2, 3] |> sum // ok, function with arity=1
+[1, 2, 3] |> sum() // ok, call to fn with arity=1
+
+10 |> 5 + 5 // invalid, not call/fn, not using `#`
+10 |> # + 5 // ok
 ```
 
 Types, classes, enums (+ field/index access)
