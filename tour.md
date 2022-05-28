@@ -113,7 +113,7 @@ v1 := do { "value" }
 // to ensure that nothing is returned, put a semicolon after the last expression
 v2: Null = do { "value"; }
 
-// you can omit parentheses for `if` when the body is a statement
+// you can omit braces for `if` when the body is a statement
 if true loop {/*...*/}
 if true do {/*...*/}
 if true return
@@ -130,12 +130,12 @@ while condition() { /*...*/ }
 loop { /*...*/ }
 
 for i in 0..10 {
-  print i
+  print(i)
 }
 
 v := 10
 while v >= 0 {
-  print v
+  print(v)
   v -= 1
 }
 
@@ -153,7 +153,7 @@ loop {
 }
 ```
 
-Functions (generics, return, throw, pipeline operator)
+Functions (generics, variadics, return, throw, pipeline operator)
 
 ```rust
 fn name(a: A, b: B, c: C) {/*...*/}
@@ -173,22 +173,27 @@ fn name[T, E](a: A, b: B, c: C) -> T
   /*...*/
 }
 
-// default args
-fn foo(bar: String, baz: String = "test") { /*...*/ }
+// positionals, defaults, rest, named + call examples
+fn foo(a, b, c: String, d = "test", rest: String..., named: String = "named") {
+  print(a, b, c, d, rest, named)
+}
+foo("a", "b", "c") // a b c test [] named
+foo("a", "b", "c", "d", "f", "g", "h") // a b c d [f g h] named
+foo("a", "b", "c", "d", "f", "g", "h", named: "i") // a b c d [f g h] i
+foo("a", b: "b", "c") // error: `c` must be labelled
 
-fn say(greeting: String, to: String) { "\{greeting}, \{to}!" }
-// positionals -> keywords
-say("Hello", "world") // "Hello, world!"
-say("Hello", to: "world")
-say(greeting: "Hello", to: "world")
-say(to: "world", greeting: "Hello")
-// say(to: "world", "Hello") // invalid
+fn bar(..., named_only: String) {
+  print(named_only)
+}
+bar("a") // error: function accepts no positional args
+bar(named_only: "a") // a
 
 fn fib(n: Int): Int {
-  match n:
+  match n {
     ..1 -> 0
     1..=2 -> 1
-    _ => fib(n-1) + fib(n+1)
+    _ -> fib(n-1) + fib(n+1)
+  }
 }
 
 // return may be used to return early
@@ -198,7 +203,7 @@ fn test() { return }
 // note that these are *not* exceptions, they do not unwind the stack,
 // nor do they automatically propagate until caught. every error must
 // be explicitly handled or propagated.
-// before you can do this, the function must be declared as fallible with `!`
+// before you can do this, the function must be declared as fallible with `throws`
 fn fallible0(v: Bool) throws {
   if v: throw "error-like"
 }
@@ -218,7 +223,7 @@ fn fallible2() throws A | B {
 }
 
 
-fn split(s: String, sep: String) -> String[] {
+fn split(s: String, sep: String) -> [String] {
   out = []
   current = ""
   for ch in s {
@@ -239,18 +244,32 @@ split(v, sep: ",")
 // pipeline operator simplifies nested calls
 print(
   [0, 1, 2, 3]
-    |> map(\x {x*x})
-    |> filter(\x {x == 0})
-    |> sum()
+  |> map(\x {x*x})
+  |> filter(\x {x == 0})
+  |> sum()
+  // if the function has positional arity of 1, and no required named params,
+  // then the call can be omitted
+  //
+  // |> sum
+  //
+  // this is useful when you want to use pipeline with lambdas
+  //
+  // 10 |> \x {x*x}
+  //
+  // the above is equivalent to
+  //
+  // 10 |> (\x {x*x})()
 )
 
 fn square(a: Int, b: Int) -> Int { a * b }
 
-print [1, 2, 4, 8]
+print(
+  [1, 2, 4, 8]
   // `#` character can be used as a placeholder
   // it is only evaluated once
   |> square(#, #)
-  |> sum()
+  |> sum
+)
 ```
 
 Types, classes, enums (+ field/index access)
@@ -303,10 +322,10 @@ a := A(a: "a", b: "b", c: "c")
 
 class Constructor {
   a, b, c: String
-  rest: String[]
+  rest: [String]
 
-  fn new(parts: String[]) -> Self {
-    Constructor(...parts[0..3], ...parts[3..])
+  fn new(parts: [String]) -> Self {
+    Constructor(...parts[0..3], parts[3..])
   }
 }
 
@@ -403,10 +422,11 @@ type Test {
 }
 
 v := { a: 0, b: 0 }
-v := match v:
+v := match v {
   { a: 1..10, b: 0 } -> /*...*/,
   { a: 0, b: 1..10 } -> /*...*/,
   _ -> /*...*/
+}
 
 // matching on enums
 v := match Name.Unit {
