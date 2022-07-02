@@ -1,5 +1,9 @@
-<p style="text-align: center">
-  <img src="./logo.svg" height="192px">
+<p align="center">
+  <img
+    alt="Mu logo"
+    src="./logo.svg"
+    width="30%"
+  >
 </p>
 
 # Mu
