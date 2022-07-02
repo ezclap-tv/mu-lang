@@ -11,19 +11,24 @@ Literals (null, int, float, bool, string, f-string, tuple, array, object)
 
 ```rust
 v := null
-v: Null
+v: null
 
+v: int
 v := 0 // int
-v: Int
+v := 0i
+v: float
 v := 0.0 // float
-v: Float
+v := 0f
+
+// number literals can also be suffixed
+v := 10ms // this calls the `ms` function with the value `10`
 
 v := true // bool
-v: Bool
+v: bool
 
 v := "test" // string
 v := "formatted \{v}" // string interpolation
-v: String
+v: string
 
 v := (v,) // tuple
 v: (T,)
@@ -47,7 +52,7 @@ name := 0
 
 // explicit type
 // this declaration shadows the previous one, so its type may differ
-name: String = "value"
+name: string = "value"
 ```
 
 Operators
@@ -111,7 +116,7 @@ do { /*...*/ }
 v0 := if v { "a" } else { "c" }
 v1 := do { "value" }
 // to ensure that nothing is returned, put a semicolon after the last expression
-v2: Null = do { "value"; }
+v2: null = do { "value"; }
 
 // you can omit braces for `if` when the body is a statement
 if true loop {/*...*/}
@@ -173,8 +178,11 @@ fn name[T, E](a: A, b: B, c: C) -> T
   /*...*/
 }
 
+// anonymous function
+square := \x {x*x}
+
 // positionals, defaults, rest, named + call examples
-fn foo(a, b, c: String, d = "test", rest: String..., named: String = "named") {
+fn foo(a, b, c: string, d = "test", rest: string..., named: string = "named") {
   print(a, b, c, d, rest, named)
 }
 foo("a", "b", "c") // a b c test [] named
@@ -182,13 +190,13 @@ foo("a", "b", "c", "d", "f", "g", "h") // a b c d [f g h] named
 foo("a", "b", "c", "d", "f", "g", "h", named: "i") // a b c d [f g h] i
 foo("a", b: "b", "c") // error: `c` must be labelled
 
-fn bar(..., named_only: String) {
+fn bar(..., named_only: string) {
   print(named_only)
 }
 bar("a") // error: function accepts no positional args
 bar(named_only: "a") // a
 
-fn fib(n: Int): Int {
+fn fib(n: int): int {
   match n {
     ..1 -> 0
     1..=2 -> 1
@@ -204,7 +212,7 @@ fn test() { return }
 // nor do they automatically propagate until caught. every error must
 // be explicitly handled or propagated.
 // before you can do this, the function must be declared as fallible with `throws`
-fn fallible0(v: Bool) throws {
+fn fallible0(v: bool) throws {
   if v: throw "error-like"
 }
 
@@ -223,7 +231,7 @@ fn fallible2() throws A | B {
 }
 
 
-fn split(s: String, sep: String) -> [String] {
+fn split(s: string, sep: string) -> [string] {
   out = []
   current = ""
   for ch in s {
@@ -261,7 +269,7 @@ print(
   // 10 |> (\x {x*x})()
 )
 
-fn square(a: Int, b: Int) -> Int { a * b }
+fn square(a: int, b: int) -> int { a * b }
 
 print(
   [1, 2, 4, 8]
@@ -318,7 +326,7 @@ type NotAssociatedType[T] where T: Default {
 class A[T /*: Bound*/] where T: Bound {
   // note: commas and semicolons are interchangeable and fully optional
   // the may be used to enhance readability:
-  a: String, b: String, c: String
+  a: string, b: string, c: string
 
   type AssociatedType = T
 
@@ -331,10 +339,10 @@ a := A("a", "b", "c")
 a := A(a: "a", b: "b", c: "c")
 
 class Constructor {
-  a, b, c: String
-  rest: [String]
+  a, b, c: string
+  rest: [string]
 
-  fn new(parts: [String]) -> Self {
+  fn new(parts: [string]) -> Self {
     Constructor(...parts[0..3], parts[3..])
   }
 }
@@ -383,11 +391,11 @@ Destructuring
 ```rust
 (a, b) = (0, 0)
 
-type Test { a: Int, b: Int }
+type Test { a: int, b: int }
 
 { a, b } := { a: 0, b: 0 }
 
-class Test { a: Int, b: Int }
+class Test { a: int, b: int }
 
 { a, b } := { a: 0, b: 0 }
 ```
@@ -427,8 +435,8 @@ match v {
 
 // matching on types
 type Test {
-  a: Int
-  b: Int
+  a: int
+  b: int
 }
 
 v := { a: 0, b: 0 }
@@ -459,9 +467,9 @@ type Disposable {
 }
 
 class File where Self: Disposable {
-  fid: Int
+  fid: int
 
-  fn open(path: String) -> File { /* ... */ }
+  fn open(path: string) -> File { /* ... */ }
   fn close(self) { /* ... */ }
 
   fn dispose(self) { self.close() }
@@ -480,7 +488,7 @@ Errors (throw, handling, propagation, unwrapping, + match)
 type A { /*...*/ }
 type B { /*...*/ }
 
-fn fallible(v: Bool) throws {
+fn fallible(v: bool) throws {
   if v: throw A
   else: throw B
 }
@@ -516,7 +524,7 @@ fn test[T](v: T?) -> T? {
   print(v)
 }
 
-v: String? = null
+v: string? = null
 test(v) // prints "null"
 v = "test"
 test(v) // prints "test"
@@ -562,7 +570,7 @@ The runtime is single-threaded, which means that no synchronization,
 such as atomics or locks, are ever needed.
 */
 
-fn perform_io(label: String) {
+fn perform_io(label: string) {
   sleep(1)
   print("\{label} io done")
 }
