@@ -1,9 +1,9 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./assets/logo-light.svg">
-    <source media="(prefers-color-scheme: light)" srcset="./assets/logo-dark.svg">
-    <img alt="The greek lowercase letter mu inside of a gear shape" src="./assets/logo-dark.svg">
-  </picture>
+  <img
+    alt="The greek lowercase letter mu inside of a gear shape"
+    src="./assets/logo.svg"
+    height="192px"
+  >
 </p>
 
 # Mu
