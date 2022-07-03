@@ -82,6 +82,8 @@ false || true
 0 & 1
 0 | 1
 0 ^ 1
+1 << 1
+1 >> 1
 ~0
 a |> b
 ```
@@ -213,21 +215,21 @@ fn test() { return }
 // be explicitly handled or propagated.
 // before you can do this, the function must be declared as fallible with `throws`
 fn fallible0(v: bool) throws {
-  if v: throw "error-like"
+  if v { throw "error-like" }
 }
 
 // fallible functions collect thrown error types into an anonymous enum
 fn fallible1() throws {
-  if a(): throw A()
-  if b(): throw B()
-  if c(): throw C()
+  if a() { throw A() }
+  if b() { throw B() }
+  if c() { throw C() }
 }
 
 // the set of possible errors can also be declared explicitly
 fn fallible2() throws A | B {
-  if a(): throw A()
-  if b(): throw B()
-  if c(): throw C() // error: this function may only throw `A` or `B`
+  if a() { throw A() }
+  if b() { throw B() }
+  if c() { throw C() } // error: this function may only throw `A` or `B`
 }
 
 
