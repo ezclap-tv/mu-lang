@@ -386,20 +386,6 @@ use_stuff_variant_a(StuffA.A) // ok
 use_stuff_variant_a(.A) // ok
 ```
 
-Destructuring
-
-```rust
-(a, b) = (0, 0)
-
-type Test { a: int, b: int }
-
-{ a, b } := { a: 0, b: 0 }
-
-class Test { a: int, b: int }
-
-{ a, b } := { a: 0, b: 0 }
-```
-
 Enums + match
 
 ```rust
