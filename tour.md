@@ -99,7 +99,7 @@ name **= 1
 name &= 1
 name |= 1
 name ^= 1
-name ??= 1 // assigns to `name` if `name` is none
+name ??= 1 // assigns to `name` if `name` is null
 ```
 
 If, do
