@@ -12,8 +12,7 @@ Regex-like extensions:
 - `( a b c )` defines a group which may contain one or more elements,
               and any of the above symbols apply to the group as a whole
 
-Terminals such as `"test"` are case-sensitive, and may contain interpolations in the form
-`"test{interpolated}"` where `interpolated` must be a terminal.
+Terminals such as `"test"` are case-sensitive.
 
 This grammar does not describe a whitespace-sensitive language, which means that
 any amount of whitespace is allowed to exist between any two elements, and is always ignored,
@@ -27,27 +26,25 @@ TODO: type expressions, expressions, if, match, etc.
 
 *)
 
-program = top_level_statement EOF ;
+program = top_level_stmt* EOF ;
 
-
-top_level_statement =
+top_level_stmt =
   | import
   | export
-  | statement
+  | stmt
   ;
 
 
 import = "import" import_list ";"? ;
 import_list = import_block | import_fragment ;
-import_block = "{" import_fragment ( "," import_fragment )* "}" ;
+import_block = "{" import_fragment ( "," import_fragment ","? )* "}" ;
 import_fragment = import_alias | import_nested ;
 import_alias = IDENTIFIER "as" IDENTIFIER ;
 import_nested = IDENTIFIER ( "." import_list )? ;
 
 
-(* note that various statements may also be exported *)
 export = "export" export_block ";"? ;
-export_block = "{" export_alias ( "," export_alias )* "}" ;
+export_block = "{" export_alias ( "," export_alias ","? )* "}" ;
 export_alias = IDENTIFIER "as" IDENTIFIER ;
 
 
@@ -85,23 +82,32 @@ while_loop_stmt = label? "while" expr loop_body ;
 inf_loop_stmt = label? "loop" loop_body ;
 loop_body = block_stmt ;
 
-label = "'{IDENTIFIER}" ;
+# no whitespace between the quote and identifier is allowed
+# no idea how to encode this in the grammar
+label = "'" IDENTIFIER;
 
 ctrl_stmt =
-  | "return" expr?
-  | "break" label?
-  | "continue" label?
+  | return_stmt
+  | throw_stmt
+  | break_stmt
+  | continue_stmt
   ;
+return_stmt = "return" expr? ;
+throw_stmt = "throw" expr ;
+break_stmt = "break" label? ;
+continue_stmt = "continue" label? ;
 
 
-fn_stmt = "export"? "fn" IDENTIFIER type_param_list? param_list fn_attributes? block_stmt ;
+fn_stmt = "export"? fn ;
+fn = "fn" IDENTIFIER type_param_list? param_list fn_attributes? block_stmt ;
 fn_attributes = fn_return_type? fn_throw_type? constraint? ;
 fn_return_type = "->" type_expr ;
 fn_throw_type = "throws" type_expr ;
 
 
-class_stmt = "export"? "class" IDENTIFIER type_param_list? constraint? class_member_list ;
-class_member_list = "{" class_member ( member_separator class_member )* "}" ;
+class_stmt = "export"? class ;
+class = "class" IDENTIFIER type_param_list? constraint? class_member_list ;
+class_member_list = "{" class_member ( any_separator class_member any_separator )* "}" ;
 class_member =
   | class_member_field
   | class_member_method
@@ -112,8 +118,9 @@ class_member_method = fn_stmt ;
 class_member_type = type_stmt ;
 
 
-enum_stmt = "export"? "enum" IDENTIFIER type_param_list? constraint? enum_variant_list ;
-enum_variant_list = "{" enum_variant ( member_separator enum_variant )* "}" ;
+enum_stmt = "export"? enum ;
+enum = "enum" IDENTIFIER type_param_list? constraint? enum_variant_list ;
+enum_variant_list = "{" enum_variant ( any_separator enum_variant any_separator )* "}" ;
 enum_variant =
   | enum_unit_variant
   | enum_tuple_variant
@@ -124,15 +131,13 @@ enum_tuple_variant = IDENTIFIER tuple_type_expr ;
 enum_struct_variant = IDENTIFIER struct_type_expr ;
 
 
-member_separator = "," | ";" | NEWLINE ;
-
-type_param_list = "[" ( type_param ( "," type_param )* )? "]" ;
+type_param_list = "[" ( type_param ( "," type_param ","? )* )? "]" ;
 type_param = IDENTIFIER ( ":" type_expr )? ( "=" type_expr ) ;
-param_list = "(" ( param ( "," param )* )? ")" ;
+param_list = "(" ( param ( "," param ","? )* )? ")" ;
 param = IDENTIFIER ( ":" type_expr )? ( "=" expr )? ;
 
 constraint = "where" constraint_bound_list ;
-constraint_bound_list = constraint_bound ( "," constraint_bound )* ;
+constraint_bound_list = constraint_bound ( "," constraint_bound ","? )* ;
 constraint_bound = IDENTIFIER ":" type_expr ;
 
 
@@ -143,3 +148,160 @@ type_stmt = "export"? "type" IDENTIFIER "=" type_expr ;
 
 
 expr_stmt = expr ;
+
+expr =
+  | do_block_expr
+  | if_expr
+  | match_expr
+  | fn_expr
+  | class_expr
+  | enum_expr
+  | spawn_expr
+  | assignment
+  ;
+
+
+do_block_expr = "do" block_stmt ;
+
+
+if_expr = "if" condition if_expr_body ( "else" ( if_expr | block ) )? ;
+if_expr_body =
+  | block_stmt
+  | loop_stmt
+  | ctrl_stmt
+  ;
+
+match_expr = "match" expr "{" match_case_list "}";
+match_case_list = match_case ( any_separator match_case any_separator? )* ;
+match_case = pattern "->" stmt ;
+
+(* TODO: pattern *)
+pattern = ;
+
+(*
+these exist only because they have different scoping rules
+specifically, the name is not declared in the enclosing scope,
+only in its own body
+*)
+fn_expr = fn ;
+class_expr = class ;
+enum_expr = enum ;
+
+
+spawn_expr = "spawn" spawn_expr_body ;
+spawn_expr_body =
+  | block_stmt
+  | call
+  ;
+
+
+assignment = 
+  | assignment_target ( assignment_op expression )?
+  | pipeline 
+  ;
+assignment_op = "=" | "+=" | "-=" | "/=" | "*=" | "%=" | "**=" | "&=" | "|=" | "^=" | "<<=" | ">>=" | "||=" | "&&=" | "??=" ;
+assignment_target =
+  | IDENTIFIER
+  | call field_access
+  | call item_access
+  ;
+
+
+pipeline = logic_or ( "|>" logic_or )* ;
+logic_or = logic_and ( "||" logic_and )* ;
+logic_and = bitwise_or ( "&&" bitwise_or )* ;
+bitwise_or = bitwise_xor ( "|" bitwise_xor )* ;
+bitwise_xor = bitwise_and ( "^" bitwise_and )* ;
+bitwise_and = equality ( "&" equality )* ;
+equality = comparison ( ( "==" | "!=" ) comparison )* ;
+comparison = bitshift ( ( ">" | ">=" | "<" | "<=" ) bitshift )* ;
+bitshift = addition ( ( "<<" | ">>" ) addition )* ;
+addition = multiplication ( ( "-" | "+" ) multiplication )* ;
+multiplication = exponentiation ( ("/" | "*" | "%" ) exponentiation )* ;
+exponentiation = unary ( "**" exponentiation )* ;
+
+unary = prefix | inc | dec | postfix ;
+prefix = ( "!" | "-" | "~" | "try" | "try!" ) unary ;
+inc = "++" assignment_target | assignment_target "++" ;
+dec = "--" assignment_target | assignment_target "--" ;
+
+postfix = primary ( call | field_access | item_access | try )* ;
+call = "(" args? ")" ;
+field_access = ( "." | "?." ) IDENTIFIER ;
+item_access = "[" expression "]" ;
+try = "." ( "try" | "try!" ) ;
+
+primary =
+  | bool
+  | null
+  | number
+  | string
+  | array
+  | struct
+  | lambda
+  | tuple
+  | grouping
+  ;
+
+bool = "true" | "false" ;
+
+null = "null" ;
+
+(*
+valid numbers:
+  0b0000_0000
+  -149120421940
+  0xb00ba
+  -inf
+  1.0e5
+  3.14e-5
+  1f
+  1i
+also with prefixes:
+  10ms
+  5.1s
+integers have higher precedence than floats
+*)
+number = ( integer | float ) IDENTIFIER? ;
+integer = ( base_2 | base_10 | base_16 ) suffix? ;
+base_2 = regex{0b[01]([01_]*[01])?} ;
+base_10 = regex{[0-9]([0-9_]*[0-9])?} ;
+base_16 = regex{0x[0-9a-fA-F]([0-9a-fA-F_]*[0-9a-fA-F])?} ;
+float =
+  | "inf"
+  | ( regex{(([0-9]+)(\.[0-9]*)?)([Ee][+-]?[0-9]+)?} suffix? )
+  ;
+
+string = 
+  | ( '"' string_fragment* '"' )
+  | ( "'" string_fragment* "'" )
+  ;
+string_fragment =
+  | "{" expr "}"
+  | "\{" text "}"
+  | text
+  ;
+text = UTF8* ;
+
+array = "[" array_item_list "]" ;
+array_item_list = array_item ( "," array_item ","? )* ;
+array_item = spread ;
+
+struct = "{" struct_fields "}" ;
+struct_field_list = struct_field ( "," struct_field ","? )* ;
+struct_field =
+  | IDENTIFIER
+  | IDENTIFIER ":" expr
+  | "[" expr "]" ":" expr
+  | spread
+  ;
+
+lambda = "\\" lambda_param_list block_stmt ;
+lambda_param_list = IDENTIFIER | param_list ;
+
+tuple = "(" expr "," ( expr "," )* ")" ;
+grouping = "(" expr ")" ;
+
+spread = "..."? expr ;
+
+any_separator = "," | ";" | NEWLINE ;

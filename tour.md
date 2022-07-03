@@ -40,7 +40,7 @@ v := [v, v, v, v]
 v := [v; 1024]
 v: [T]
 
-v := { v: v, [v]: v, ...v } // object
+v := { v: v, [v]: v, ...v } // struct
 v: { v: T }
 ```
 
