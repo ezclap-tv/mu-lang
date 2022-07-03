@@ -1,0 +1,145 @@
+(*
+Written with regex-like extensions and interpolations on top of EBNF.
+
+Regex-like extensions:
+- `element?` means zero or one occurence of `element`
+- `element*` means zero or more occurrences of `element`
+- `element+` means one or more occurrences of `element`
+- `element{N}` means exactly N occurrences of `element`
+- `element{N,}` means N or more occurrences of `element`
+- `element{N,M}` means between `N` and `M` occurrences of `element`
+- `a | b` means either `a` or `b` may appear in this position
+- `( a b c )` defines a group which may contain one or more elements,
+              and any of the above symbols apply to the group as a whole
+
+Terminals such as `"test"` are case-sensitive, and may contain interpolations in the form
+`"test{interpolated}"` where `interpolated` must be a terminal.
+
+This grammar does not describe a whitespace-sensitive language, which means that
+any amount of whitespace is allowed to exist between any two elements, and is always ignored,
+unless explicitly notated as `NEWLINE` for `\n` or `WHITESPACE` for `\s`.
+
+This grammar does not attempt to describe the semantics of the language,
+such as when certain statements or expressions can appear.
+It only describes the syntax at a "surface" level.
+
+TODO: type expressions, expressions, if, match, etc.
+
+*)
+
+program = top_level_statement EOF ;
+
+
+top_level_statement =
+  | import
+  | export
+  | statement
+  ;
+
+
+import = "import" import_list ";"? ;
+import_list = import_block | import_fragment ;
+import_block = "{" import_fragment ( "," import_fragment )* "}" ;
+import_fragment = import_alias | import_nested ;
+import_alias = IDENTIFIER "as" IDENTIFIER ;
+import_nested = IDENTIFIER ( "." import_list )? ;
+
+
+(* note that various statements may also be exported *)
+export = "export" export_block ";"? ;
+export_block = "{" export_alias ( "," export_alias )* "}" ;
+export_alias = IDENTIFIER "as" IDENTIFIER ;
+
+
+stmt =
+  ( | var_decl
+    | block_stmt
+    | loop_stmt
+    | ctrl_stmt
+    | fn_stmt
+    | class_stmt
+    | enum_stmt
+    | with_stmt
+    | type_stmt
+    | expr_stmt
+    | 
+  ) ";"? ;
+
+
+var_decl =
+  | IDENTIFIER ":=" expression
+  | IDENTIFIER ":" type_expr ( "=" expression )?
+  ;
+
+
+block_stmt = "{" stmt* "}" ;
+
+
+loop_stmt =
+  | for_loop_stmt
+  | while_loop_stmt
+  | inf_loop_stmt
+  ;
+for_loop_stmt = label? "for" IDENTIFIER "in" expr loop_body ;
+while_loop_stmt = label? "while" expr loop_body ;
+inf_loop_stmt = label? "loop" loop_body ;
+loop_body = block_stmt ;
+
+label = "'{IDENTIFIER}" ;
+
+ctrl_stmt =
+  | "return" expr?
+  | "break" label?
+  | "continue" label?
+  ;
+
+
+fn_stmt = "export"? "fn" IDENTIFIER type_param_list? param_list fn_attributes? block_stmt ;
+fn_attributes = fn_return_type? fn_throw_type? constraint? ;
+fn_return_type = "->" type_expr ;
+fn_throw_type = "throws" type_expr ;
+
+
+class_stmt = "export"? "class" IDENTIFIER type_param_list? constraint? class_member_list ;
+class_member_list = "{" class_member ( member_separator class_member )* "}" ;
+class_member =
+  | class_member_field
+  | class_member_method
+  | class_member_type
+  ;
+class_member_field = IDENTIFIER ( ":" type_expr )? ( "=" expr )? ;
+class_member_method = fn_stmt ;
+class_member_type = type_stmt ;
+
+
+enum_stmt = "export"? "enum" IDENTIFIER type_param_list? constraint? enum_variant_list ;
+enum_variant_list = "{" enum_variant ( member_separator enum_variant )* "}" ;
+enum_variant =
+  | enum_unit_variant
+  | enum_tuple_variant
+  | enum_struct_variant
+  ;
+enum_unit_variant = IDENTIFIER ;
+enum_tuple_variant = IDENTIFIER tuple_type_expr ;
+enum_struct_variant = IDENTIFIER struct_type_expr ;
+
+
+member_separator = "," | ";" | NEWLINE ;
+
+type_param_list = "[" ( type_param ( "," type_param )* )? "]" ;
+type_param = IDENTIFIER ( ":" type_expr )? ( "=" type_expr ) ;
+param_list = "(" ( param ( "," param )* )? ")" ;
+param = IDENTIFIER ( ":" type_expr )? ( "=" expr )? ;
+
+constraint = "where" constraint_bound_list ;
+constraint_bound_list = constraint_bound ( "," constraint_bound )* ;
+constraint_bound = IDENTIFIER ":" type_expr ;
+
+
+with_stmt = "with" ( IDENTIFIER ":=" )? expr block_stmt ;
+
+
+type_stmt = "export"? "type" IDENTIFIER "=" type_expr ;
+
+
+expr_stmt = expr ;
