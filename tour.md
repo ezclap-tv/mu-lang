@@ -274,13 +274,13 @@ print(
 
 fn square(a: int, b: int) -> int { a * b }
 
-print(
-  [1, 2, 4, 8]
-  // `#` character can be used as a placeholder
-  // it is only evaluated once
-  |> square(#, #)
-  |> sum
-)
+// `#` character can be used as a placeholder
+// it binds the expression on the left side, which is only evaluated once
+fn expensive() {
+  print("expensive")
+  2 * 2
+}
+tuple := expensive() |> (#, #, #) // prints "expensive" exactly once
 
 // if the right-side is not a function with arity=1 or a call expression
 // using one, it *must* include the `#` character to specify where the
