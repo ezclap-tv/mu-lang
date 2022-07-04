@@ -261,7 +261,8 @@ assignment_target =
   | call item_access
   ;
 
-
+(* `#` is allowed as an identifier in the context of a placeholder's right expression *)
+(* TODO: nested pipelines? *)
 pipeline = logic_or ( "|>" logic_or )* ;
 logic_or = logic_and ( "||" logic_and )* ;
 logic_and = bitwise_or ( "&&" bitwise_or )* ;
