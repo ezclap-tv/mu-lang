@@ -23,6 +23,7 @@ such as when certain statements or expressions can appear.
 It only describes the syntax at a "surface" level.
 
 TODO: type expressions, expressions, if, match, etc.
+TODO: range
 
 *)
 
@@ -146,6 +147,16 @@ with_stmt = "with" ( IDENTIFIER ":=" )? expr block_stmt ;
 
 type_stmt = "export"? "type" IDENTIFIER "=" type_expr ;
 
+(*
+TODO: type expressions
+type operators:
+- intersection `&`
+- union `|`
+- field/associated type access `.`
+*)
+type_expr =
+  ;
+
 
 expr_stmt = expr ;
 
@@ -173,10 +184,54 @@ if_expr_body =
 
 match_expr = "match" expr "{" match_case_list "}";
 match_case_list = match_case ( any_separator match_case any_separator? )* ;
-match_case = pattern "->" stmt ;
+match_case = pattern case_guard? "->" stmt ;
+
+case_guard = "if" expr ;
 
 (* TODO: pattern *)
-pattern = ;
+pattern = "error"? pattern_inner ;
+pattern_inner =
+  | any_pattern
+  | ignore_pattern
+  | bool_pattern
+  | null_pattern
+  | integer_pattern
+  | range_pattern
+  | string_pattern
+  | array_pattern
+  | tuple_pattern
+  | struct_pattern
+  | enum_pattern
+  ;
+
+pattern_with_rest = rest_pattern | pattern_inner ;
+rest_pattern = ".." pattern_binding? ;
+
+any_pattern = IDENTIFIER ;
+ignore_pattern = "_" ;
+bool_pattern = ( "true" | "false" ) pattern_binding? ;
+null_pattern = "null" pattern_binding? ;
+integer_pattern = integer pattern_binding? ;
+range_pattern =
+  ( | integer ".." integer
+    | integer ".."
+    | ".." integer
+  ) pattern_binding? ;
+string_pattern =
+  | quote text quote
+  | apos text apos
+  ;
+array_pattern = "[" rest_pattern ( "," rest_pattern ","? )* "]" ;
+tuple_pattern = "(" rest_pattern ( "," rest_pattern ","? )* ")" ;
+struct_pattern = "{" struct_pattern_item ( "," struct_pattern_item ","? )* "}" ;
+struct_pattern_item =
+  | IDENTIFIER
+  | IDENTIFIER ":" pattern
+  | rest_pattern
+  ;
+enum_pattern = IDENTIFIER? "." IDENTIFIER ( tuple_pattern | struct_pattern )? ;
+pattern_binding = "as" IDENTIFIER ;
+
 
 (*
 these exist only because they have different scoping rules
@@ -264,17 +319,18 @@ integers have higher precedence than floats
 *)
 number = ( integer | float ) IDENTIFIER? ;
 integer = ( base_2 | base_10 | base_16 ) suffix? ;
-base_2 = regex{0b[01]([01_]*[01])?} ;
-base_10 = regex{[0-9]([0-9_]*[0-9])?} ;
-base_16 = regex{0x[0-9a-fA-F]([0-9a-fA-F_]*[0-9a-fA-F])?} ;
+integer_base_2 = regex{0b[01]([01_]*[01])?} ;
+integer_base_10 = regex{[0-9]([0-9_]*[0-9])?} ;
+integer_base_16 = regex{0x[0-9a-fA-F]([0-9a-fA-F_]*[0-9a-fA-F])?} ;
 float =
   | "inf"
   | ( regex{(([0-9]+)(\.[0-9]*)?)([Ee][+-]?[0-9]+)?} suffix? )
   ;
 
+(* strings also support escapes such as \n \t \x2800 etc.*)
 string = 
-  | ( '"' string_fragment* '"' )
-  | ( "'" string_fragment* "'" )
+  | ( quote string_fragment* quote )
+  | ( apos string_fragment* apos )
   ;
 string_fragment =
   | "{" expr "}"
@@ -282,6 +338,8 @@ string_fragment =
   | text
   ;
 text = UTF8* ;
+apos = "'" ;
+quote = '"' ;
 
 array = "[" array_item_list "]" ;
 array_item_list = array_item ( "," array_item ","? )* ;
