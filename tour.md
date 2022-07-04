@@ -389,7 +389,7 @@ use_stuff_variant_a(StuffA.A) // ok
 use_stuff_variant_a(.A) // ok
 ```
 
-Enums + match
+Enums + match + patterns
 
 ```rust
 enum Name {
@@ -446,6 +446,44 @@ v := match Name.Unit {
   .Tuple(a, b) -> /*...*/,
   _ -> /*...*/
 }
+
+/*
+// literals
+true as v // bound to `v`
+false as v
+null as v
+0 as v
+"test" as v
+0..10 as v // integer range
+
+// complex types
+// anywhere you'd normally place the value is where you can also match on it
+// in every case except structs, you use the `as` keyword to bind parts of the pattern
+// in case of structs, you use right-side of `:`
+
+// checks that `len` is at least `2`
+// binds `first` to index 0, `middle` to `1..=len-3`, `last` to `len-1`
+[first, .. as middle, _, last]
+
+// checks that `len` is at least `2`, and that index `0` has value `0`, and index `len-1` has value `6`
+// binds nothing
+[0, .., 6]
+
+// checks that `.2` has value `2`
+// binds `.0` to `a` and `.1` to `c`
+(a, b as c, 2, .. as rest)
+
+// checks that `d` has value `2`
+// binds `a` to `a` and `b` to `c`
+// QQQ: should `d` be bound here too?
+{ a, b: c, d: 2 }
+
+// patterns can be (almost) arbitrarily nested, for example:
+// matches the last item in the last array 3 levels deep
+[.., [[.., 0]]] -> {}
+// matches an enum tuple variant with a deeply nested struct
+.Tuple({ a: { b: { c: 0..10 } } }) -> {}
+*/
 ```
 
 With
