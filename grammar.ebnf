@@ -22,9 +22,6 @@ This grammar does not attempt to describe the semantics of the language,
 such as when certain statements or expressions can appear.
 It only describes the syntax at a "surface" level.
 
-TODO: type expressions, expressions, if, match, etc.
-TODO: range
-
 *)
 
 program = top_level_stmt* EOF ;
@@ -35,7 +32,6 @@ top_level_stmt =
   | stmt
   ;
 
-
 import = "import" import_list ";"? ;
 import_list = import_block | import_fragment ;
 import_block = "{" import_fragment ( "," import_fragment ","? )* "}" ;
@@ -43,11 +39,9 @@ import_fragment = import_alias | import_nested ;
 import_alias = IDENTIFIER "as" IDENTIFIER ;
 import_nested = IDENTIFIER ( "." import_list )? ;
 
-
 export = "export" export_block ";"? ;
 export_block = "{" export_alias ( "," export_alias ","? )* "}" ;
 export_alias = IDENTIFIER "as" IDENTIFIER ;
-
 
 stmt =
   ( | var_decl
@@ -63,15 +57,12 @@ stmt =
     | 
   ) ";"? ;
 
-
 var_decl =
   | IDENTIFIER ":=" expression
   | IDENTIFIER ":" type_expr ( "=" expression )?
   ;
 
-
 block_stmt = "{" stmt* "}" ;
-
 
 loop_stmt =
   | for_loop_stmt
@@ -83,8 +74,10 @@ while_loop_stmt = label? "while" expr loop_body ;
 inf_loop_stmt = label? "loop" loop_body ;
 loop_body = block_stmt ;
 
-# no whitespace between the quote and identifier is allowed
-# no idea how to encode this in the grammar
+(*
+no whitespace between the quote and identifier is allowed
+no idea how to encode this in the grammar
+*)
 label = "'" IDENTIFIER;
 
 ctrl_stmt =
@@ -98,13 +91,11 @@ throw_stmt = "throw" expr ;
 break_stmt = "break" label? ;
 continue_stmt = "continue" label? ;
 
-
 fn_stmt = "export"? fn ;
 fn = "fn" IDENTIFIER type_param_list? param_list fn_attributes? block_stmt ;
-fn_attributes = fn_return_type? fn_throw_type? constraint? ;
-fn_return_type = "->" type_expr ;
-fn_throw_type = "throws" type_expr ;
-
+fn_attributes = fn_returns? fn_throws? constraint? ;
+fn_returns = "->" type_expr ;
+fn_throws = "throws" IDENTIFIER ( "," IDENTIFIER ","? )* ;
 
 class_stmt = "export"? class ;
 class = "class" IDENTIFIER type_param_list? constraint? class_member_list ;
@@ -118,7 +109,6 @@ class_member_field = IDENTIFIER ( ":" type_expr )? ( "=" expr )? ;
 class_member_method = fn_stmt ;
 class_member_type = type_stmt ;
 
-
 enum_stmt = "export"? enum ;
 enum = "enum" IDENTIFIER type_param_list? constraint? enum_variant_list ;
 enum_variant_list = "{" enum_variant ( any_separator enum_variant any_separator )* "}" ;
@@ -128,9 +118,8 @@ enum_variant =
   | enum_struct_variant
   ;
 enum_unit_variant = IDENTIFIER ;
-enum_tuple_variant = IDENTIFIER tuple_type_expr ;
-enum_struct_variant = IDENTIFIER struct_type_expr ;
-
+enum_tuple_variant = IDENTIFIER tuple_type ;
+enum_struct_variant = IDENTIFIER struct_type ;
 
 type_param_list = "[" ( type_param ( "," type_param ","? )* )? "]" ;
 type_param = IDENTIFIER ( ":" type_expr )? ( "=" type_expr ) ;
@@ -141,22 +130,39 @@ constraint = "where" constraint_bound_list ;
 constraint_bound_list = constraint_bound ( "," constraint_bound ","? )* ;
 constraint_bound = IDENTIFIER ":" type_expr ;
 
-
 with_stmt = "with" ( IDENTIFIER ":=" )? expr block_stmt ;
-
 
 type_stmt = "export"? "type" IDENTIFIER "=" type_expr ;
 
-(*
-TODO: type expressions
-type operators:
-- intersection `&`
-- union `|`
-- field/associated type access `.`
-*)
-type_expr =
+(* TODO: more advanced type stuff *)
+type_expr = primary_type_expr ;
+
+primary_type_expr =
+  | "bool"
+  | "null"
+  | "int"
+  | "float"
+  | "string"
+  | fn_type
+  | array_type
+  | struct_type
+  | tuple_type
+  | grouping_type
   ;
 
+fn_type = "fn" "(" fn_type_param_list? ")" fn_returns? fn_throws? ;
+fn_type_param_list = type_expr ( "," type_expr ","? )* ;
+
+array_type = "[" type_expr "]" ;
+
+struct_type = "{" struct_type_pair* "}" ;
+struct_type_pair = IDENTIFIER ":" type_expr ;
+
+tuple_type = "(" ( tuple_type_single | tuple_type_multi ) ")" ;
+tuple_type_single = ( type_expr "," )? ;
+tuple_type_multi = ( type_expr "," )+ type_expr? ;
+
+grouping_type = "(" type_expr ")" ;
 
 expr_stmt = expr ;
 
@@ -168,12 +174,10 @@ expr =
   | class_expr
   | enum_expr
   | spawn_expr
-  | assignment
+  | assignment_expr
   ;
 
-
 do_block_expr = "do" block_stmt ;
-
 
 if_expr = "if" condition if_expr_body ( "else" ( if_expr | block ) )? ;
 if_expr_body =
@@ -232,7 +236,6 @@ struct_pattern_item =
 enum_pattern = IDENTIFIER? "." IDENTIFIER ( tuple_pattern | struct_pattern )? ;
 pattern_binding = "as" IDENTIFIER ;
 
-
 (*
 these exist only because they have different scoping rules
 specifically, the name is not declared in the enclosing scope,
@@ -242,66 +245,67 @@ fn_expr = fn ;
 class_expr = class ;
 enum_expr = enum ;
 
-
 spawn_expr = "spawn" spawn_expr_body ;
 spawn_expr_body =
   | block_stmt
   | call
   ;
 
-
-assignment = 
+assignment_expr = 
   | assignment_target ( assignment_op expression )?
-  | pipeline 
+  | pipeline_expr 
   ;
 assignment_op = "=" | "+=" | "-=" | "/=" | "*=" | "%=" | "**=" | "&=" | "|=" | "^=" | "<<=" | ">>=" | "||=" | "&&=" | "??=" ;
 assignment_target =
   | IDENTIFIER
-  | call field_access
-  | call item_access
+  | call_expr field_access_expr
+  | call_expr item_access_expr
   ;
 
 (* `#` is allowed as an identifier in the context of a placeholder's right expression *)
 (* TODO: nested pipelines? *)
-pipeline = logic_or ( "|>" logic_or )* ;
-logic_or = logic_and ( "||" logic_and )* ;
-logic_and = bitwise_or ( "&&" bitwise_or )* ;
-bitwise_or = bitwise_xor ( "|" bitwise_xor )* ;
-bitwise_xor = bitwise_and ( "^" bitwise_and )* ;
-bitwise_and = equality ( "&" equality )* ;
-equality = comparison ( ( "==" | "!=" ) comparison )* ;
-comparison = bitshift ( ( ">" | ">=" | "<" | "<=" ) bitshift )* ;
-bitshift = addition ( ( "<<" | ">>" ) addition )* ;
-addition = multiplication ( ( "-" | "+" ) multiplication )* ;
-multiplication = exponentiation ( ("/" | "*" | "%" ) exponentiation )* ;
-exponentiation = unary ( "**" exponentiation )* ;
+pipeline_expr = logic_or_expr ( "|>" logic_or_expr )* ;
+logic_or_expr = logic_and_expr ( "||" logic_and_expr )* ;
+logic_and_expr = bitwise_or_expr ( "&&" bitwise_or_expr )* ;
+bitwise_or_expr = bitwise_xor_expr ( "|" bitwise_xor_expr )* ;
+bitwise_xor_expr = bitwise_and_expr ( "^" bitwise_and_expr )* ;
+bitwise_and_expr = equality_expr ( "&" equality_expr )* ;
+equality_expr = comparison_expr ( ( "==" | "!=" ) comparison_expr )* ;
+comparison_expr = bitshift_expr ( ( ">" | ">=" | "<" | "<=" ) bitshift_expr )* ;
+bitshift_expr = addition_expr ( ( "<<" | ">>" ) addition_expr )* ;
+addition_expr = multiplication_expr ( ( "-" | "+" ) multiplication_expr )* ;
+multiplication_expr = exponentiation_expr ( ("/" | "*" | "%" ) exponentiation_expr )* ;
+exponentiation_expr = unary_expr ( "**" unary_expr )* ;
 
-unary = prefix | inc | dec | postfix ;
-prefix = ( "!" | "-" | "~" | "try" | "try!" ) unary ;
-inc = "++" assignment_target | assignment_target "++" ;
-dec = "--" assignment_target | assignment_target "--" ;
-
-postfix = primary ( call | field_access | item_access | try )* ;
-call = "(" args? ")" ;
-field_access = ( "." | "?." ) IDENTIFIER ;
-item_access = "[" expression "]" ;
-try = "." ( "try" | "try!" ) ;
-
-primary =
-  | bool
-  | null
-  | number
-  | string
-  | array
-  | struct
-  | lambda
-  | tuple
-  | grouping
+unary_expr = prefix_expr | inc_expr | dec_expr | postfix_expr ;
+prefix_expr = ( "!" | "-" | "~" | "try" | "try!" ) unary_expr ;
+inc_expr = "++" assignment_target | assignment_target "++" ;
+dec_expr = "--" assignment_target | assignment_target "--" ;
+postfix_expr = primary_expr ( call_expr | try_expr | field_access_expr | item_access_expr )* ;
+call_expr = "(" args? ")" ;
+try_expr = "." ( "try" | "try!" ) ;
+field_access_expr = ( "." | "?." ) IDENTIFIER ;
+item_access_expr = "["item_access_index "]" ;
+item_access_index =
+  | ( expr ".." expr )
+  | expr
   ;
 
-bool = "true" | "false" ;
+primary_expr =
+  | bool_expr
+  | null_expr
+  | number_expr
+  | string_expr
+  | array_expr
+  | struct_expr
+  | lambda_expr
+  | tuple_expr
+  | grouping_expr
+  ;
 
-null = "null" ;
+bool_expr = "true" | "false" ;
+
+null_expr = "null" ;
 
 (*
 valid numbers:
@@ -318,7 +322,7 @@ also with prefixes:
   5.1s
 integers have higher precedence than floats
 *)
-number = ( integer | float ) IDENTIFIER? ;
+number_expr = ( integer | float ) IDENTIFIER? ;
 integer = ( base_2 | base_10 | base_16 ) suffix? ;
 integer_base_2 = regex{0b[01]([01_]*[01])?} ;
 integer_base_10 = regex{[0-9]([0-9_]*[0-9])?} ;
@@ -329,7 +333,7 @@ float =
   ;
 
 (* strings also support escapes such as \n \t \x2800 etc.*)
-string = 
+string_expr = 
   | ( quote string_fragment* quote )
   | ( apos string_fragment* apos )
   ;
@@ -342,25 +346,38 @@ text = UTF8* ;
 apos = "'" ;
 quote = '"' ;
 
-array = "[" array_item_list "]" ;
-array_item_list = array_item ( "," array_item ","? )* ;
-array_item = spread ;
+array_expr = "[" ( array_item_list | array_len_init ) "]" ;
+array_item_list = spread_expr ( "," spread_expr ","? )* ;
+array_len_init = expr ";" expr ;
 
-struct = "{" struct_fields "}" ;
+struct_expr = "{" struct_fields "}" ;
 struct_field_list = struct_field ( "," struct_field ","? )* ;
 struct_field =
   | IDENTIFIER
   | IDENTIFIER ":" expr
   | "[" expr "]" ":" expr
-  | spread
+  | spread_expr
   ;
 
-lambda = "\\" lambda_param_list block_stmt ;
+lambda_expr = "\\" lambda_param_list block_stmt ;
 lambda_param_list = IDENTIFIER | param_list ;
 
-tuple = "(" expr "," ( expr "," )* ")" ;
-grouping = "(" expr ")" ;
+(*
+  0 elements  -> no comma
+  1 element   -> ends with comma
+  >1 elements -> separated by comma + optional trailing comma
 
-spread = "..."? expr ;
+() // tuple
+(a) // group
+(a,) // tuple
+(a,b) // tuple
+*)
+tuple_expr = "(" ( tuple_expr_single | tuple_expr_multi ) ")" ;
+tuple_expr_single = ( expr "," )? ;
+tuple_expr_multi = ( expr "," )+ expr? ;
+
+grouping_expr = "(" expr ")" ;
+
+spread_expr = "..."? expr ;
 
 any_separator = "," | ";" | NEWLINE ;
