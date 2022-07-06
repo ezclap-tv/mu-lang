@@ -7,7 +7,7 @@
 
 ### Language features
 
-Literals (null, int, float, bool, string, f-string, tuple, array, object)
+Literals (null, int, float, bool, string, f-string, tuple, array, record)
 
 ```rust
 v := null
@@ -40,7 +40,7 @@ v := [v, v, v, v]
 v := [v; 1024]
 v: [T]
 
-v := { v: v, [v]: v, ...v } // struct
+v := { v: v, [v]: v, ...v } // record
 v: { v: T }
 ```
 
@@ -325,7 +325,6 @@ type NotAssociatedType[T] where T: Default {
   fn test() -> T { T.default() }
 }
 
-// classes are nominal types
 class A[T /*: Bound*/] where T: Bound {
   // note: commas and semicolons are interchangeable and fully optional
   // the may be used to enhance readability:
@@ -349,6 +348,18 @@ class Constructor {
     Constructor(...parts[0..3], parts[3..])
   }
 }
+
+// classes are nominal types
+class A { v: number }
+type B = { v: number }
+fn accepts_A(v: A) { /* ... */ }
+fn accepts_B(v: B) { /* ... */ }
+a := A(v: 0)
+b := { v: 1 }
+accepts_A(a) // ok
+accepts_A(b) // error: parameter `v` only accepts instances of class `A`
+accepts_B(a) // ok
+accepts_B(b) // ok
 
 // bounds on `Self` are how you declare that you want this class to be a subtype of some `T`
 class SelfBound where Self: Default {
@@ -481,7 +492,7 @@ null as v
 // patterns can be (almost) arbitrarily nested, for example:
 // matches the last item in the last array 3 levels deep
 [.., [[.., 0]]] -> {}
-// matches an enum tuple variant with a deeply nested struct
+// matches an enum tuple variant with a deeply nested record
 .Tuple({ a: { b: { c: 0..10 } } }) -> {}
 */
 ```

@@ -115,11 +115,11 @@ enum_variant_list = "{" enum_variant ( any_separator enum_variant any_separator 
 enum_variant =
   | enum_unit_variant
   | enum_tuple_variant
-  | enum_struct_variant
+  | enum_record_variant
   ;
 enum_unit_variant = IDENTIFIER ;
 enum_tuple_variant = IDENTIFIER tuple_type ;
-enum_struct_variant = IDENTIFIER struct_type ;
+enum_record_variant = IDENTIFIER record_type ;
 
 type_param_list = "[" ( type_param ( "," type_param ","? )* )? "]" ;
 type_param = IDENTIFIER ( ":" type_expr )? ( "=" type_expr ) ;
@@ -145,7 +145,7 @@ primary_type_expr =
   | "string"
   | fn_type
   | array_type
-  | struct_type
+  | record_type
   | tuple_type
   | grouping_type
   ;
@@ -155,8 +155,8 @@ fn_type_param_list = type_expr ( "," type_expr ","? )* ;
 
 array_type = "[" type_expr "]" ;
 
-struct_type = "{" struct_type_pair* "}" ;
-struct_type_pair = IDENTIFIER ":" type_expr ;
+record_type = "{" record_type_pair* "}" ;
+record_type_pair = IDENTIFIER ":" type_expr ;
 
 tuple_type = "(" ( tuple_type_single | tuple_type_multi ) ")" ;
 tuple_type_single = ( type_expr "," )? ;
@@ -193,8 +193,7 @@ match_case = pattern case_guard? "->" stmt ;
 case_guard = "if" expr ;
 
 (* TODO: pattern *)
-pattern = "error"? pattern_inner ;
-pattern_inner =
+pattern =
   | any_pattern
   | ignore_pattern
   | bool_pattern
@@ -204,7 +203,7 @@ pattern_inner =
   | string_pattern
   | array_pattern
   | tuple_pattern
-  | struct_pattern
+  | record_pattern
   | enum_pattern
   ;
 
@@ -227,13 +226,14 @@ string_pattern =
   ;
 array_pattern = "[" rest_pattern ( "," rest_pattern ","? )* "]" ;
 tuple_pattern = "(" rest_pattern ( "," rest_pattern ","? )* ")" ;
-struct_pattern = "{" struct_pattern_item ( "," struct_pattern_item ","? )* "}" ;
-struct_pattern_item =
+record_pattern = "{" record_pattern_item ( "," record_pattern_item ","? )* "}" ;
+record_pattern_item =
   | IDENTIFIER
   | IDENTIFIER ":" pattern
   | rest_pattern
   ;
-enum_pattern = IDENTIFIER? "." IDENTIFIER ( tuple_pattern | struct_pattern )? ;
+(* if matching on a result, `IDENTIFIER` must be `error` and it is not optional *)
+enum_pattern = IDENTIFIER? "." IDENTIFIER ( tuple_pattern | record_pattern )? ;
 pattern_binding = "as" IDENTIFIER ;
 
 (*
@@ -297,7 +297,7 @@ primary_expr =
   | number_expr
   | string_expr
   | array_expr
-  | struct_expr
+  | record_expr
   | lambda_expr
   | tuple_expr
   | grouping_expr
@@ -350,9 +350,9 @@ array_expr = "[" ( array_item_list | array_len_init ) "]" ;
 array_item_list = spread_expr ( "," spread_expr ","? )* ;
 array_len_init = expr ";" expr ;
 
-struct_expr = "{" struct_fields "}" ;
-struct_field_list = struct_field ( "," struct_field ","? )* ;
-struct_field =
+record_expr = "{" record_fields "}" ;
+record_field_list = record_field ( "," record_field ","? )* ;
+record_field =
   | IDENTIFIER
   | IDENTIFIER ":" expr
   | "[" expr "]" ":" expr
