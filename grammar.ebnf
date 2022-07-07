@@ -99,7 +99,7 @@ fn_throws = "throws" IDENTIFIER ( "," IDENTIFIER ","? )* ;
 
 class_stmt = "export"? class ;
 class = "class" IDENTIFIER type_param_list? constraint? class_member_list ;
-class_member_list = "{" class_member ( any_separator class_member any_separator )* "}" ;
+class_member_list = "{" class_member ( separator class_member separator )* "}" ;
 class_member =
   | class_member_field
   | class_member_method
@@ -111,15 +111,14 @@ class_member_type = type_stmt ;
 
 enum_stmt = "export"? enum ;
 enum = "enum" IDENTIFIER type_param_list? constraint? enum_variant_list ;
-enum_variant_list = "{" enum_variant ( any_separator enum_variant any_separator )* "}" ;
-enum_variant =
-  | enum_unit_variant
-  | enum_tuple_variant
-  | enum_record_variant
+enum_variant_list =
+  "{" "|"? enum_variant ( ( "|" | "," ) enum_variant ( "|" | "," )? )* "}" ;
+enum_variant = IDENTIFIER enum_variant_inner?;
+enum_variant_inner =
+  | "(" type_expr ( "," type_expr ","? )* ")"
+  | record_type
   ;
-enum_unit_variant = IDENTIFIER ;
-enum_tuple_variant = IDENTIFIER tuple_type ;
-enum_record_variant = IDENTIFIER record_type ;
+
 
 type_param_list = "[" ( type_param ( "," type_param ","? )* )? "]" ;
 type_param = IDENTIFIER ( ":" type_expr )? ( "=" type_expr ) ;
@@ -132,21 +131,24 @@ constraint_bound = IDENTIFIER ":" type_expr ;
 
 with_stmt = "with" ( IDENTIFIER ":=" )? expr block_stmt ;
 
-type_stmt = "export"? "type" IDENTIFIER "=" type_expr ;
+type_stmt = "export"? "type" IDENTIFIER type_stmt_init ;
+type_stmt_init =
+  | record_type
+  | "=" type_expr
+  ;
 
-(* TODO: more advanced type stuff *)
-type_expr = primary_type_expr ;
+type_expr = type_intersection ;
+
+(* intersections are only valid between record types *)
+type_intersection = primary_type_expr ( "+" primary_type_expr )* ;
 
 primary_type_expr =
-  | "bool"
-  | "null"
-  | "int"
-  | "float"
-  | "string"
   | fn_type
   | array_type
   | record_type
   | tuple_type
+  | enum_type
+  | primitive_type
   | grouping_type
   ;
 
@@ -155,12 +157,23 @@ fn_type_param_list = type_expr ( "," type_expr ","? )* ;
 
 array_type = "[" type_expr "]" ;
 
-record_type = "{" record_type_pair* "}" ;
+record_type = "{" record_type_pair ( "," record_type_pair ","? )* "}" ;
 record_type_pair = IDENTIFIER ":" type_expr ;
 
 tuple_type = "(" ( tuple_type_single | tuple_type_multi ) ")" ;
 tuple_type_single = ( type_expr "," )? ;
 tuple_type_multi = ( type_expr "," )+ type_expr? ;
+
+enum_type = "|"? enum_variant ( "|" enum_variant )* ;
+
+primitive_type =
+  | "bool"
+  | "null"
+  | "int"
+  | "float"
+  | "string"
+  | IDENTIFIER
+  ;
 
 grouping_type = "(" type_expr ")" ;
 
@@ -187,7 +200,7 @@ if_expr_body =
   ;
 
 match_expr = "match" expr "{" match_case_list "}";
-match_case_list = match_case ( any_separator match_case any_separator? )* ;
+match_case_list = match_case ( separator match_case separator? )* ;
 match_case = pattern case_guard? "->" stmt ;
 
 case_guard = "if" expr ;
@@ -380,4 +393,4 @@ grouping_expr = "(" expr ")" ;
 
 spread_expr = "..."? expr ;
 
-any_separator = "," | ";" | NEWLINE ;
+separator = "," | ";" | NEWLINE ;
