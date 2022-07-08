@@ -405,6 +405,7 @@ Enums + match + patterns
 ```rust
 enum Name {
   Unit
+  Simple(T)
   Tuple(A, B)
   Struct { a: A, b: B }
 }
