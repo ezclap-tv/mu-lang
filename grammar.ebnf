@@ -12,15 +12,16 @@ Regex-like extensions:
 - `( a b c )` defines a group which may contain one or more elements,
               and any of the above symbols apply to the group as a whole
 
+The grammar may also contain regex terminals, written in the form `regex{"<regex>"}`.
+For example: `regex{"[a-bA-B_][a-bA-B_0-9]*"}` describes an identifier which consists
+of alphanumeric characters or underscores, except at the start, where digits may
+not appear.
+
 Terminals such as `"test"` are case-sensitive.
 
 This grammar does not describe a whitespace-sensitive language, which means that
-any amount of whitespace is allowed to exist between any two elements, and is always ignored,
-unless explicitly notated as `NEWLINE` for `\n` or `WHITESPACE` for `\s`.
-
-This grammar does not attempt to describe the semantics of the language,
-such as when certain statements or expressions can appear.
-It only describes the syntax at a "surface" level.
+any amount of whitespace is allowed to exist between any two elements, and is always
+ignored, unless explicitly notated as `NEWLINE` for `\n` or `WHITESPACE` for `\s`.
 
 *)
 
@@ -399,3 +400,7 @@ grouping_expr = "(" expr ")" ;
 spread_expr = "..."? expr ;
 
 separator = "," | ";" | NEWLINE ;
+
+IDENTIFIER = regex{"[a-bA-B_][a-bA-B_0-9]*"} ;
+
+NEWLINE = regex{"\n"} ;
