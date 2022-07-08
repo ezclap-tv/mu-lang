@@ -98,8 +98,8 @@ fn_returns = "->" type_expr ;
 fn_throws = "throws" IDENTIFIER ( "," IDENTIFIER ","? )* ;
 
 class_stmt = "export"? class ;
-class = "class" IDENTIFIER type_param_list? constraint? class_member_list ;
-class_member_list = "{" class_member ( separator class_member separator )* "}" ;
+class = "class" IDENTIFIER type_param_list? constraint? "{" class_member_list? "}" ;
+class_member_list = class_member ( separator class_member separator )* ;
 class_member =
   | class_member_field
   | class_member_method
@@ -110,9 +110,9 @@ class_member_method = fn_stmt ;
 class_member_type = type_stmt ;
 
 enum_stmt = "export"? enum ;
-enum = "enum" IDENTIFIER type_param_list? constraint? enum_variant_list ;
+enum = "enum" IDENTIFIER type_param_list? constraint? "{" enum_variant_list? ( ";" class_member_list )? "}" ;
 enum_variant_list =
-  "{" "|"? enum_variant ( ( "|" | "," ) enum_variant ( "|" | "," )? )* "}" ;
+  "|"? enum_variant ( ( "|" | "," ) enum_variant ( "|" | "," )? )* ;
 enum_variant = IDENTIFIER enum_variant_inner?;
 enum_variant_inner =
   | "(" type_expr ( "," type_expr ","? )* ")"
@@ -172,7 +172,7 @@ primitive_type =
   | "int"
   | "float"
   | "string"
-  | IDENTIFIER
+  | IDENTIFIER ( "." IDENTIFIER )*
   ;
 
 grouping_type = "(" type_expr ")" ;
@@ -205,7 +205,6 @@ match_case = pattern case_guard? "->" stmt ;
 
 case_guard = "if" expr ;
 
-(* TODO: pattern *)
 pattern =
   | any_pattern
   | ignore_pattern
@@ -249,11 +248,8 @@ record_pattern_item =
 enum_pattern = IDENTIFIER? "." IDENTIFIER ( tuple_pattern | record_pattern )? ;
 pattern_binding = "as" IDENTIFIER ;
 
-(*
-these exist only because they have different scoping rules
-specifically, the name is not declared in the enclosing scope,
-only in its own body
-*)
+(* these exist only because they have different scoping rules. specifically,
+   the name is not declared in the enclosing scope, only in its own body *)
 fn_expr = fn ;
 class_expr = class ;
 enum_expr = enum ;
@@ -276,7 +272,6 @@ assignment_target =
   ;
 
 (* `#` is allowed as an identifier in the context of a placeholder's right expression *)
-(* TODO: nested pipelines? *)
 pipeline_expr = logic_or_expr ( "|>" logic_or_expr )* ;
 logic_or_expr = logic_and_expr ( "||" logic_and_expr )* ;
 logic_and_expr = bitwise_or_expr ( "&&" bitwise_or_expr )* ;
