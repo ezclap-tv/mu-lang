@@ -519,6 +519,15 @@ with f := File.open("test.json") {
   use(f)
   // call to `f.dispose()` is inserted here
 }
+
+// `with` may contain multiple declarations
+with
+  a := fopen("a.json");
+  b := fopen("b.json");
+  c := fopen("c.json");
+{
+
+}
 ```
 
 Errors (throw, handling, propagation, unwrapping, + match)
