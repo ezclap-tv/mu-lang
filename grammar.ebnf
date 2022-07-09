@@ -136,7 +136,7 @@ type_stmt_init =
 
 type_expr = type_intersection ;
 
-(* intersections are only valid between record types *)
+(* intersections are only valid on types that reduce to record types *)
 type_intersection = primary_type_expr ( "+" primary_type_expr )* ;
 
 primary_type_expr =
