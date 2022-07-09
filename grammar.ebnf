@@ -96,7 +96,7 @@ fn_throws = "throws" IDENTIFIER ( "," IDENTIFIER ","? )* ;
 
 class_stmt = "export"? class ;
 class = "class" IDENTIFIER type_param_list? constraint? "{" class_member_list? "}" ;
-class_member_list = class_member ( separator class_member separator )* ;
+class_member_list = class_member ( separator class_member separator? )* ;
 class_member =
   | class_member_field
   | class_member_method
