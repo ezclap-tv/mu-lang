@@ -164,9 +164,7 @@ array_type = "[" type_expr "]" ;
 record_type = "{" record_type_pair ( "," record_type_pair ","? )* "}" ;
 record_type_pair = IDENTIFIER ":" type_expr ;
 
-tuple_type = "(" ( tuple_type_single | tuple_type_multi ) ")" ;
-tuple_type_single = ( type_expr "," )? ;
-tuple_type_multi = ( type_expr "," )+ type_expr? ;
+tuple_type = "(" ( ( type_expr "," )+ type_expr? )? ")" ;
 
 enum_type = "|"? enum_variant ( "|" enum_variant )* ;
 
