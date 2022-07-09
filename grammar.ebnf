@@ -126,7 +126,8 @@ constraint = "where" constraint_bound_list ;
 constraint_bound_list = constraint_bound ( "," constraint_bound ","? )* ;
 constraint_bound = IDENTIFIER ":" type_expr ;
 
-with_stmt = "with" ( IDENTIFIER ":=" )? expr block_stmt ;
+with_stmt = "with" with_decl ( ";" with_decl )* block_stmt ;
+with_decl = ( IDENTIFIER ":=" )? expr ;
 
 type_stmt = "export"? "type" IDENTIFIER type_stmt_init ;
 type_stmt_init =
