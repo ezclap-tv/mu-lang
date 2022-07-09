@@ -40,7 +40,14 @@ import_fragment = import_alias | import_nested ;
 import_alias = IDENTIFIER "as" IDENTIFIER ;
 import_nested = IDENTIFIER ( "." import_list )? ;
 
-export = "export" export_block ";"? ;
+export = "export" export_item ";"? ;
+export_item =
+  | export_block
+  | fn_stmt
+  | class_stmt
+  | enum_stmt
+  | type_stmt
+  ;
 export_block = "{" export_alias ( "," export_alias ","? )* "}" ;
 export_alias = IDENTIFIER "as" IDENTIFIER ;
 
@@ -88,13 +95,13 @@ throw_stmt = "throw" expr ;
 break_stmt = "break" label? ;
 continue_stmt = "continue" label? ;
 
-fn_stmt = "export"? fn ;
+fn_stmt = fn ;
 fn = "fn" IDENTIFIER type_param_list? param_list fn_attributes? block_stmt ;
 fn_attributes = fn_returns? fn_throws? constraint? ;
 fn_returns = "->" type_expr ;
 fn_throws = "throws" IDENTIFIER ( "," IDENTIFIER ","? )* ;
 
-class_stmt = "export"? class ;
+class_stmt = class ;
 class = "class" IDENTIFIER type_param_list? constraint? "{" class_member_list? "}" ;
 class_member_list = class_member ( separator class_member separator? )* ;
 class_member =
@@ -106,7 +113,7 @@ class_member_field = IDENTIFIER ( ":" type_expr )? ( "=" expr )? ;
 class_member_method = fn_stmt ;
 class_member_type = type_stmt ;
 
-enum_stmt = "export"? enum ;
+enum_stmt = enum ;
 enum = "enum" IDENTIFIER type_param_list? constraint? "{" enum_variant_list? class_member_list? "}" ;
 enum_variant_list =
   "|"? enum_variant ( ( "|" | "," ) enum_variant ( "|" | "," )? )* ;
@@ -115,7 +122,6 @@ enum_variant_inner =
   | "(" type_expr ( "," type_expr ","? )* ")"
   | record_type
   ;
-
 
 type_param_list = "[" ( type_param ( "," type_param ","? )* )? "]" ;
 type_param = IDENTIFIER ( ":" type_expr )? ( "=" type_expr ) ;
@@ -129,7 +135,7 @@ constraint_bound = IDENTIFIER ":" type_expr ;
 with_stmt = "with" with_decl ( ";" with_decl )* block_stmt ;
 with_decl = ( IDENTIFIER ":=" )? expr ;
 
-type_stmt = "export"? "type" IDENTIFIER type_stmt_init ;
+type_stmt = "type" IDENTIFIER type_stmt_init ;
 type_stmt_init =
   | record_type
   | "=" type_expr
