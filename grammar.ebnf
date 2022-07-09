@@ -56,10 +56,10 @@ stmt =
     | block_stmt
     | loop_stmt
     | ctrl_stmt
+    | with_stmt
     | fn_stmt
     | class_stmt
     | enum_stmt
-    | with_stmt
     | type_stmt
     | expr_stmt
     | 
@@ -95,6 +95,9 @@ throw_stmt = "throw" expr ;
 break_stmt = "break" label? ;
 continue_stmt = "continue" label? ;
 
+with_stmt = "with" with_decl ( ";" with_decl ";"? )* block_stmt ;
+with_decl = ( IDENTIFIER ":=" )? expr ;
+
 fn_stmt = fn ;
 fn = "fn" IDENTIFIER type_param_list? param_list fn_attributes? block_stmt ;
 fn_attributes = fn_returns? fn_throws? constraint? ;
@@ -123,19 +126,7 @@ enum_variant_inner =
   | record_type
   ;
 
-type_param_list = "[" ( type_param ( "," type_param ","? )* )? "]" ;
-type_param = IDENTIFIER ( ":" type_expr )? ( "=" type_expr ) ;
-param_list = "(" ( param ( "," param ","? )* )? ")" ;
-param = IDENTIFIER ( ":" type_expr )? ( "=" expr )? ;
-
-constraint = "where" constraint_bound_list ;
-constraint_bound_list = constraint_bound ( "," constraint_bound ","? )* ;
-constraint_bound = IDENTIFIER ":" type_expr ;
-
-with_stmt = "with" with_decl ( ";" with_decl ";"? )* block_stmt ;
-with_decl = ( IDENTIFIER ":=" )? expr ;
-
-type_stmt = "type" IDENTIFIER type_stmt_init ;
+type_stmt = "type" IDENTIFIER type_param_list? constraint? type_stmt_init ;
 type_stmt_init =
   | record_type
   | "=" type_expr
@@ -178,6 +169,15 @@ primitive_type =
   ;
 
 grouping_type = "(" type_expr ")" ;
+
+type_param_list = "[" ( type_param ( "," type_param ","? )* )? "]" ;
+type_param = IDENTIFIER ( ":" type_expr )? ( "=" type_expr ) ;
+param_list = "(" ( param ( "," param ","? )* )? ")" ;
+param = IDENTIFIER ( ":" type_expr )? ( "=" expr )? ;
+
+constraint = "where" constraint_bound_list ;
+constraint_bound_list = constraint_bound ( "," constraint_bound ","? )* ;
+constraint_bound = IDENTIFIER ":" type_expr ;
 
 expr_stmt = expr ;
 
