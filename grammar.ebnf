@@ -205,7 +205,7 @@ if_expr_body =
 
 match_expr = "match" expr "{" match_case_list "}";
 match_case_list = match_case ( separator match_case separator? )* ;
-match_case = pattern case_guard? "->" stmt ;
+match_case = pattern case_guard? "=>" stmt ;
 
 case_guard = "if" expr ;
 

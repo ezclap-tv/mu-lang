@@ -201,9 +201,9 @@ bar(named_only: "a") // a
 
 fn fib(n: int): int {
   match n {
-    ..1 -> 0
-    1..=2 -> 1
-    _ -> fib(n-1) + fib(n+1)
+    ..1 => 0
+    1..=2 => 1
+    _ => fib(n-1) + fib(n+1)
   }
 }
 
@@ -415,23 +415,23 @@ enum Name {
 
 // numeric
 v := match v {
-  0 -> /*...*/,
-  1..10 -> /*...*/,
-  n if n >= 10 -> /*...*/,
+  0 => /*...*/,
+  1..10 => /*...*/,
+  n if n >= 10 => /*...*/,
   // must be exhaustive
-  _ -> /*...*/
+  _ => /*...*/
 }
 
 // stringy
 match v {
-  "test" -> /*...*/,
-  _ -> /*...*/
+  "test" => /*...*/,
+  _ => /*...*/
 }
 
 match v {
-  "a" -> "b",
-  "b" -> "c",
-  _ -> "d"
+  "a" => "b",
+  "b" => "c",
+  _ => "d"
 }
 
 // matching on types
@@ -442,21 +442,21 @@ type Test {
 
 v := { a: 0, b: 0 }
 v := match v {
-  { a: 1..10, b: 0 } -> /*...*/,
-  { a: 0, b: 1..10 } -> /*...*/,
-  _ -> /*...*/
+  { a: 1..10, b: 0 } => /*...*/,
+  { a: 0, b: 1..10 } => /*...*/,
+  _ => /*...*/
 }
 
 // matching on enums
 v := match Name.Unit {
-  .Unit -> /*...*/,
-  .Tuple(a, b) -> /*...*/,
+  .Unit => /*...*/,
+  .Tuple(a, b) => /*...*/,
   // with nesting
-  .Tuple(a: 0, b: 10) -> /*...*/,
+  .Tuple(a: 0, b: 10) => /*...*/,
   // and guards
-  .Tuple(a: 0, b) if (0..10).contains(b) -> /*...*/,
-  .Tuple(a, b) -> /*...*/,
-  _ -> /*...*/
+  .Tuple(a: 0, b) if (0..10).contains(b) => /*...*/,
+  .Tuple(a, b) => /*...*/,
+  _ => /*...*/
 }
 
 /*
@@ -492,9 +492,9 @@ null as v
 
 // patterns can be (almost) arbitrarily nested, for example:
 // matches the last item in the last array 3 levels deep
-[.., [[.., 0]]] -> {}
+[.., [[.., 0]]] => {}
 // matches an enum tuple variant with a deeply nested record
-.Tuple({ a: { b: { c: 0..10 } } }) -> {}
+.Tuple({ a: { b: { c: 0..10 } } }) => {}
 */
 ```
 
@@ -555,13 +555,13 @@ fn fallible2() throws {
 v := fallible() // error: must handle failure
 // match on errors
 v := match fallible() {
-  v -> /*...*/,
+  v => /*...*/,
   // specific error
-  error A -> /*...*/,
+  error A => /*...*/,
   // specific error with binding
-  error A as e -> /*...*/,
+  error A as e => /*...*/,
   // wildcard
-  error _ -> /*...*/
+  error _ => /*...*/
 }
 ```
 
