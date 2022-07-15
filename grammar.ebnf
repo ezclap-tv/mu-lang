@@ -345,9 +345,9 @@ float =
 suffix = IDENTIFIER ;
 
 (* strings also support escapes such as \n \t \x2800 etc.*)
-string_expr = 
-  | ( quote string_fragment* quote )
-  | ( apos string_fragment* apos )
+string_expr =
+  | ( quote string_fragment* quote ) suffix?
+  | ( apos string_fragment* apos ) suffix?
   ;
 string_fragment =
   | "{" expr "}"
