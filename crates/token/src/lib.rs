@@ -1,0 +1,312 @@
+use logos::Logos;
+use std::borrow::Cow;
+
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Logos)]
+enum TokenKind<'src> {
+  // keywords
+  #[token("import")]
+  Import,
+  #[token("export")]
+  Export,
+  #[token("as")]
+  As,
+  #[token("for")]
+  For,
+  #[token("while")]
+  While,
+  #[token("loop")]
+  Loop,
+  #[token("in")]
+  In,
+  #[token("return")]
+  Return,
+  #[token("throw")]
+  Throw,
+  #[token("break")]
+  Break,
+  #[token("continue")]
+  Continue,
+  #[token("with")]
+  With,
+  #[token("fn")]
+  Fn,
+  #[token("throws")]
+  Throws,
+  #[token("class")]
+  Class,
+  #[token("enum")]
+  Enum,
+  #[token("type")]
+  Type,
+  #[token("bool")]
+  Bool,
+  #[token("null")]
+  Null,
+  #[token("int")]
+  IntType,
+  #[token("float")]
+  FloatType,
+  #[token("string")]
+  StringType,
+  #[token("where")]
+  Where,
+  #[token("do")]
+  Do,
+  #[token("if")]
+  If,
+  #[token("else")]
+  Else,
+  #[token("match")]
+  Match,
+  #[token("true")]
+  True,
+  #[token("false")]
+  False,
+  #[token("spawn")]
+  Spawn,
+  #[token("try")]
+  Try,
+  #[token("try!")]
+  TryBang,
+  // symbols
+  #[token("{")]
+  LeftBrace,
+  #[token("}")]
+  RightBrace,
+  #[token("(")]
+  LeftParen,
+  #[token(")")]
+  RightParen,
+  #[token("[")]
+  LeftBracket,
+  #[token("]")]
+  RightBracket,
+  #[token(";")]
+  Semicolon,
+  #[token(",")]
+  Comma,
+  #[token(".")]
+  Dot,
+  #[token("?.")]
+  QuestionDot,
+  #[token("..")]
+  DotDot,
+  #[token("..=")]
+  DotDotEqual,
+  #[token("...")]
+  Spread,
+  #[token(":=")]
+  Walrus,
+  #[token(":")]
+  Colon,
+  #[token("=")]
+  Equal,
+  #[token("->")]
+  ArrowThin,
+  #[token("=>")]
+  ArrowFat,
+  #[token("+")]
+  Plus,
+  #[token("-")]
+  Minus,
+  #[token("/")]
+  Slash,
+  #[token("*")]
+  Star,
+  #[token("%")]
+  Percent,
+  #[token("**")]
+  Power,
+  #[token("&")]
+  BitAnd,
+  #[token("|")]
+  BitOr,
+  #[token("^")]
+  BitXor,
+  #[token("||")]
+  Or,
+  #[token("&&")]
+  And,
+  #[token("?")]
+  Question,
+  #[token("+=")]
+  PlusEqual,
+  #[token("-=")]
+  MinusEqual,
+  #[token("/=")]
+  SlashEqual,
+  #[token("*=")]
+  StarEqual,
+  #[token("%=")]
+  PercentEqual,
+  #[token("**=")]
+  PowerEqual,
+  #[token("&=")]
+  BitAndEqual,
+  #[token("|=")]
+  BitOrEqual,
+  #[token("^=")]
+  BitXorEqual,
+  #[token("<<=")]
+  ShiftLeftEqual,
+  #[token(">>=")]
+  ShiftRightEqual,
+  #[token("||=")]
+  OrEqual,
+  #[token("&&=")]
+  AndEqual,
+  #[token("??=")]
+  CoalescingEqual,
+  #[token("|>")]
+  Pipeline,
+  #[token("==")]
+  EqualEqual,
+  #[token("!=")]
+  BangEqual,
+  #[token(">")]
+  Greater,
+  #[token(">=")]
+  GreaterEqual,
+  #[token("<")]
+  Lesser,
+  #[token("<=")]
+  LesserEqual,
+  #[token("<<")]
+  ShiftLeft,
+  #[token(">>")]
+  ShiftRight,
+  #[token("!")]
+  Bang,
+  #[token("~")]
+  BitNot,
+  #[token("++")]
+  PlusPlus,
+  #[token("--")]
+  MinusMinus,
+  // misc
+  #[regex("[a-bA-B_][a-bA-B_0-9]*")]
+  Identifier,
+  #[regex("'[a-bA-B_][a-bA-B_0-9]*")]
+  Label,
+  // TODO: implement `lex_string` similarly to https://github.com/ves-lang/ves/blob/b69cef7e9181e302d72ff311cb0fd666d143b629/ves-parser/src/lexer.rs#L421
+  #[regex("\"", lex_string)]
+  #[regex("\'", lex_string, priority = 100)]
+  StringLit(Vec<StringFragment<'src>>),
+  // int has precedence over floats
+  // TODO: parse integers in various bases
+  #[regex("[0-9]([0-9_]*[0-9])?", lex_integer_base_10, priority = 100)]
+  #[regex("0b[01]([01_]*[01])?", lex_integer_base_2)]
+  #[regex("0x[0-9a-fA-F]([0-9a-fA-F_]*[0-9a-fA-F])?", lex_integer_base_16)]
+  IntLit(u64),
+  #[token("inf", |_| f64::INFINITY)]
+  // TODO: why tf is `\.` an invalid escape bro please
+  #[regex("[0-9]+(\.[0-9]*)?([Ee][+-]?[0-9]+)?", |lex| lex.slice().parse())]
+  FloatLit(f64),
+}
+
+pub enum StringFragment<'src> {
+  Text(Cow<'src, str>),
+  Expr(logos::Lexer<'src, TokenKind<'src>>),
+}
+
+/*
+"import"
+";"
+"{"
+","
+"}"
+"as"
+"."
+"export"
+":="
+":"
+"="
+"for"
+"in"
+"while"
+"loop"
+"'[a-bA-B_][a-bA-B_0-9]*"
+"return"
+"throw"
+"break"
+"continue"
+"with"
+"fn"
+"->"
+"throws"
+"class"
+"enum"
+"|"
+"("
+")"
+"type"
+"+"
+"?"
+"["
+"]"
+"bool"
+"null"
+"int"
+"float"
+"string"
+"where"
+"do"
+"if"
+"else"
+"match"
+"=>"
+".."
+"_"
+"true"
+"false"
+"spawn"
+"+="
+"-="
+"/="
+"*="
+"%="
+"**="
+"&="
+"|="
+"^="
+"<<="
+">>="
+"||="
+"&&="
+"??="
+"|>"
+"||"
+"&&"
+"^"
+"&"
+"=="
+"!="
+">"
+">="
+"<"
+"<="
+"<<"
+">>"
+"-"
+"/"
+"*"
+"%"
+"**"
+"!"
+"~"
+"try"
+"try!"
+"++"
+"--"
+"?."
+"0b[01]([01_]*[01])?"
+"[0-9]([0-9_]*[0-9])?"
+"0x[0-9a-fA-F]([0-9a-fA-F_]*[0-9a-fA-F])?"
+"inf"
+"[0-9]+(.[0-9]*)?([Ee][+-]?[0-9]+)?"
+"'"
+"..="
+"\"
+"..."
+"[a-bA-B_][a-bA-B_0-9]*"
+*/

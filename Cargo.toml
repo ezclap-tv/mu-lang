@@ -1,0 +1,6 @@
+[workspace]
+members = [
+  "crates/frontend",
+  "crates/ast",
+  "crates/token",
+]
