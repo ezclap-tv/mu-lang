@@ -29,6 +29,8 @@ v: bool
 v := "test" // string
 v := "formatted {v}" // string interpolation
 v := "escaped curlies \{v}" // exact value is `escaped curlies {v}`
+// strings also support other escaped charaters such as `\n`, `\t`, `\x2800`, etc.
+v := "\x2800"
 v: string
 
 v := (v,) // tuple
