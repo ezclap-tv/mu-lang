@@ -27,7 +27,8 @@ v := true // bool
 v: bool
 
 v := "test" // string
-v := "formatted \{v}" // string interpolation
+v := "formatted {v}" // string interpolation
+v := "escaped curlies \{v}" // exact value is `escaped curlies {v}`
 v: string
 
 v := (v,) // tuple
@@ -645,7 +646,7 @@ such as atomics or locks, are ever needed.
 
 fn perform_io(label: string) {
   sleep(1)
-  print("\{label} io done")
+  print("{label} io done")
 }
 
 // first.hr
