@@ -410,6 +410,10 @@ enum Name {
   Struct { a: A, b: B }
 }
 
+class Test {
+  a: string
+}
+
 // pattern matching
 // it is an expression, just like `if`
 
@@ -457,6 +461,20 @@ v := match Name.Unit {
   .Tuple(a: 0, b) if (0..10).contains(b) => /*...*/,
   .Tuple(a, b) => /*...*/,
   _ => /*...*/
+}
+
+// postfix match
+v := a.match { /*...*/ }
+
+// record matching
+v := match { a: /* some string */ } {
+  { a: "test" } => /*...*/
+  { a } => /*...*/
+}
+// class matching - equivalent to record matching
+v := match Test(a: /* some string */) {
+  { a: "test" } => /*...*/
+  { a } => /*...*/
 }
 
 /*
@@ -545,7 +563,7 @@ fn fallible2() throws {
   // propagation
   v := try fallible()
   // or `try` as postfix
-  /v := fallible().try
+  v := fallible().try
 
   // unwrapping
   v := try! fallible()

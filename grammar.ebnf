@@ -298,6 +298,7 @@ dec_expr = "--" assignment_target | assignment_target "--" ;
 postfix_expr = primary_expr ( call_expr | try_expr | field_access_expr | item_access_expr )* ;
 call_expr = "(" args? ")" ;
 try_expr = "." ( "try" | "try!" ) ;
+postfix_match_expr = "." match_expr ;
 field_access_expr = ( "." | "?." ) IDENTIFIER ;
 item_access_expr = "[" expr "]" ;
 
