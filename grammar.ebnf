@@ -199,7 +199,6 @@ do_block_expr = "do" block_stmt ;
 if_expr = "if" condition if_expr_body ( "else" ( if_expr | block ) )? ;
 if_expr_body =
   | block_stmt
-  | loop_stmt
   | ctrl_stmt
   ;
 

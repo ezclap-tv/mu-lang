@@ -124,11 +124,10 @@ v1 := do { "value" }
 // to ensure that nothing is returned, put a semicolon after the last expression
 v2: null = do { "value"; }
 
-// you can omit braces for `if` when the body is a statement
-if true loop {/*...*/}
-if true do {/*...*/}
+// you can use control statements without braces in `if` statements
 if true return
 if true break
+if true continue
 // etc.
 ```
 
