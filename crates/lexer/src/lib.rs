@@ -37,7 +37,7 @@ impl<'a> Token<'a> {
 
 pub trait NextTokenExt<'a> {
   fn next_token(&mut self) -> Option<Token<'a>>;
-  fn all_tokens(&mut self) -> Vec<Token<'a>>;
+  fn collect_tokens(&mut self) -> Vec<Token<'a>>;
 }
 
 impl<'a> NextTokenExt<'a> for logos::Lexer<'a, TokenKind<'a>> {
@@ -47,7 +47,7 @@ impl<'a> NextTokenExt<'a> for logos::Lexer<'a, TokenKind<'a>> {
       .map(|next| Token::new(self.slice(), self.span(), next))
   }
 
-  fn all_tokens(&mut self) -> Vec<Token<'a>> {
+  fn collect_tokens(&mut self) -> Vec<Token<'a>> {
     let mut out = Vec::new();
     while let Some(t) = self.next_token() {
       out.push(t);
@@ -280,6 +280,42 @@ pub enum TokenKind<'src> {
   #[error]
   Invalid,
   EOF,
+}
+
+#[cfg(feature = "fuzz")]
+#[doc(hidden)]
+pub fn _run_lexer(s: &'_ str) -> Vec<Token<'_>> {
+  let mut output = Vec::new();
+
+  fn collect_tokens<'a>(output: &mut Vec<Token<'a>>, lex: &mut logos::Lexer<'a, TokenKind<'a>>) {
+    while let Some(mut t) = lex.next_token() {
+      match &mut t.kind {
+        TokenKind::StringLit(s) => match s {
+          StringLiteral::Plain(_) => output.push(t),
+          StringLiteral::Invalid(_) => output.push(t),
+          StringLiteral::Interpolated(fragments) => {
+            let i = output.len();
+            output.push(Token::new("", 0..1, TokenKind::Invalid));
+
+            for frag in fragments {
+              match frag {
+                strings::StringFragment::Text(text) => {
+                  output.push(text.clone());
+                }
+                strings::StringFragment::Expr(lex) => collect_tokens(output, lex),
+              }
+            }
+
+            output[i] = t;
+          }
+        },
+        _ => output.push(t),
+      }
+    }
+  }
+
+  collect_tokens(&mut output, &mut TokenKind::lexer(s));
+  output
 }
 
 #[cfg(test)]
@@ -632,6 +668,67 @@ pub(crate) mod tests {
   }
 
   #[test]
+  fn test_unicode_modifier_closing_curlies_are_not_recognized() {
+    // NOTE: the first } has a few unicode markers on it:
+    // bytes: [34, 123, 125, 217, 159, 123]
+    const SOURCE: &str = r#""{}ٟ{}""#;
+    assert_eq!(test_tokenize(SOURCE), vec![]);
+  }
+
+  #[test]
+  fn test_lex_unterminated_empty_string_at_the_end_of_file() {
+    const SOURCE: &str = "some_other_code \"";
+    assert_eq!(
+      test_tokenize(SOURCE),
+      vec![
+        token!(Identifier, "some_other_code"),
+        token!(
+          TokenKind::StringLit(StringLiteral::Invalid(MalformedStringLiteral::MissingQuote)),
+          "\""
+        )
+      ]
+    );
+  }
+
+  #[test]
+  fn test_unterminated_interpolation_with_codepoint_at_the_end() {
+    let source: &str = std::str::from_utf8(&[
+      219, 188, 43, 125, 62, 0, 46, 70, 43, 125, 125, 0, 112, 123, 125, 0, 112, 123, 44, 0, 112,
+      34, 44, 70, 123, 43, 125, 0, 35, 112, 70, 43, 209, 188,
+    ])
+    .unwrap();
+    assert_eq!(
+      test_tokenize(source),
+      vec![
+        token!(Invalid, "ۼ"),
+        token!(Plus, "+"),
+        token!(RightBrace, "}"),
+        token!(Greater, ">"),
+        token!(Invalid, "\0"),
+        token!(Dot, "."),
+        token!(Identifier, "F"),
+        token!(Plus, "+"),
+        token!(RightBrace, "}"),
+        token!(RightBrace, "}"),
+        token!(Invalid, "\0"),
+        token!(Identifier, "p"),
+        token!(LeftBrace, "{"),
+        token!(RightBrace, "}"),
+        token!(Invalid, "\0"),
+        token!(Identifier, "p"),
+        token!(LeftBrace, "{"),
+        token!(Comma, ","),
+        token!(Invalid, "\0"),
+        token!(Identifier, "p"),
+        token!(
+          TokenKind::StringLit(StringLiteral::Invalid(MalformedStringLiteral::MissingQuote)),
+          "\",F{+}\0#pF+Ѽ"
+        ),
+      ]
+    );
+  }
+
+  #[test]
   fn string_interpolation_edge_cases() {
     const SOURCE: &str = r#"
       "{}"
@@ -964,7 +1061,7 @@ pub(crate) mod tests {
   fn dump_tokens(src: String) -> String {
     let mut lex = TokenKind::lexer(&src[..]);
     lex
-      .all_tokens()
+      .collect_tokens()
       .iter_mut()
       .filter(|t| t.kind != TokenKind::LineEnd)
       .map(dump_token)
@@ -992,7 +1089,7 @@ pub(crate) mod tests {
               }
               StringFragment::Expr(expr) => {
                 out.push_str("Fragment {");
-                let mut expr_tokens = expr.all_tokens();
+                let mut expr_tokens = expr.collect_tokens();
                 for token in &mut expr_tokens {
                   for line in dump_token(token).trim_end().split('\n') {
                     out.push_str("\n    ");

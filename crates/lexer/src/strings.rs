@@ -126,7 +126,7 @@ pub fn lex_string<'a>(lex: &mut logos::Lexer<'a, TokenKind<'a>>) -> StringLitera
       }
       b'{' if bytes.get(i.saturating_sub(1)) != Some(&b'\\') => {
         let span = if previous_fragment_end != 0 {
-          (previous_fragment_end + 1)..i
+          (previous_fragment_end + 1).min(i)..i
         } else {
           0..i
         };
@@ -175,7 +175,12 @@ pub fn lex_string<'a>(lex: &mut logos::Lexer<'a, TokenKind<'a>>) -> StringLitera
     }
   }
 
-  lex.bump(bump_count + 1);
+  if state == InterpolatedStringState::Closed {
+    lex.bump(bump_count + 1);
+  } else {
+    // Move the pointer to EOF
+    lex.bump(lex.source().len() - lex.span().end);
+  }
 
   match state {
     InterpolatedStringState::Closed => (),
