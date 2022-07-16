@@ -126,10 +126,11 @@ pub fn lex_string<'a>(lex: &mut logos::Lexer<'a, TokenKind<'a>>) -> StringLitera
       }
       b'{' if bytes.get(i.saturating_sub(1)) != Some(&b'\\') => {
         let span = if previous_fragment_end != 0 {
-          (previous_fragment_end + 1).min(i)..i
+          previous_fragment_end..i
         } else {
           0..i
         };
+
         let lexeme = &remainder[span.clone()];
         if !lexeme.is_empty() {
           fragments.push(StringFragment::Text(Token::new(
@@ -144,7 +145,7 @@ pub fn lex_string<'a>(lex: &mut logos::Lexer<'a, TokenKind<'a>>) -> StringLitera
         let fragment_start = i + 1;
         let fragment_bytes = (&remainder[fragment_start..]).as_bytes();
         let mut fragment_end = 0;
-        for (fi, byte) in fragment_bytes.iter().enumerate() {
+        for (fi, byte) in fragment_bytes.iter().copied().enumerate() {
           fragment_end = fragment_start + fi;
 
           // FIXME: this will break for nested opening curlies like in "{ '{' }", because it doesn't respect strings

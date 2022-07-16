@@ -668,11 +668,22 @@ pub(crate) mod tests {
   }
 
   #[test]
-  fn test_unicode_modifier_closing_curlies_are_not_recognized() {
-    // NOTE: the first } has a few unicode markers on it:
+  fn test_adjacent_curlies_with_unicode_modifier() {
+    // NOTE: the first } has a unicode marker on it (0x065F, ARABIC WAVY HAMZA BELOW)
     // bytes: [34, 123, 125, 217, 159, 123]
-    const SOURCE: &str = r#""{}ٟ{}""#;
-    assert_eq!(test_tokenize(SOURCE), vec![]);
+    const SOURCE: &str = r#""{}ٟ{}"  "{}{}""#;
+
+    let mut actual = test_tokenize(SOURCE);
+    compare_interpolated_strings(
+      &mut actual,
+      &[
+        interp_token!(
+          "\"{}ٟ{}\"",
+          frag_list![frag_expr!(), frag_text!("\u{65f}"), frag_expr!()]
+        ),
+        interp_token!("\"{}{}\"", frag_list![frag_expr!(), frag_expr!()]),
+      ],
+    );
   }
 
   #[test]
