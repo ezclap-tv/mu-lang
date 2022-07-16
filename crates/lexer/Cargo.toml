@@ -1,5 +1,5 @@
 [package]
-name = "lexer"
+name = "mu-lexer"
 version = "0.1.0"
 edition = "2021"
 
@@ -10,3 +10,4 @@ logos = "0.12.1"
 
 [dev-dependencies]
 pretty_assertions = "1.2.1"
+mu_testing = { package = "mu-testing", path = "../testing" }

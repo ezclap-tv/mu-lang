@@ -1,0 +1,9 @@
+[package]
+name = "mu-testing"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+lazy_static = "1.4.0"
+mu_testing_macro = { package = "mu-testing-macro", path = "./mu-testing-macro" }
+pretty_assertions = "1.2.1"

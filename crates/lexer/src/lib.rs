@@ -37,6 +37,7 @@ impl<'a> Token<'a> {
 
 pub trait NextTokenExt<'a> {
   fn next_token(&mut self) -> Option<Token<'a>>;
+  fn all_tokens(&mut self) -> Vec<Token<'a>>;
 }
 
 impl<'a> NextTokenExt<'a> for logos::Lexer<'a, TokenKind<'a>> {
@@ -44,6 +45,14 @@ impl<'a> NextTokenExt<'a> for logos::Lexer<'a, TokenKind<'a>> {
     self
       .next()
       .map(|next| Token::new(self.slice(), self.span(), next))
+  }
+
+  fn all_tokens(&mut self) -> Vec<Token<'a>> {
+    let mut out = Vec::new();
+    while let Some(t) = self.next_token() {
+      out.push(t);
+    }
+    out
   }
 }
 
@@ -85,7 +94,7 @@ pub enum TokenKind<'src> {
   #[token("type")]
   Type,
   #[token("bool")]
-  Bool,
+  BoolType,
   #[token("null")]
   Null,
   #[token("int")]
@@ -227,6 +236,8 @@ pub enum TokenKind<'src> {
   PlusPlus,
   #[token("--")]
   MinusMinus,
+  #[token("\\")]
+  BackSlash,
 
   // Identifiers
   #[regex("[a-zA-Z_][a-zA-Z_0-9]*")]
@@ -860,7 +871,7 @@ pub(crate) mod tests {
         token!(Class, "class"),
         token!(Enum, "enum"),
         token!(Type, "type"),
-        token!(Bool, "bool"),
+        token!(BoolType, "bool"),
         token!(Null, "null"),
         token!(IntType, "int"),
         token!(FloatType, "float"),
@@ -879,7 +890,7 @@ pub(crate) mod tests {
 
   #[test]
   fn symbols() {
-    const SOURCE: &str = "{ } ( ) [ ] ; , . ?. .. ..= ... := : = -> => + - / * % ** & | ^ || && ? += -= /= *= %= **= &= |= ^= <<= >>= ||= &&= ??= |> # == != > >= < <= << >> ! ~ ++";
+    const SOURCE: &str = "{ } ( ) [ ] ; , . ?. .. ..= ... := : = -> => + - / * % ** & | ^ || && ? += -= /= *= %= **= &= |= ^= <<= >>= ||= &&= ??= |> # == != > >= < <= << >> ! ~ ++ -- \\";
 
     assert_eq!(
       test_tokenize(SOURCE),
@@ -941,9 +952,79 @@ pub(crate) mod tests {
         token!(Bang, "!"),
         token!(BitNot, "~"),
         token!(PlusPlus, "++"),
+        token!(MinusMinus, "--"),
+        token!(BackSlash, "\\"),
       ]
     );
   }
+
+  static CRATE_ROOT: &str = env!("CARGO_MANIFEST_DIR");
+  static TESTS_DIR: &str = "tests";
+
+  fn dump_tokens(src: String) -> String {
+    let mut lex = TokenKind::lexer(&src[..]);
+    lex
+      .all_tokens()
+      .iter_mut()
+      .filter(|t| t.kind != TokenKind::LineEnd)
+      .map(dump_token)
+      .collect::<Vec<_>>()
+      .join("\n")
+  }
+
+  fn dump_token<'a>(t: &mut Token<'a>) -> String {
+    let mut out = String::new();
+    match &mut t.kind {
+      TokenKind::StringLit(s) => match s {
+        StringLiteral::Plain(_) | StringLiteral::Invalid(_) => {
+          add_lexeme(&mut out, format!("StringLiteral::{:?}", s), &t.lexeme);
+        }
+        StringLiteral::Interpolated(frags) => {
+          add_lexeme(&mut out, "StringLiteral::Interpolated {", &t.lexeme);
+
+          for (_, frag) in frags.iter_mut().enumerate() {
+            out.push_str("\n  ");
+            match frag {
+              StringFragment::Text(text) => {
+                out.push_str("Text {\n    ");
+                out.push_str(&dump_token(text));
+                out.push_str("\n  }");
+              }
+              StringFragment::Expr(expr) => {
+                out.push_str("Fragment {");
+                let mut expr_tokens = expr.all_tokens();
+                for token in &mut expr_tokens {
+                  for line in dump_token(token).trim_end().split('\n') {
+                    out.push_str("\n    ");
+                    out.push_str(&line);
+                  }
+                }
+                if !expr_tokens.is_empty() {
+                  out.push('\n');
+                }
+                out.push_str("  }");
+              }
+            }
+          }
+
+          if !frags.is_empty() {
+            out.push('\n');
+          }
+
+          out.push('}');
+        }
+      },
+      _ => add_lexeme(&mut out, format!("{:?}", t.kind), &t.lexeme),
+    }
+    out
+  }
+
+  fn add_lexeme<S: Into<String>>(out: &mut String, s: S, lexeme: impl AsRef<str>) {
+    out.push_str(&format!("{: <32} {:?}", s.into(), lexeme.as_ref()))
+  }
+
+  mu_testing::make_test_macros!(eq => CRATE_ROOT, TESTS_DIR, dump_tokens);
+  test_eq!(tour);
 
   mod utils {
     pub(crate) use super::{assert_eq, *};

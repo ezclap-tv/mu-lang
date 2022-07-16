@@ -1,0 +1,488 @@
+v := null
+v: null
+
+v: int
+v := 0 // int
+v := 0i
+v: float
+v := 0.0 // float
+v := 0f
+
+v := true // bool
+v: bool
+
+v := "test"
+v := "formatted {v}" // string interpolation
+v := "escaped curlies \{v}" // exact value is `escaped curlies {v}`
+// strings also support other escaped charaters such as `\n`, `\t`, `\x2800`, etc.
+v := "\x2800"
+v: string
+
+v := 10ms // this calls the `ms` function with the value `10`
+v := "3f9a1c30-dd8f-4769-8ac7-214f94d7d70c"uuid // parses the string as a uuid
+
+v0 := if v { "a" } else { "c" }
+v1 := do { "value" }
+v2: null = do { "value"; }
+
+for item in iterator { /*...*/ }
+
+while condition() { /*...*/ }
+loop { /*...*/ }
+
+for i in 0..10 {
+  print(i)
+}
+
+v := 10
+while v >= 0 {
+  print(v)
+  v -= 1
+}
+
+v := 0
+loop {
+  if v == 5 break
+  v += 1
+}
+
+// labelled loops (applies to `for` and `while`, too)
+'a: loop {
+  'b: loop {
+    break 'a
+  }
+}
+
+fn name[T, E](a: A, b: B, c: C) -> T
+  throws E
+  where
+    A: IA,
+    B: IB,
+    C: IC
+{
+  /*...*/
+}
+
+square := \x {x*x}
+
+
+// pipeline operator simplifies nested calls
+print(
+  [0, 1, 2, 3]
+  |> map(\x {x*x})
+  |> filter(\x {x == 0})
+  |> sum()
+)
+
+class Constructor {
+  a, b, c: string
+  rest: [string]
+
+  fn new(parts: [string]) -> Self {
+    Constructor(...parts[0..3], parts[3..])
+  }
+}
+
+
+enum Name {
+  Unit
+  Simple(T)
+  Tuple(A, B)
+  Struct { a: A, b: B }
+}
+
+class Test {
+  a: string?
+}
+
+with f := File.open("test.json") {}
+
+import {
+  a.{A, B},
+}
+export { e as h, F as G, G as F, H as E }
+
+spawn { /*...*/ }
+
+async.gather([
+  spawn { /*...*/ },
+  spawn { /*...*/ }
+])
+
+%output
+
+Identifier                       "v"
+ColonEqual                       ":="
+Null                             "null"
+Identifier                       "v"
+Colon                            ":"
+Null                             "null"
+Identifier                       "v"
+Colon                            ":"
+IntType                          "int"
+Identifier                       "v"
+ColonEqual                       ":="
+IntLit(0)                        "0"
+Identifier                       "v"
+ColonEqual                       ":="
+IntLit(0)                        "0i"
+Identifier                       "v"
+Colon                            ":"
+FloatType                        "float"
+Identifier                       "v"
+ColonEqual                       ":="
+FloatLit(FloatBits(0.0))         "0.0"
+Identifier                       "v"
+ColonEqual                       ":="
+FloatLit(FloatBits(0.0))         "0f"
+Identifier                       "v"
+ColonEqual                       ":="
+True                             "true"
+Identifier                       "v"
+Colon                            ":"
+BoolType                         "bool"
+Identifier                       "v"
+ColonEqual                       ":="
+StringLiteral::Plain("test")     "\"test\""
+Identifier                       "v"
+ColonEqual                       ":="
+StringLiteral::Interpolated {    "\"formatted {v}\""
+  Text {
+    StringLiteral::Plain("formatted ") "formatted "
+  }
+  Fragment {
+    Identifier                       "v"
+  }
+}
+Identifier                       "v"
+ColonEqual                       ":="
+StringLiteral::Plain("escaped curlies \\{v}") "\"escaped curlies \\{v}\""
+Identifier                       "v"
+ColonEqual                       ":="
+StringLiteral::Plain("\\x2800")  "\"\\x2800\""
+Identifier                       "v"
+Colon                            ":"
+StringType                       "string"
+Identifier                       "v"
+ColonEqual                       ":="
+IntLit(10)                       "10"
+Identifier                       "ms"
+Identifier                       "v"
+ColonEqual                       ":="
+StringLiteral::Plain("3f9a1c30-dd8f-4769-8ac7-214f94d7d70c") "\"3f9a1c30-dd8f-4769-8ac7-214f94d7d70c\""
+Identifier                       "uuid"
+Identifier                       "v0"
+ColonEqual                       ":="
+If                               "if"
+Identifier                       "v"
+LeftBrace                        "{"
+StringLiteral::Plain("a")        "\"a\""
+RightBrace                       "}"
+Else                             "else"
+LeftBrace                        "{"
+StringLiteral::Plain("c")        "\"c\""
+RightBrace                       "}"
+Identifier                       "v1"
+ColonEqual                       ":="
+Do                               "do"
+LeftBrace                        "{"
+StringLiteral::Plain("value")    "\"value\""
+RightBrace                       "}"
+Identifier                       "v2"
+Colon                            ":"
+Null                             "null"
+Equal                            "="
+Do                               "do"
+LeftBrace                        "{"
+StringLiteral::Plain("value")    "\"value\""
+Semicolon                        ";"
+RightBrace                       "}"
+For                              "for"
+Identifier                       "item"
+In                               "in"
+Identifier                       "iterator"
+LeftBrace                        "{"
+RightBrace                       "}"
+While                            "while"
+Identifier                       "condition"
+LeftParen                        "("
+RightParen                       ")"
+LeftBrace                        "{"
+RightBrace                       "}"
+Loop                             "loop"
+LeftBrace                        "{"
+RightBrace                       "}"
+For                              "for"
+Identifier                       "i"
+In                               "in"
+IntLit(0)                        "0"
+DotDot                           ".."
+IntLit(10)                       "10"
+LeftBrace                        "{"
+Identifier                       "print"
+LeftParen                        "("
+Identifier                       "i"
+RightParen                       ")"
+RightBrace                       "}"
+Identifier                       "v"
+ColonEqual                       ":="
+IntLit(10)                       "10"
+While                            "while"
+Identifier                       "v"
+GreaterEqual                     ">="
+IntLit(0)                        "0"
+LeftBrace                        "{"
+Identifier                       "print"
+LeftParen                        "("
+Identifier                       "v"
+RightParen                       ")"
+Identifier                       "v"
+MinusEqual                       "-="
+IntLit(1)                        "1"
+RightBrace                       "}"
+Identifier                       "v"
+ColonEqual                       ":="
+IntLit(0)                        "0"
+Loop                             "loop"
+LeftBrace                        "{"
+If                               "if"
+Identifier                       "v"
+EqualEqual                       "=="
+IntLit(5)                        "5"
+Break                            "break"
+Identifier                       "v"
+PlusEqual                        "+="
+IntLit(1)                        "1"
+RightBrace                       "}"
+Label                            "'a"
+Colon                            ":"
+Loop                             "loop"
+LeftBrace                        "{"
+Label                            "'b"
+Colon                            ":"
+Loop                             "loop"
+LeftBrace                        "{"
+Break                            "break"
+Label                            "'a"
+RightBrace                       "}"
+RightBrace                       "}"
+Fn                               "fn"
+Identifier                       "name"
+LeftBracket                      "["
+Identifier                       "T"
+Comma                            ","
+Identifier                       "E"
+RightBracket                     "]"
+LeftParen                        "("
+Identifier                       "a"
+Colon                            ":"
+Identifier                       "A"
+Comma                            ","
+Identifier                       "b"
+Colon                            ":"
+Identifier                       "B"
+Comma                            ","
+Identifier                       "c"
+Colon                            ":"
+Identifier                       "C"
+RightParen                       ")"
+ArrowThin                        "->"
+Identifier                       "T"
+Throws                           "throws"
+Identifier                       "E"
+Where                            "where"
+Identifier                       "A"
+Colon                            ":"
+Identifier                       "IA"
+Comma                            ","
+Identifier                       "B"
+Colon                            ":"
+Identifier                       "IB"
+Comma                            ","
+Identifier                       "C"
+Colon                            ":"
+Identifier                       "IC"
+LeftBrace                        "{"
+RightBrace                       "}"
+Identifier                       "square"
+ColonEqual                       ":="
+BackSlash                        "\\"
+Identifier                       "x"
+LeftBrace                        "{"
+Identifier                       "x"
+Star                             "*"
+Identifier                       "x"
+RightBrace                       "}"
+Identifier                       "print"
+LeftParen                        "("
+LeftBracket                      "["
+IntLit(0)                        "0"
+Comma                            ","
+IntLit(1)                        "1"
+Comma                            ","
+IntLit(2)                        "2"
+Comma                            ","
+IntLit(3)                        "3"
+RightBracket                     "]"
+Pipeline                         "|>"
+Identifier                       "map"
+LeftParen                        "("
+BackSlash                        "\\"
+Identifier                       "x"
+LeftBrace                        "{"
+Identifier                       "x"
+Star                             "*"
+Identifier                       "x"
+RightBrace                       "}"
+RightParen                       ")"
+Pipeline                         "|>"
+Identifier                       "filter"
+LeftParen                        "("
+BackSlash                        "\\"
+Identifier                       "x"
+LeftBrace                        "{"
+Identifier                       "x"
+EqualEqual                       "=="
+IntLit(0)                        "0"
+RightBrace                       "}"
+RightParen                       ")"
+Pipeline                         "|>"
+Identifier                       "sum"
+LeftParen                        "("
+RightParen                       ")"
+RightParen                       ")"
+Class                            "class"
+Identifier                       "Constructor"
+LeftBrace                        "{"
+Identifier                       "a"
+Comma                            ","
+Identifier                       "b"
+Comma                            ","
+Identifier                       "c"
+Colon                            ":"
+StringType                       "string"
+Identifier                       "rest"
+Colon                            ":"
+LeftBracket                      "["
+StringType                       "string"
+RightBracket                     "]"
+Fn                               "fn"
+Identifier                       "new"
+LeftParen                        "("
+Identifier                       "parts"
+Colon                            ":"
+LeftBracket                      "["
+StringType                       "string"
+RightBracket                     "]"
+RightParen                       ")"
+ArrowThin                        "->"
+Identifier                       "Self"
+LeftBrace                        "{"
+Identifier                       "Constructor"
+LeftParen                        "("
+Spread                           "..."
+Identifier                       "parts"
+LeftBracket                      "["
+IntLit(0)                        "0"
+DotDot                           ".."
+IntLit(3)                        "3"
+RightBracket                     "]"
+Comma                            ","
+Identifier                       "parts"
+LeftBracket                      "["
+IntLit(3)                        "3"
+DotDot                           ".."
+RightBracket                     "]"
+RightParen                       ")"
+RightBrace                       "}"
+RightBrace                       "}"
+Enum                             "enum"
+Identifier                       "Name"
+LeftBrace                        "{"
+Identifier                       "Unit"
+Identifier                       "Simple"
+LeftParen                        "("
+Identifier                       "T"
+RightParen                       ")"
+Identifier                       "Tuple"
+LeftParen                        "("
+Identifier                       "A"
+Comma                            ","
+Identifier                       "B"
+RightParen                       ")"
+Identifier                       "Struct"
+LeftBrace                        "{"
+Identifier                       "a"
+Colon                            ":"
+Identifier                       "A"
+Comma                            ","
+Identifier                       "b"
+Colon                            ":"
+Identifier                       "B"
+RightBrace                       "}"
+RightBrace                       "}"
+Class                            "class"
+Identifier                       "Test"
+LeftBrace                        "{"
+Identifier                       "a"
+Colon                            ":"
+StringType                       "string"
+Question                         "?"
+RightBrace                       "}"
+With                             "with"
+Identifier                       "f"
+ColonEqual                       ":="
+Identifier                       "File"
+Dot                              "."
+Identifier                       "open"
+LeftParen                        "("
+StringLiteral::Plain("test.json") "\"test.json\""
+RightParen                       ")"
+LeftBrace                        "{"
+RightBrace                       "}"
+Import                           "import"
+LeftBrace                        "{"
+Identifier                       "a"
+Dot                              "."
+LeftBrace                        "{"
+Identifier                       "A"
+Comma                            ","
+Identifier                       "B"
+RightBrace                       "}"
+Comma                            ","
+RightBrace                       "}"
+Export                           "export"
+LeftBrace                        "{"
+Identifier                       "e"
+As                               "as"
+Identifier                       "h"
+Comma                            ","
+Identifier                       "F"
+As                               "as"
+Identifier                       "G"
+Comma                            ","
+Identifier                       "G"
+As                               "as"
+Identifier                       "F"
+Comma                            ","
+Identifier                       "H"
+As                               "as"
+Identifier                       "E"
+RightBrace                       "}"
+Spawn                            "spawn"
+LeftBrace                        "{"
+RightBrace                       "}"
+Identifier                       "async"
+Dot                              "."
+Identifier                       "gather"
+LeftParen                        "("
+LeftBracket                      "["
+Spawn                            "spawn"
+LeftBrace                        "{"
+RightBrace                       "}"
+Comma                            ","
+Spawn                            "spawn"
+LeftBrace                        "{"
+RightBrace                       "}"
+RightBracket                     "]"
+RightParen                       ")"

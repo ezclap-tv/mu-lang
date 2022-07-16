@@ -3,4 +3,6 @@ members = [
   "crates/parser",
   "crates/ast",
   "crates/lexer",
+  "crates/testing",
+  "crates/testing/mu-testing-macro",
 ]
