@@ -413,3 +413,8 @@ separator = "," | ";" | NEWLINE ;
 IDENTIFIER = regex{"[a-bA-B_][a-bA-B_0-9]*"} ;
 
 NEWLINE = regex{"\n"} ;
+
+COMMENT = regex{"\/\/[^\n]*"}
+
+// Multiline comments can be nested.
+MULTI_LINE_COMMENT = "/*" ( MULTI_LINE_COMMENT | regex{"(?:(?!\*\/).)+"} ) "*/"
