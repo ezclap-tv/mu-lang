@@ -44,8 +44,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3f9eec918d3f24069decb9af1554cad7c880e2da24a9afd88aca000531ab82c1"
 
 [[package]]
-name = "frontend"
+name = "lexer"
 version = "0.1.0"
+dependencies = [
+ "logos",
+ "pretty_assertions",
+]
 
 [[package]]
 name = "logos"
@@ -78,6 +82,10 @@ checksum = "628223faebab4e3e40667ee0b2336d34a5b960ff60ea743ddfdbcf7770bcfb66"
 dependencies = [
  "winapi",
 ]
+
+[[package]]
+name = "parser"
+version = "0.1.0"
 
 [[package]]
 name = "pretty_assertions"
@@ -124,14 +132,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
-]
-
-[[package]]
-name = "token"
-version = "0.1.0"
-dependencies = [
- "logos",
- "pretty_assertions",
 ]
 
 [[package]]
