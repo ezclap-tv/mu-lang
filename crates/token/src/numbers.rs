@@ -19,12 +19,15 @@ impl Eq for FloatBits {}
 
 pub fn lex_integer<'src>(
   lex: &mut logos::Lexer<'src, TokenKind<'src>>,
-  radix: u32,
 ) -> Result<i64, ParseIntError> {
   let mut slice = lex.slice();
+  let mut radix = 10;
+
   if slice.starts_with("0b") || slice.starts_with("0x") {
+    radix = if slice.starts_with("0b") { 2 } else { 16 };
     slice = &slice[2..];
   }
+
   let clean = strip_underscore_and_suffix(slice, if radix <= 10 { "i" } else { "" });
   i64::from_str_radix(&clean, radix)
 }

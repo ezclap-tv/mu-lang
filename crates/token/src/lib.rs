@@ -243,9 +243,9 @@ pub enum TokenKind<'src> {
   StringLit(StringLiteral<'src>),
 
   // NOTE: Int has precedence over floats
-  #[regex("[0-9]([0-9_]*[0-9])?i?", |lex| lex_integer(lex, 10), priority = 100)]
-  #[regex("0b[01]([01_]*[01])?", |lex| lex_integer(lex, 2))]
-  #[regex("0x[0-9a-fA-F]([0-9a-fA-F_]*[0-9a-fA-F])?", |lex| lex_integer(lex, 16))]
+  #[regex("[0-9]([0-9_]*[0-9])?i?", |lex| lex_integer(lex), priority = 100)]
+  #[regex("0b[01]([01_]*[01])?", |lex| lex_integer(lex))]
+  #[regex("0x[0-9a-fA-F]([0-9a-fA-F_]*[0-9a-fA-F])?", |lex| lex_integer(lex))]
   IntLit(i64),
 
   #[token("inf", |_| FloatBits(f64::INFINITY), priority=99)]
