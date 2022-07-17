@@ -182,6 +182,8 @@ pub enum TokenKind<'src> {
   And,
   #[token("?")]
   Question,
+  #[token("??")]
+  Coalescing,
   #[token("+=")]
   PlusEqual,
   #[token("-=")]
@@ -996,7 +998,7 @@ pub(crate) mod tests {
 
   #[test]
   fn symbols() {
-    const SOURCE: &str = "{ } ( ) [ ] ; , . ?. .. ..= ... := : = -> => + - / * % ** & | ^ || && ? += -= /= *= %= **= &= |= ^= <<= >>= ||= &&= ??= |> # == != > >= < <= << >> ! ~ ++ -- \\";
+    const SOURCE: &str = "{ } ( ) [ ] ; , . ?. .. ..= ... := : = -> => + - / * % ** & | ^ || && ? ?? += -= /= *= %= **= &= |= ^= <<= >>= ||= &&= ??= |> # == != > >= < <= << >> ! ~ ++ -- \\";
 
     assert_eq!(
       test_tokenize(SOURCE),
@@ -1031,6 +1033,7 @@ pub(crate) mod tests {
         token!(Or, "||"),
         token!(And, "&&"),
         token!(Question, "?"),
+        token!(Coalescing, "??"),
         token!(PlusEqual, "+="),
         token!(MinusEqual, "-="),
         token!(SlashEqual, "/="),
