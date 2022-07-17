@@ -100,15 +100,17 @@ pub fn lex_string<'a>(lex: &mut logos::Lexer<'a, TokenKind<'a>>) -> StringLitera
   let mut state = InterpolatedStringState::MissingQuote;
   let mut bump_count = 0;
 
-  for (i, byte) in bytes.iter().enumerate() {
+  let mut i = 0;
+  while i < bytes.len() {
     // we just parsed a fragment and need to catch up to where it stopped parsing
     if i < previous_fragment_end {
-      continue;
+      i = previous_fragment_end;
     }
 
+    let byte = bytes[i];
     bump_count = i;
     match byte {
-      c if c == &quote_kind && bytes.get(i.saturating_sub(1)) != Some(&b'\\') => {
+      c if c == quote_kind && bytes.get(i.saturating_sub(1)) != Some(&b'\\') => {
         if previous_fragment_end < i {
           let span = previous_fragment_end..i;
           let remainder = &remainder[span.clone()];
@@ -173,6 +175,8 @@ pub fn lex_string<'a>(lex: &mut logos::Lexer<'a, TokenKind<'a>>) -> StringLitera
       }
       _ => (),
     }
+
+    i += 1;
   }
 
   if state == InterpolatedStringState::Closed {
