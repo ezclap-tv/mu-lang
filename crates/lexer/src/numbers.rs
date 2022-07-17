@@ -1,7 +1,5 @@
 use std::num::{ParseFloatError, ParseIntError};
 
-use crate::TokenKind;
-
 #[derive(Clone, Debug)]
 pub struct FloatBits(pub f64);
 
@@ -17,37 +15,24 @@ impl std::hash::Hash for FloatBits {
 }
 impl Eq for FloatBits {}
 
-pub fn lex_integer<'src>(
-  lex: &mut logos::Lexer<'src, TokenKind<'src>>,
-) -> Result<i64, ParseIntError> {
-  let mut slice = lex.slice();
-  let mut radix = 10;
-
-  if slice.starts_with("0b") || slice.starts_with("0x") {
-    radix = if slice.starts_with("0b") { 2 } else { 16 };
-    slice = &slice[2..];
-  }
-
-  let clean = strip_underscore_and_suffix(slice, if radix <= 10 { "i" } else { "" });
-  i64::from_str_radix(&clean, radix)
+#[derive(Clone, Copy)]
+pub enum Radix {
+  Binary = 2,
+  Decimal = 10,
+  Hexadecimal = 16,
 }
 
-pub fn lex_float<'src>(
-  lex: &mut logos::Lexer<'src, TokenKind<'src>>,
-) -> Result<FloatBits, ParseFloatError> {
-  let slice = lex.slice();
-  let clean = strip_underscore_and_suffix(slice, "f");
-  clean.parse().map(FloatBits)
+pub fn str_to_int(lexeme: &str, radix: Radix) -> Result<i64, ParseIntError> {
+  let clean = strip_underscores(lexeme);
+  i64::from_str_radix(&clean, radix as u32)
 }
 
-fn strip_underscore_and_suffix(input: &str, suffix: &str) -> String {
-  let input = input.strip_suffix(suffix).unwrap_or(input);
-  let mut out = String::with_capacity(input.len());
-  for c in input.chars() {
-    if c == '_' {
-      continue;
-    }
-    out.extend(&[c]);
-  }
+pub fn str_to_float(lexeme: &str) -> Result<FloatBits, ParseFloatError> {
+  lexeme.parse().map(FloatBits)
+}
+
+fn strip_underscores(input: &str) -> String {
+  let mut out = input.to_string();
+  out.retain(|c| c != '_');
   out
 }

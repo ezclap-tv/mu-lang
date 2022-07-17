@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use logos::{Logos, Span};
 
 use crate::comments::lex_multi_line_comment;
-use crate::numbers::{lex_float, lex_integer, FloatBits};
+use crate::numbers::{str_to_float, str_to_int, FloatBits, Radix};
 use crate::strings::{lex_string, StringLiteral};
 
 pub mod comments;
@@ -254,13 +254,13 @@ pub enum TokenKind<'src> {
   StringLit(StringLiteral<'src>),
 
   // NOTE: Int has precedence over floats
-  #[regex("[0-9]([0-9_]*[0-9])?i?", |lex| lex_integer(lex), priority = 100)]
-  #[regex("0b[01]([01_]*[01])?", |lex| lex_integer(lex))]
-  #[regex("0x[0-9a-fA-F]([0-9a-fA-F_]*[0-9a-fA-F])?", |lex| lex_integer(lex))]
+  #[regex("[0-9]([0-9_]*[0-9])?", |lex| str_to_int(lex.slice(), Radix::Decimal), priority = 100)]
+  #[regex("0b[01]([01_]*[01])?", |lex| str_to_int(&lex.slice()[2..], Radix::Binary))]
+  #[regex("0x[0-9a-fA-F]([0-9a-fA-F_]*[0-9a-fA-F])?", |lex| str_to_int(&lex.slice()[2..], Radix::Hexadecimal))]
   IntLit(i64),
 
   #[token("inf", |_| FloatBits(f64::INFINITY), priority=99)]
-  #[regex(r"[0-9]+(\.[0-9]+)?([Ee][+-]?[0-9]+)?f?", lex_float)]
+  #[regex(r"[0-9]+(\.[0-9]+)?([Ee][+-]?[0-9]+)?", |lex| str_to_float(lex.slice()))]
   FloatLit(FloatBits),
 
   // Misc
@@ -912,9 +912,6 @@ pub(crate) mod tests {
       999_999_999_999_999_999_999
       1.0
       1e300
-      1e300f
-      100f
-      100i
       
       0xABCDEF
       0xA_B_C_D_E_F
@@ -937,9 +934,6 @@ pub(crate) mod tests {
         token!(Invalid, "999_999_999_999_999_999_999"),
         token!(float(1.0), "1.0"),
         token!(float(1e300), "1e300"),
-        token!(float(1e300), "1e300f"),
-        token!(float(100.0), "100f"),
-        token!(int(100), "100i"),
         token!(int(0xABCDEF), "0xABCDEF"),
         token!(int(0xA_B_C_D_E_F), "0xA_B_C_D_E_F"),
         token!(int(0xDEAD_CAFE), "0xDEAD_CAFE"),
