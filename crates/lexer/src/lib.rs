@@ -665,7 +665,7 @@ pub(crate) mod tests {
     assert_eq!(
       test_tokenize(SOURCE),
       vec![token!(
-        TokenKind::StringLit(StringLiteral::Invalid(MalformedStringLiteral::MissingBrace)),
+        TokenKind::StringLit(StringLiteral::Invalid(MalformedStringLiteral::MissingQuote)),
         "\" bonjour {\"\"{bonjour \"\n    "
       )]
     );

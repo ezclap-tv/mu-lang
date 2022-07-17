@@ -142,17 +142,20 @@ pub fn lex_string<'a>(lex: &mut logos::Lexer<'a, TokenKind<'a>>) -> StringLitera
         }
 
         let mut unclosed_braces = 1;
+        let mut quotes = 0;
         // + 1 to skip opening brace
         let fragment_start = i + 1;
         let fragment_bytes = remainder[fragment_start..].as_bytes();
         let mut fragment_end = 0;
-        for (fi, byte) in fragment_bytes.iter().copied().enumerate() {
+        for (fi, fbyte) in fragment_bytes.iter().copied().enumerate() {
+          let fprev = fragment_bytes.get(fi.saturating_sub(1));
           fragment_end = fragment_start + fi;
 
-          // FIXME: this will break for nested opening curlies like in "{ '{' }", because it doesn't respect strings
-          match byte {
-            b'{' => unclosed_braces += 1,
-            b'}' => {
+          // FIXME: this will break for nested opening curlies like in "{ "{" }", because it doesn't respect strings
+          match fbyte {
+            b'"' if fprev != Some(&b'\\') => quotes += 1,
+            b'{' if quotes % 2 == 0 => unclosed_braces += 1,
+            b'}' if quotes % 2 == 0 => {
               unclosed_braces -= 1;
               if unclosed_braces == 0 {
                 break;
@@ -160,6 +163,12 @@ pub fn lex_string<'a>(lex: &mut logos::Lexer<'a, TokenKind<'a>>) -> StringLitera
             }
             _ => (),
           }
+        }
+
+        if quotes % 2 != 0 {
+          bump_count = fragment_end;
+          state = InterpolatedStringState::MissingQuote;
+          break;
         }
 
         if unclosed_braces != 0 {
