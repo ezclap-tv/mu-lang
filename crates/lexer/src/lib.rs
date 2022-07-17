@@ -833,26 +833,58 @@ pub(crate) mod tests {
 
   #[test]
   fn string_interpolation_nested_string() {
-    // FIXME: escaped nested curly leads to the entire file being parsed as Invalid
-    const SOURCE: &str = r#" 
-    "a { "hello I'm nested" }" 
-    "b { "nested \{ curly" }"
-"#;
+    const SOURCE: &str = r#"
+      "a {"\{"}"
+      "b {"\}"}"
+      "c {"\"\{\""}"
+      "d {"\"\}\""}"
+      "e { "hello I'm nested" }" 
+      "f { "nested \{ curly" }"
+    "#;
     let mut actual = test_tokenize(SOURCE);
+    println!("{actual:?}");
     compare_interpolated_strings(
       &mut actual,
       &[
         interp_token!(
-          "\"a { \"hello I'm nested\" }\"",
+          r#""a {"\{"}""#,
           frag_list![
             frag_text!("a "),
+            frag_expr![token!(string(r#"\{"#), r#""\{""#)]
+          ]
+        ),
+        interp_token!(
+          r#""b {"\}"}""#,
+          frag_list![
+            frag_text!("b "),
+            frag_expr![token!(string(r#"\}"#), r#""\}""#)]
+          ]
+        ),
+        interp_token!(
+          r#""c {"\"\{\""}""#,
+          frag_list![
+            frag_text!("c "),
+            frag_expr![token!(string(r#"\"\{\""#), r#""\"\{\"""#)]
+          ]
+        ),
+        interp_token!(
+          r#""d {"\"\}\""}""#,
+          frag_list![
+            frag_text!("d "),
+            frag_expr![token!(string(r#"\"\}\""#), r#""\"\}\"""#)]
+          ]
+        ),
+        interp_token!(
+          r#""e { "hello I'm nested" }""#,
+          frag_list![
+            frag_text!("e "),
             frag_expr![token!(string("hello I'm nested"), "\"hello I'm nested\"")]
           ]
         ),
         interp_token!(
-          "\"b { \"nested \\{ curly\" }\"",
+          r#""f { "nested \{ curly" }""#,
           frag_list![
-            frag_text!("b "),
+            frag_text!("f "),
             frag_expr![token!(string("nested \\{ curly"), "\"nested \\{ curly\"")]
           ]
         ),
