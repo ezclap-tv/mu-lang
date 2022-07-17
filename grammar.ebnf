@@ -189,6 +189,7 @@ expr =
   | do_block_expr
   | if_expr
   | match_expr
+  | catch_expr
   | fn_expr
   | class_expr
   | enum_expr
@@ -204,7 +205,10 @@ if_expr_body =
   | ctrl_stmt
   ;
 
-match_expr = "match" expr "{" match_case_list "}";
+(* `match` and `catch` are parsed the same way *)
+match_expr = "match" match_expr_body ;
+catch_expr = "catch" match_expr_body ;
+match_expr_body = expr "{" match_case_list "}" ;
 match_case_list = match_case ( separator match_case separator? )* ;
 match_case = pattern case_guard? "=>" stmt ;
 
@@ -296,10 +300,17 @@ unary_expr = prefix_expr | inc_expr | dec_expr | postfix_expr ;
 prefix_expr = ( "!" | "-" | "~" | "try" | "try!" ) unary_expr ;
 inc_expr = "++" assignment_target | assignment_target "++" ;
 dec_expr = "--" assignment_target | assignment_target "--" ;
-postfix_expr = primary_expr ( call_expr | try_expr | field_access_expr | item_access_expr )* ;
+postfix_expr = primary_expr
+  ( | call_expr
+    | try_expr
+    | postfix_match_expr
+    | postfix_catch_expr
+    | field_access_expr
+    | item_access_expr )* ;
 call_expr = "(" args? ")" ;
 try_expr = "." ( "try" | "try!" ) ;
 postfix_match_expr = "." match_expr ;
+postfix_catch_expr = "." catch_expr ;
 field_access_expr = ( "." | "?." ) IDENTIFIER ;
 item_access_expr = "[" expr "]" ;
 

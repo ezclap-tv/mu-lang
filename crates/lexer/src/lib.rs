@@ -113,6 +113,8 @@ pub enum TokenKind<'src> {
   Else,
   #[token("match")]
   Match,
+  #[token("catch")]
+  Catch,
   #[token("spawn")]
   Spawn,
   #[token("try")]
@@ -951,7 +953,7 @@ pub(crate) mod tests {
   #[test]
   fn keywords() {
     const SOURCE: &str = r"
-    import export as for while loop in return throw break continue with fn throws class enum type bool null int float string where do if else match spawn try try!
+    import export as for while loop in return throw break continue with fn throws class enum type bool null int float string where do if else match catch spawn try try!
     ";
 
     assert_eq!(
@@ -984,6 +986,7 @@ pub(crate) mod tests {
         token!(If, "if"),
         token!(Else, "else"),
         token!(Match, "match"),
+        token!(Catch, "catch"),
         token!(Spawn, "spawn"),
         token!(Try, "try"),
         token!(TryBang, "try!"),

@@ -114,7 +114,7 @@ If, do
 
 ```rust
 if a() { /*...*/ }
-elif b() { /*...*/ }
+else if b() { /*...*/ }
 else { /*...*/ }
 
 do { /*...*/ }
@@ -559,31 +559,33 @@ type A { /*...*/ }
 type B { /*...*/ }
 
 fn fallible(v: bool) throws {
-  if v: throw A
-  else: throw B
+  if v { throw A }
+  else { throw B }
 }
 
 fn fallible2() throws {
-  // propagation
+  v := fallible() // error: must handle failure
+
+  // there are three ways to handle errors:
+  // 1. propagation
   v := try fallible()
-  // or `try` as postfix
+  // postfix try
   v := fallible().try
 
-  // unwrapping
+  // 2. unwrapping
   v := try! fallible()
   v := fallible().try!
-}
 
-v := fallible() // error: must handle failure
-// match on errors
-v := match fallible() {
-  v => /*...*/,
-  // specific error
-  error A => /*...*/,
-  // specific error with binding
-  error A as e => /*...*/,
-  // wildcard
-  error _ => /*...*/
+  // 3. catching
+  v := catch fallible() {
+    A => /*...*/,
+    B => /*...*/,
+  }
+  // postfix catch
+  v := fallible().catch {
+    A => /*...*/,
+    B => /*...*/,
+  }
 }
 ```
 

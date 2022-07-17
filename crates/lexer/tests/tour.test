@@ -109,6 +109,39 @@ async.gather([
   spawn { /*...*/ }
 ])
 
+type A { /*...*/ }
+type B { /*...*/ }
+
+fn fallible(v: bool) throws {
+  if v { throw A }
+  else { throw B }
+}
+
+fn fallible2() throws {
+  v := fallible() // error: must handle failure
+
+  // there are three ways to handle errors:
+  // 1. propagation
+  v := try fallible()
+  // postfix try
+  v := fallible().try
+
+  // 2. unwrapping
+  v := try! fallible()
+  v := fallible().try!
+
+  // 3. catching
+  v := catch fallible() {
+    A => /*...*/,
+    B => /*...*/,
+  }
+  // postfix catch
+  v := fallible().catch {
+    A => /*...*/,
+    B => /*...*/,
+  }
+}
+
 %output
 
 Identifier                       "v"
@@ -488,3 +521,99 @@ LeftBrace                        "{"
 RightBrace                       "}"
 RightBracket                     "]"
 RightParen                       ")"
+Type                             "type"
+Identifier                       "A"
+LeftBrace                        "{"
+RightBrace                       "}"
+Type                             "type"
+Identifier                       "B"
+LeftBrace                        "{"
+RightBrace                       "}"
+Fn                               "fn"
+Identifier                       "fallible"
+LeftParen                        "("
+Identifier                       "v"
+Colon                            ":"
+BoolType                         "bool"
+RightParen                       ")"
+Throws                           "throws"
+LeftBrace                        "{"
+If                               "if"
+Identifier                       "v"
+LeftBrace                        "{"
+Throw                            "throw"
+Identifier                       "A"
+RightBrace                       "}"
+Else                             "else"
+LeftBrace                        "{"
+Throw                            "throw"
+Identifier                       "B"
+RightBrace                       "}"
+RightBrace                       "}"
+Fn                               "fn"
+Identifier                       "fallible2"
+LeftParen                        "("
+RightParen                       ")"
+Throws                           "throws"
+LeftBrace                        "{"
+Identifier                       "v"
+ColonEqual                       ":="
+Identifier                       "fallible"
+LeftParen                        "("
+RightParen                       ")"
+Identifier                       "v"
+ColonEqual                       ":="
+Try                              "try"
+Identifier                       "fallible"
+LeftParen                        "("
+RightParen                       ")"
+Identifier                       "v"
+ColonEqual                       ":="
+Identifier                       "fallible"
+LeftParen                        "("
+RightParen                       ")"
+Dot                              "."
+Try                              "try"
+Identifier                       "v"
+ColonEqual                       ":="
+TryBang                          "try!"
+Identifier                       "fallible"
+LeftParen                        "("
+RightParen                       ")"
+Identifier                       "v"
+ColonEqual                       ":="
+Identifier                       "fallible"
+LeftParen                        "("
+RightParen                       ")"
+Dot                              "."
+TryBang                          "try!"
+Identifier                       "v"
+ColonEqual                       ":="
+Catch                            "catch"
+Identifier                       "fallible"
+LeftParen                        "("
+RightParen                       ")"
+LeftBrace                        "{"
+Identifier                       "A"
+ArrowFat                         "=>"
+Comma                            ","
+Identifier                       "B"
+ArrowFat                         "=>"
+Comma                            ","
+RightBrace                       "}"
+Identifier                       "v"
+ColonEqual                       ":="
+Identifier                       "fallible"
+LeftParen                        "("
+RightParen                       ")"
+Dot                              "."
+Catch                            "catch"
+LeftBrace                        "{"
+Identifier                       "A"
+ArrowFat                         "=>"
+Comma                            ","
+Identifier                       "B"
+ArrowFat                         "=>"
+Comma                            ","
+RightBrace                       "}"
+RightBrace                       "}"
