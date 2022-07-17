@@ -259,7 +259,7 @@ pub enum TokenKind<'src> {
   #[regex("0x[0-9a-fA-F]([0-9a-fA-F_]*[0-9a-fA-F])?", |lex| str_to_int(&lex.slice()[2..], Radix::Hexadecimal))]
   IntLit(i64),
 
-  #[token("inf", |_| FloatBits(f64::INFINITY), priority=99)]
+  #[token("inf", |_| FloatBits(f64::INFINITY), priority = 99)]
   #[regex(r"[0-9]+(\.[0-9]+)?([Ee][+-]?[0-9]+)?", |lex| str_to_float(lex.slice()))]
   FloatLit(FloatBits),
 
