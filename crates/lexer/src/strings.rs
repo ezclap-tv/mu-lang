@@ -104,7 +104,7 @@ pub fn lex_string<'a>(lex: &mut logos::Lexer<'a, TokenKind<'a>>) -> StringLitera
   while i < bytes.len() {
     // we just parsed a fragment and need to catch up to where it stopped parsing
     if i < previous_fragment_end {
-      i = previous_fragment_end;
+      i = previous_fragment_end.min(bytes.len() - 1);
     }
 
     let byte = bytes[i];

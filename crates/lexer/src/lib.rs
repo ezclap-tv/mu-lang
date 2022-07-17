@@ -672,6 +672,35 @@ pub(crate) mod tests {
   }
 
   #[test]
+  fn unterminated_fragment_2() {
+    const SOURCE: &str = r#"
+        0"{+}"#;
+
+    assert_eq!(
+      test_tokenize(SOURCE),
+      vec![
+        token!(int(0), "0"),
+        token!(
+          TokenKind::StringLit(StringLiteral::Invalid(MalformedStringLiteral::MissingQuote)),
+          "\"{+}"
+        )
+      ]
+    );
+  }
+
+  #[test]
+  fn unterminated_fragment_3() {
+    const SOURCE: &str = "\"{{}}";
+    assert_eq!(
+      test_tokenize(SOURCE),
+      vec![token!(
+        TokenKind::StringLit(StringLiteral::Invalid(MalformedStringLiteral::MissingQuote)),
+        "\"{{}}"
+      )]
+    );
+  }
+
+  #[test]
   fn test_adjacent_curlies_with_unicode_modifier() {
     // NOTE: the first } has a unicode marker on it (0x065F, ARABIC WAVY HAMZA BELOW)
     // bytes: [34, 123, 125, 217, 159, 123]
