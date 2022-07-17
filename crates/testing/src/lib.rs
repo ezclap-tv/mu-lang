@@ -48,13 +48,10 @@ where
 {
   let output = f(source);
 
-  let mut pretty_assertion = true;
-  if let Some(value) = option_env!("MU_TEST_PLAIN_ASSERT") {
-    if value.trim() == test_name {
-      pretty_assertion = false;
-    }
-  }
-  if pretty_assertion {
+  let pretty_assertions = option_env!("MU_TEST_PLAIN_ASSERT")
+    .map(|v| v.trim() != test_name)
+    .unwrap_or(true);
+  if pretty_assertions {
     pretty_assertions::assert_eq!(
       DisplayAsDebugWrapper(output.trim()),
       DisplayAsDebugWrapper(&expected[..]),
