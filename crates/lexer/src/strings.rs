@@ -84,8 +84,7 @@ impl<'a> PartialEq for StringFragment<'a> {
   fn eq(&self, other: &StringFragment<'a>) -> bool {
     match (self, other) {
       (Self::Text(l), Self::Text(r)) => l.lexeme == r.lexeme,
-      // QQQ: return true or compare the pointers? we con't compare lexers since they're lazy
-      (left, right) => left as *const _ == right as *const _,
+      (left, right) => std::ptr::eq(left, right),
     }
   }
 }
@@ -143,7 +142,7 @@ pub fn lex_string<'a>(lex: &mut logos::Lexer<'a, TokenKind<'a>>) -> StringLitera
         let mut unclosed_braces = 1;
         // + 1 to skip opening brace
         let fragment_start = i + 1;
-        let fragment_bytes = (&remainder[fragment_start..]).as_bytes();
+        let fragment_bytes = remainder[fragment_start..].as_bytes();
         let mut fragment_end = 0;
         for (fi, byte) in fragment_bytes.iter().copied().enumerate() {
           fragment_end = fragment_start + fi;
@@ -197,7 +196,7 @@ pub fn lex_string<'a>(lex: &mut logos::Lexer<'a, TokenKind<'a>>) -> StringLitera
     if let StringFragment::Text(value) = &fragments[0] {
       return StringLiteral::Plain(value.lexeme.clone());
     }
-  } else if fragments.len() == 0 {
+  } else if fragments.is_empty() {
     return StringLiteral::Plain(Cow::from(""));
   }
 

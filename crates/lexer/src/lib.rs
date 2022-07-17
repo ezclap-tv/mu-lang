@@ -901,6 +901,7 @@ pub(crate) mod tests {
   }
 
   #[test]
+  #[allow(clippy::unusual_byte_groupings)]
   fn numeric_literals() {
     let source: &str = r#"123
       123_321
@@ -1080,7 +1081,7 @@ pub(crate) mod tests {
       .join("\n")
   }
 
-  fn dump_token<'a>(t: &mut Token<'a>) -> String {
+  fn dump_token(t: &mut Token<'_>) -> String {
     let mut out = String::new();
     match &mut t.kind {
       TokenKind::StringLit(s) => match s {
@@ -1104,7 +1105,7 @@ pub(crate) mod tests {
                 for token in &mut expr_tokens {
                   for line in dump_token(token).trim_end().split('\n') {
                     out.push_str("\n    ");
-                    out.push_str(&line);
+                    out.push_str(line);
                   }
                 }
                 if !expr_tokens.is_empty() {
@@ -1128,7 +1129,8 @@ pub(crate) mod tests {
   }
 
   fn add_lexeme<S: Into<String>>(out: &mut String, s: S, lexeme: impl AsRef<str>) {
-    out.push_str(&format!("{: <32} {:?}", s.into(), lexeme.as_ref()))
+    use std::fmt::Write;
+    let _ = write!(out, "{: <32} {:?}", s.into(), lexeme.as_ref());
   }
 
   mu_testing::make_test_macros!(eq => CRATE_ROOT, TESTS_DIR, dump_tokens);

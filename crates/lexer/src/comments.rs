@@ -3,7 +3,7 @@ use logos::Logos;
 
 use crate::TokenKind;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SkipOnSuccess {
   Success,
   Error,
@@ -39,9 +39,8 @@ pub fn lex_multi_line_comment<'a>(lex: &mut logos::Lexer<'a, TokenKind<'a>>) -> 
   // this starts at one, because the initial /* is already consumed
   let mut opening_count = 1;
   let mut previous_two = [b'*', b'\0'];
-  let mut bytes = lex.remainder().bytes();
 
-  while let Some(ch) = bytes.next() {
+  for ch in lex.remainder().bytes() {
     n += 1;
     previous_two[0] = previous_two[1];
     previous_two[1] = ch;

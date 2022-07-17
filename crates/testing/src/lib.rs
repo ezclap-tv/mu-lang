@@ -6,7 +6,7 @@ pub use mu_testing_macro::mu_test_suite;
 pub use pretty_assertions;
 
 /// The kind of output a test may have.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OutputKind {
   OkOrEq,
   Err,
@@ -23,7 +23,7 @@ pub fn load_test_file(tests_dir: &Path, name: &str) -> (String, String, OutputKi
   let (code, expected) = source
     .split_once("%output")
     .expect("Invalid test file format. Make sure that your test contains the %output directive.");
-  let (output_kind, expected) = expected.split_once("\n").expect(
+  let (output_kind, expected) = expected.split_once('\n').expect(
     "Invalid test file format. Make sure that the %output directive is on a separate line.",
   );
   let output_kind = match output_kind.trim() {
@@ -205,7 +205,7 @@ macro_rules! make_test_macros {
 }
 
 /// A wrapper that exposes the given object's [`Display`] impl as [`Debug`].
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct DisplayAsDebugWrapper<T>(T);
 
 impl<T> std::fmt::Debug for DisplayAsDebugWrapper<T>
