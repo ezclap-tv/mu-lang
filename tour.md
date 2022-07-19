@@ -216,10 +216,8 @@ fn fib(n: int): int {
 fn test() { return }
 
 // `throw` may be used to return an error
-// note that these are *not* exceptions, they do not unwind the stack,
-// nor do they automatically propagate until caught. every error must
-// be explicitly handled or propagated.
-// before you can do this, the function must be declared as fallible with `throws`
+// note that these are *not* exceptions, they do not unwind the stack, nor do they automatically propagate until caught. every error must be explicitly handled or propagated.
+// before you can throw errors, the function must be declared as fallible with `throws`
 fn fallible0(v: bool) throws {
   if v { throw "error-like" }
 }
@@ -263,8 +261,7 @@ print(
   |> map(\x {x*x})
   |> filter(\x {x == 0})
   |> sum()
-  // if the function has positional arity of 1, and no required named params,
-  // then the call can be omitted
+  // if the function has positional arity of 1, and no required named params, then the call can be omitted
   //
   // |> sum
   //
@@ -287,9 +284,7 @@ fn expensive() {
 }
 tuple := expensive() |> (#, #, #) // prints "expensive" exactly once
 
-// if the right-side is not a function with arity=1 or a call expression
-// using one, it *must* include the `#` character to specify where the
-// left-side should should be placed.
+// if the right-side is not a function with arity=1 or a call expression using one, it *must* include the `#` character to specify where the left-side should should be placed.
 
 [1, 2, 3] |> sum // ok, function with arity=1
 [1, 2, 3] |> sum() // ok, call to fn with arity=1
@@ -316,8 +311,7 @@ type Any {
   fn typeid() -> TypeId,
 }
 
-// an associated type is essentially a type parameter,
-// but may not differ between definitions for the same type
+// an associated type is essentially a type parameter, but may not differ between definitions for the same type
 type AssociatedType {
   type Test: Default
 
@@ -635,19 +629,17 @@ enum G {}
 type H {}
 // symbols exported this way may be renamed using `as`
 export { e as h, F as G, G as F, H as E }
+
+// the language does not guarantee the order in which modules' top-level code is executed. module imports may be arbitrarily re-ordered and/or parallelized. the only guarantee is that code at the top-level in imported modules will be executed exactly once.
 ```
 
 Concurrency
 
 ```rust
 /*
-Everything is asynchronous by default.
-All execution happens within the context of a task.
-Whenever you do any I/O, the task is blocked until that I/O finishes,
-but other tasks may be scheduled to run during during that time.
+Everything is asynchronous by default. All execution happens within the context of a task. Whenever you do any I/O, the task is blocked until that I/O finishes, but other tasks may be scheduled to run during during that time.
 
-The runtime is single-threaded, which means that no synchronization,
-such as atomics or locks, are ever needed.
+The runtime is single-threaded, which means that no synchronization, such as atomics or locks, are ever needed.
 */
 
 fn perform_io(label: string) {
@@ -678,25 +670,23 @@ second b
 
 you never know when the runtime will suspend your module due to I/O,
 but you also don't have to *care* about when the runtime will suspend
-your module! it's easier to reason about, as all code simply looks
+your code! it's easier to reason about, as all code simply looks
 fully synchronous. but there are scenarios in which you explicitly
 don't want to suspend execution until some I/O finishes, or you want
 to perform more than one instance of I/O at the same time.
 for these use cases, you can use the `spawn` keyword.
 */
 
-// first.hr
 print("first a")
 spawn perform_io("first")
 print("first b")
 
-// second.hr
 print("second a")
 spawn perform_io("second")
 print("second b")
 
 /*
-running both modules will produce the following logs:
+executing the above code will print:
 
 first a
 first b
@@ -705,7 +695,9 @@ second b
 first io done
 second io done
 
-those last two logs may switch places if `second` completes first.
+those last two prints may switch places if `second` completes first.
+this is because the language does not guarantee the order of
+execution of spawned tasks.
 */
 
 // you may also know tasks under names such as:
@@ -715,12 +707,8 @@ those last two logs may switch places if `second` completes first.
 // - green threads
 
 // spawning tasks works as follows:
-// arguments are evaluated, a new stack is created, the arguments
-// are copied over to the new stack, and the function is called
-// in the context of the new stack.
-// because the runtime is single threaded, the spawned task won't begin
-// executing until the current module is blocked on some I/O, or it
-// itself finishes executing.
+// arguments are evaluated, a new stack is created, the arguments are copied over to the new stack, and the function is called in the context of the new stack.
+// because the runtime is single threaded, the spawned task won't begin executing until the current module blocks on some I/O or finishes executing.
 spawn task()
 
 // spawn a "block"
@@ -734,10 +722,9 @@ if !task.done {
   task.join() // blocks until `task` finishes executing
 }
 
-// the `async.gather` function takes in multiple task handles, and blocks
-// until all of them have finished executing.
-async.gather([
+// the `join` function from the built-in `async` module accepts multiple task handles, and blocks until all of them have finished executing.
+async.join((
   spawn { /*...*/ },
   spawn { /*...*/ }
-])
+))
 ```
