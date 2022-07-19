@@ -1,7 +1,8 @@
 use std::cell::Cell;
+use std::collections::HashMap;
 use std::time::Duration;
 
-use experiments::piggyback_scheduler::{AsyncFnResult, FnResult, Function, Object, OpCode, Vm};
+use experiments::future_scheduler::{AsyncFnResult, FnResult, Function, Isolate, Object, OpCode};
 
 fn hello_world() -> FnResult {
   Ok(Object::Str("Hello, World!".into()))
@@ -15,8 +16,12 @@ fn sleep_test(id: usize, millis: u64) -> AsyncFnResult {
       "[async fn{id}] Function executed after {}μs! Now waiting for {millis}ms.",
       now.elapsed().as_micros()
     );
+    let now = std::time::Instant::now();
     tokio::time::sleep(Duration::from_millis(millis)).await;
-    Ok(Object::Str(format!("Result of fn{id} after {millis}ms")))
+    Ok(Object::Str(format!(
+      "Result of fn{id} after {}ms",
+      now.elapsed().as_millis()
+    )))
   })
 }
 
@@ -70,65 +75,110 @@ pub mod poll_n {
 
 #[tokio::main]
 async fn main() {
-  //   let _runtime = tokio::runtime::Builder::new_multi_thread()
-  //     .enable_all()
-  //     .build()
-  //     .unwrap().block_on(future);
+  let mut vm = Isolate::new({
+    let mut globals = HashMap::new();
 
-  let mut vm = Vm::new();
-  vm.queue_function(Function {
-    name: "Test".into(),
-    code: vec![OpCode::CallNative, OpCode::Print],
-    initial_stack: vec![Object::NativeFnSync(hello_world)],
-  });
+    globals.insert("hello_world", Object::NativeFnSync(hello_world));
 
-  vm.queue_function(Function {
-    name: "Async Test 1".into(),
-    initial_stack: vec![{
+    globals.insert("sleep_test_500", {
       fn sleep_test_500() -> AsyncFnResult {
-        sleep_test(0, 500)
+        sleep_test(0, 5000)
       }
-
       Object::NativeFnAsync(sleep_test_500)
-    }],
-    code: vec![OpCode::CallNative, OpCode::Print],
-  });
+    });
 
-  //   vm.queue_function(Function {
-  //     name: "Poll 3 Test".into(),
-  //     initial_stack: vec![{
-  //       fn poll_3_test() -> AsyncFnResult {
-  //         poll_n_test(3)
-  //       }
-
-  //       Object::NativeFnAsync(poll_3_test)
-  //     }],
-  //     code: vec![OpCode::CallNative, OpCode::Print],
-  //   });
-
-  vm.queue_function(Function {
-    name: "Async Test 2".into(),
-    initial_stack: vec![{
+    globals.insert("sleep_test_205", {
       fn sleep_test_205() -> AsyncFnResult {
         sleep_test(1, 205)
       }
-
       Object::NativeFnAsync(sleep_test_205)
-    }],
-    code: vec![OpCode::CallNative, OpCode::Print],
-  });
+    });
 
-  vm.queue_function(Function {
-    name: "Async Test 3".into(),
-    initial_stack: vec![{
+    globals.insert("sleep_test_200", {
       fn sleep_test_200() -> AsyncFnResult {
         sleep_test(2, 200)
       }
-
       Object::NativeFnAsync(sleep_test_200)
-    }],
-    code: vec![OpCode::CallNative, OpCode::Print],
+    });
+
+    globals.insert("poll_3", {
+      fn poll_3_test() -> AsyncFnResult {
+        poll_n_test(3)
+      }
+      Object::NativeFnAsync(poll_3_test)
+    });
+
+    globals.insert(
+      "async_subtask_1",
+      Function {
+        name: "async_subtask_1".into(),
+        code: vec![
+          OpCode::GetGlobal("sleep_test_500"),
+          OpCode::CallNative,
+          OpCode::Print,
+        ],
+      }
+      .into(),
+    );
+
+    globals.insert(
+      "async_subtask_2",
+      Function {
+        name: "async_subtask_2".into(),
+        code: vec![
+          OpCode::GetGlobal("sleep_test_205"),
+          OpCode::CallNative,
+          OpCode::Print,
+        ],
+      }
+      .into(),
+    );
+
+    globals.insert(
+      "async_subtask_3",
+      Function {
+        name: "async_subtask_3".into(),
+        code: vec![
+          OpCode::GetGlobal("sleep_test_200"),
+          OpCode::CallNative,
+          OpCode::Print,
+          OpCode::GetGlobal("subtask_poll_3"),
+          OpCode::Spawn,
+        ],
+      }
+      .into(),
+    );
+
+    globals.insert(
+      "subtask_poll_3",
+      Function {
+        name: "subtask_poll_3".into(),
+        code: vec![
+          OpCode::GetGlobal("poll_3"),
+          OpCode::CallNative,
+          OpCode::Print,
+        ],
+      }
+      .into(),
+    );
+
+    globals
   });
 
-  vm.run();
+  let root_task = Function {
+    name: "Test".into(),
+    code: vec![
+      OpCode::GetGlobal("hello_world"),
+      OpCode::CallNative,
+      OpCode::Print,
+      OpCode::GetGlobal("async_subtask_1"),
+      OpCode::Spawn,
+      OpCode::GetGlobal("async_subtask_2"),
+      OpCode::Spawn,
+      OpCode::GetGlobal("async_subtask_3"),
+      OpCode::Spawn,
+    ],
+  };
+
+  vm.run(root_task).await;
 }

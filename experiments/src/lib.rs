@@ -1,4 +1,4 @@
-pub mod piggyback_scheduler;
+pub mod future_scheduler;
 
 #[cfg(test)]
 mod tests {
