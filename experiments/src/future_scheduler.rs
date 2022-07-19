@@ -107,9 +107,9 @@ pub struct Isolate<'a> {
   tasks_so_far: usize,
   // Tasks that need to be polled when the isolate wakes up.
   pending_queue: Queue<Task<'a>>,
-  // Tasks that have been finished and can be executed. This is temporary queue is preserved between polls as an optimization.
+  // Tasks that have been finished and can be executed. This temporary queue is preserved between polls as an optimization.
   done_tasks: Queue<Task<'a>>,
-  // Tasks that have been polled. This is temporary queue is preserved between polls as an optimization.
+  // Tasks that have been polled. This temporary queue is preserved between polls as an optimization.
   polled_queue: Queue<Task<'a>>,
 }
 
