@@ -1,34 +1,6 @@
-use logos::internal::{CallbackResult, LexerInternal};
-use logos::Logos;
-
 use crate::TokenKind;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SkipOnSuccess {
-  Success,
-  Error,
-}
-
-impl<'a> CallbackResult<'a, (), TokenKind<'a>> for SkipOnSuccess {
-  fn construct<Constructor>(self, _: Constructor, lex: &mut logos::Lexer<'a, TokenKind<'a>>)
-  where
-    Constructor: Fn(()) -> TokenKind<'a>,
-  {
-    match self {
-      SkipOnSuccess::Success => {
-        // Taken from the callback for Filter::Skip
-        lex.trivia();
-        TokenKind::lex(lex);
-      }
-      SkipOnSuccess::Error => {
-        // Taken from the callback for bool
-        lex.set(TokenKind::ERROR)
-      }
-    }
-  }
-}
-
-pub fn lex_multi_line_comment<'a>(lex: &mut logos::Lexer<'a, TokenKind<'a>>) -> SkipOnSuccess {
+pub fn lex_multi_line_comment<'a>(lex: &mut logos::Lexer<'a, TokenKind<'a>>) -> bool {
   // how many characters we went through
   let mut n = 0;
   // Mitigate DOS attacks on the lexer with many unclosed comments: /*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*/*
@@ -66,87 +38,87 @@ pub fn lex_multi_line_comment<'a>(lex: &mut logos::Lexer<'a, TokenKind<'a>>) -> 
 
   if opening_count == 0 {
     lex.bump(n);
-    SkipOnSuccess::Success
+    true
   } else {
     lex.bump(n_at_last_seen_opening);
-    SkipOnSuccess::Error
+    false
   }
 }
 
 #[cfg(test)]
 mod tests {
   use super::lex_multi_line_comment;
-  use crate::comments::SkipOnSuccess;
+  // use crate::comments::SkipOnSuccess;
   use crate::tests::{assert_eq, *};
 
   #[test]
   fn test_multi_line_comment_parsing() {
     struct Case {
       input: &'static str,
-      expected: SkipOnSuccess,
+      expected: bool,
     }
 
     let tests = [
       Case {
         input: "/**/",
-        expected: SkipOnSuccess::Success,
+        expected: true,
       },
       Case {
         input: "/* */",
-        expected: SkipOnSuccess::Success,
+        expected: true,
       },
       Case {
         input: "/*/**/*/",
-        expected: SkipOnSuccess::Success,
+        expected: true,
       },
       Case {
         input: "/* /**/ */",
-        expected: SkipOnSuccess::Success,
+        expected: true,
       },
       Case {
         input: "/* /* */ */",
-        expected: SkipOnSuccess::Success,
+        expected: true,
       },
       Case {
         input: "/*/* */*/",
-        expected: SkipOnSuccess::Success,
+        expected: true,
       },
       Case {
         input: "/*/***/*/",
-        expected: SkipOnSuccess::Success,
+        expected: true,
       },
       Case {
         input: "/**** /***/*/",
-        expected: SkipOnSuccess::Success,
+        expected: true,
       },
       Case {
         input: "/*/***/*****/",
-        expected: SkipOnSuccess::Success,
+        expected: true,
       },
       Case {
         input: "/* \\\\////// &*&#E*(@798712,)........ ///// // / // /  */",
-        expected: SkipOnSuccess::Success,
+        expected: true,
       },
       Case {
         input: "/* /* /* /* /* /* */ */ */ */ */ */",
-        expected: SkipOnSuccess::Success,
+        expected: true,
       },
       Case {
         input: "/*",
-        expected: SkipOnSuccess::Error,
+        expected: false,
       },
       Case {
         input: "/* /* */",
-        expected: SkipOnSuccess::Error,
+        expected: false,
       },
       Case {
         input: "/*/*/*/* */*/*/",
-        expected: SkipOnSuccess::Error,
+        expected: false,
       },
       // NOTE: this is a success because the lexer stops as soon as it sees the closing */
       Case {
         input: "/**/*/",
-        expected: SkipOnSuccess::Success,
+        expected: true,
       },
     ];
 

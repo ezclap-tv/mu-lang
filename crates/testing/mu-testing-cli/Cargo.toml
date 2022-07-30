@@ -1,0 +1,9 @@
+[package]
+name = "mu-testing-cli"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "3.2.16", features = ["derive"] }
+colored = "2.0.0"
+mu_testing = { package = "mu-testing", path = "../" }

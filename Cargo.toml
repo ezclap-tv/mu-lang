@@ -4,5 +4,6 @@ members = [
   "crates/ast",
   "crates/lexer",
   "crates/testing",
+  "crates/testing/mu-testing-cli",
   "crates/testing/mu-testing-macro",
 ]

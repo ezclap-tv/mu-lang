@@ -271,7 +271,7 @@ pub enum TokenKind<'src> {
   #[token("\n")]
   LineEnd,
 
-  #[regex("//[^\n]*", logos::skip)]
+  #[regex("//[^\n]*")]
   Comment,
 
   /// Multi-line comment (they can be nested)
@@ -364,11 +364,16 @@ pub(crate) mod tests {
 
   fn test_tokenize_inner<'a>(
     lex: &mut logos::Lexer<'a, TokenKind<'a>>,
-    newlines: bool,
+    include_trivia: bool,
   ) -> Vec<TestToken<'a>> {
     let mut out = Vec::new();
     while let Some(token) = lex.next_token() {
-      if !newlines && matches!(token.kind, TokenKind::LineEnd) {
+      if !include_trivia
+        && matches!(
+          token.kind,
+          TokenKind::LineEnd | TokenKind::Comment | TokenKind::MultiLineComment
+        )
+      {
         continue;
       }
       out.push(token.into());
@@ -556,13 +561,30 @@ pub(crate) mod tests {
   #[test]
   fn comment() {
     const SOURCE: &str = "// asdfasdfasdfasdfasdfasdfasdf\nident";
-    assert_eq!(test_tokenize(SOURCE), vec![token!(Identifier, "ident")]);
+    assert_eq!(
+      test_tokenize_inner(&mut TokenKind::lexer(SOURCE), true),
+      vec![
+        token!(Comment, "// asdfasdfasdfasdfasdfasdfasdf"),
+        token!(LineEnd, "\n"),
+        token!(Identifier, "ident")
+      ]
+    );
   }
 
   #[test]
   fn multi_comment() {
     const SOURCE: &str = "/* */ /* /* /* /******afhišuhůů§ßß×××$$ůĐ[đĐ[đĐ[đ*/ */ */ */ ident";
-    assert_eq!(test_tokenize(SOURCE), vec![token!(Identifier, "ident")]);
+    assert_eq!(
+      test_tokenize_inner(&mut TokenKind::lexer(SOURCE), true),
+      vec![
+        token!(MultiLineComment, "/* */"),
+        token!(
+          MultiLineComment,
+          "/* /* /* /******afhišuhůů§ßß×××$$ůĐ[đĐ[đĐ[đ*/ */ */ */"
+        ),
+        token!(Identifier, "ident")
+      ]
+    );
   }
 
   #[test]
@@ -1131,7 +1153,7 @@ pub(crate) mod tests {
   static CRATE_ROOT: &str = env!("CARGO_MANIFEST_DIR");
   static TESTS_DIR: &str = "tests";
 
-  fn dump_tokens(src: String) -> String {
+  fn dump_tokens(src: std::borrow::Cow<'_, str>) -> String {
     let mut lex = TokenKind::lexer(&src[..]);
     lex
       .collect_tokens()
@@ -1195,7 +1217,7 @@ pub(crate) mod tests {
   }
 
   mu_testing::make_test_macros!(eq => CRATE_ROOT, TESTS_DIR, dump_tokens);
-  test_eq!(tour);
+  test_eq!(t1_test_tour_lexing);
 
   mod utils {
     pub(crate) use super::{assert_eq, *};
