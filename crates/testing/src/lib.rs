@@ -110,6 +110,7 @@ pub fn load_test_file<'a>(test_dir: &Path, name: &'a str) -> TestFile<'a> {
 pub fn write_test_file(file: &TestFile<'_>, new_content: &str) {
   let mut f = std::fs::File::options()
     .write(true)
+    .truncate(true)
     .open(&file.test_path)
     .expect("Failed to open the file for writing");
 
