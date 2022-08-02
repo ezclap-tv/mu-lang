@@ -1,0 +1,82 @@
+null
+true
+false
+1
+0b0000_0000
+0xABC_DEF
+100_000_000
+1.0
+3.141592
+1e-10
+1.238e+10
+inf
+""
+"string"
+"
+multi 
+  line 
+    string
+"
+
+%output
+
+Stmt
+  kind: Expr
+    kind: PrimitiveLiteral
+      value: Null
+Stmt
+  kind: Expr
+    kind: PrimitiveLiteral
+      value: Bool(true)
+Stmt
+  kind: Expr
+    kind: PrimitiveLiteral
+      value: Bool(false)
+Stmt
+  kind: Expr
+    kind: PrimitiveLiteral
+      value: Int(1)
+Stmt
+  kind: Expr
+    kind: PrimitiveLiteral
+      value: Int(0)
+Stmt
+  kind: Expr
+    kind: PrimitiveLiteral
+      value: Int(11259375)
+Stmt
+  kind: Expr
+    kind: PrimitiveLiteral
+      value: Int(100000000)
+Stmt
+  kind: Expr
+    kind: PrimitiveLiteral
+      value: Float(1.0)
+Stmt
+  kind: Expr
+    kind: PrimitiveLiteral
+      value: Float(3.141592)
+Stmt
+  kind: Expr
+    kind: PrimitiveLiteral
+      value: Float(1e-10)
+Stmt
+  kind: Expr
+    kind: PrimitiveLiteral
+      value: Float(12380000000.0)
+Stmt
+  kind: Expr
+    kind: PrimitiveLiteral
+      value: Float(inf)
+Stmt
+  kind: Expr
+    kind: PrimitiveLiteral
+      value: String("")
+Stmt
+  kind: Expr
+    kind: PrimitiveLiteral
+      value: String("string")
+Stmt
+  kind: Expr
+    kind: PrimitiveLiteral
+      value: String("\nmulti \n  line \n    string\n")

@@ -1,17 +1,22 @@
 use std::borrow::Cow;
 
-use logos::{Logos, Span};
+use ast2str::AstToStr;
+use logos::Logos;
 
 use crate::comments::lex_multi_line_comment;
 use crate::numbers::{str_to_float, str_to_int, FloatBits, Radix};
 use crate::strings::{lex_string, StringLiteral};
 
-pub mod comments;
+mod comments;
 pub mod numbers;
 pub mod strings;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+pub use logos::Span;
+pub type Lexer<'a> = logos::Lexer<'a, TokenKind<'a>>;
+
+#[derive(Clone, Debug, PartialEq, Eq, AstToStr)]
 pub struct Token<'a> {
+  #[forward]
   pub lexeme: Cow<'a, str>,
   /// Start+end range of this token in the line where it was parsed
   pub span: Span,
@@ -284,6 +289,10 @@ pub enum TokenKind<'src> {
   #[error]
   Invalid,
   EOF,
+}
+
+pub fn lexer(source: &str) -> Lexer<'_> {
+  TokenKind::lexer(source)
 }
 
 #[cfg(feature = "fuzz")]

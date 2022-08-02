@@ -3,6 +3,7 @@ members = [
   "crates/parser",
   "crates/ast",
   "crates/lexer",
+  "crates/errors",
   "crates/testing",
   "crates/testing/mu-testing-cli",
   "crates/testing/mu-testing-macro",
