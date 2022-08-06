@@ -18,7 +18,7 @@ pub enum OutputKind {
   Err,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct TestFile<'a> {
   pub test_name: &'a str,
   pub test_path: PathBuf,
