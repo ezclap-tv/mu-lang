@@ -1,8 +1,7 @@
-use std::os::unix::process::CommandExt;
-use std::process::Command;
-
 use clap::Parser;
 use colored::*;
+
+mod process;
 
 /// Cargo test wrapper for running mu tests.
 #[derive(Parser, Debug)]
@@ -86,7 +85,7 @@ fn main() {
   }
 
   // ${ENV_PLAIN_ASSERT}=? ${ENV_WRITE_SNAPSHOTS}=? cargo test {--package ?} -- {...}
-  let mut command = Command::new("cargo");
+  let mut command = process::ProcessBuilder::new("cargo");
   command.env(
     mu_testing::ENV_PLAIN_ASSERT,
     if args.plain { "1" } else { "0" },
@@ -105,12 +104,10 @@ fn main() {
     command.arg(name);
   }
 
-  command.args(args.cargo_test_args);
+  command.args(&args.cargo_test_args[..]);
 
   // NOTE: this essentially spawns a new process, and only returns if that failed.
-  #[allow(irrefutable_let_patterns)]
-  if let err @ std::io::Error { .. } = command.exec() {
-    eprintln!("Error: Failed to execute {:?}", command);
-    eprintln!("Error: {}", err);
+  if let Err(e) = command.exec_replace() {
+    eprintln!("Failed to execute {command}: {e}");
   }
 }
