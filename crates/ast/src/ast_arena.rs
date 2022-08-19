@@ -33,6 +33,11 @@ impl<'arena> Arena<'arena> {
   pub fn vec<T>(&self) -> AstVec<'arena, T> {
     Vec::new_in(self.clone())
   }
+  pub fn vec_with_capacity<T>(&self, cap: usize) -> AstVec<'arena, T> {
+    let mut v = Vec::new_in(self.clone());
+    v.reserve(cap);
+    v
+  }
 }
 
 unsafe impl<'arena> std::alloc::Allocator for Arena<'arena> {

@@ -1,0 +1,51 @@
+()
+(1)
+(1,)
+(1, 2)
+((), ())
+[(); 1]
+
+%output
+
+Stmt
+  kind: Expr
+    kind: Tuple::Unit
+Stmt
+  kind: Expr
+    kind: ExprKind::Grouping
+      expr: Expr
+        kind: PrimitiveLiteral
+          value: Int(1)
+Stmt
+  kind: Expr
+    kind: Tuple::Tuple
+      elements=
+        Expr
+          kind: PrimitiveLiteral
+            value: Int(1)
+Stmt
+  kind: Expr
+    kind: Tuple::Tuple
+      elements=
+        Expr
+          kind: PrimitiveLiteral
+            value: Int(1)
+        Expr
+          kind: PrimitiveLiteral
+            value: Int(2)
+Stmt
+  kind: Expr
+    kind: Tuple::Tuple
+      elements=
+        Expr
+          kind: Tuple::Unit
+        Expr
+          kind: Tuple::Unit
+Stmt
+  kind: Expr
+    kind: InitializedArray
+      value: Expr
+        kind: Tuple::Unit
+      length: Expr
+        kind: PrimitiveLiteral
+          value: Int(1)

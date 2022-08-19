@@ -169,6 +169,30 @@ pub struct PrimitiveLiteral<'t> {
 }
 
 #[derive(Debug, Clone, AstToStr)]
+pub struct InitializedArray<'arena, 't> {
+  pub value: Node![Expr],
+  pub length: Node![Expr],
+}
+
+#[derive(Debug, Clone, AstToStr)]
+pub struct ArrayItem<'arena, 't> {
+  pub spread: Option<Token<'t>>,
+  pub value: Node![Expr],
+}
+
+#[derive(Debug, Clone, AstToStr)]
+pub enum ArrayLiteral<'arena, 't> {
+  Plain(#[rename = "items"] Vec![Node![ArrayItem]]),
+  Initialized(#[forward] HeapNode![InitializedArray]),
+}
+
+#[derive(Debug, Clone, AstToStr)]
+pub enum Tuple<'arena, 't> {
+  Unit,
+  Tuple(#[rename = "elements"] Vec![Node![Expr]]),
+}
+
+#[derive(Debug, Clone, AstToStr)]
 pub enum ExprKind<'arena, 't> {
   Identifier(#[rename = "name"] Token<'t>),
   Pipeline(#[forward] HeapNode![Pipeline]),
@@ -176,6 +200,8 @@ pub enum ExprKind<'arena, 't> {
   UnOp(#[forward] HeapNode![UnOp]),
   Try(#[forward] HeapNode![TryExpr]),
   PrimitiveLiteral(#[forward] AstPtr<'arena, PrimitiveLiteral<'t>>),
+  ArrayLiteral(#[forward] Node![ArrayLiteral]),
+  Tuple(#[forward] Node![Tuple]),
   Grouping(#[rename = "expr"] HeapNode![Expr]),
 }
 

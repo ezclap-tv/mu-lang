@@ -371,7 +371,115 @@ impl<'arena, 't> Parser<'arena, 't> {
       unimplemented!("todo: interpolated strings {:?}", fragments)
     }
 
-    todo!()
+    if self.match_(&TokenKind::LeftBracket) {
+      let start_span = self.previous.span.clone();
+      let mut tmp_vec = vec![];
+
+      if !self.check(&TokenKind::RightBracket) {
+        let mut first_spread = None;
+        if self.match_(&TokenKind::Spread) {
+          first_spread = Some(self.previous.clone());
+        }
+        let first_item = self.expr()?;
+
+        if first_spread.is_none() && self.match_(&TokenKind::Semicolon) {
+          let length = self.expr()?;
+          let literal = ArrayLiteral::Initialized(self.arena.boxed(InitializedArray {
+            value: first_item,
+            length,
+          }));
+          self.consume(
+            &TokenKind::RightBracket,
+            "Expected a `]` after the array length",
+          )?;
+
+          let end_span = self.previous.span.start;
+          return Ok(Expr::new(
+            ExprKind::ArrayLiteral(literal),
+            start_span.start..end_span,
+          ));
+        }
+
+        tmp_vec.push(ArrayItem {
+          spread: first_spread,
+          value: first_item,
+        });
+        while self.match_(&TokenKind::Comma) {
+          if self.check(&TokenKind::RightBracket) {
+            break;
+          }
+          let spread = if self.match_(&TokenKind::Spread) {
+            Some(self.previous.clone())
+          } else {
+            None
+          };
+          tmp_vec.push(ArrayItem {
+            spread,
+            value: self.expr()?,
+          });
+        }
+      }
+
+      self.consume(
+        &TokenKind::RightBracket,
+        "Expected a `]` at the end of an array literal",
+      )?;
+
+      let mut arena_vec = self.arena.vec_with_capacity(tmp_vec.len());
+      arena_vec.extend(tmp_vec.into_iter());
+      let literal = ArrayLiteral::Plain(arena_vec);
+      let end_span = self.previous.span.start;
+      return Ok(Expr::new(
+        ExprKind::ArrayLiteral(literal),
+        start_span.start..end_span,
+      ));
+    }
+
+    if self.match_(&TokenKind::LeftParen) {
+      let start = self.previous.span.start;
+
+      if self.match_(&TokenKind::RightParen) {
+        let end = self.previous.span.end;
+        return Ok(Expr::new(ExprKind::Tuple(Tuple::Unit), start..end));
+      }
+
+      let expr = self.expr()?;
+      if self.match_(&TokenKind::RightParen) {
+        let end = self.previous.span.end;
+        return Ok(Expr::new(
+          ExprKind::Grouping(self.arena.boxed(expr)),
+          start..end,
+        ));
+      }
+
+      self.consume(
+        &TokenKind::Comma,
+        "Expected a `,` after the first tuple element.",
+      )?;
+
+      let mut tmp_vec = vec![expr];
+      while !self.check(&TokenKind::RightParen) {
+        tmp_vec.push(self.expr()?);
+        if !self.check(&TokenKind::RightParen) {
+          self.consume(&TokenKind::Comma, "Expected a `,` after a tuple element")?;
+        }
+      }
+
+      self.consume(
+        &TokenKind::RightParen,
+        "Expected a `)` after the tuple elements",
+      )?;
+      let end = self.previous.span.end;
+
+      let mut elements = self.arena.vec_with_capacity(tmp_vec.len());
+      elements.extend(tmp_vec.into_iter());
+      return Ok(Expr::new(
+        ExprKind::Tuple(Tuple::Tuple(elements)),
+        start..end,
+      ));
+    }
+
+    todo!("{:?}", self.current);
   }
 
   fn skip_semi(&mut self) -> bool {
