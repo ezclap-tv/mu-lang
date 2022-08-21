@@ -6,18 +6,16 @@ use mu_lexer::{lexer, Lexer, NextTokenExt};
 
 mod macros;
 
-pub type Result<'arena, 't> = std::result::Result<Ast<'arena, 't>, ErrorSink<'t>>;
+pub type Result<'t> = std::result::Result<Ast<'t>, ErrorSink<'t>>;
 pub type ParseResult<T> = std::result::Result<T, MuError>;
 
-pub fn parse<'arena, 't>(source: &'t str) -> Result<'arena, 't> {
-  let arena = Arena::new();
+pub fn parse(source: &'_ str) -> Result<'_> {
   let lexer = lexer(source);
-  let parser = Parser::new(arena, lexer);
+  let parser = Parser::new(lexer);
   parser.parse()
 }
 
-struct Parser<'arena, 't> {
-  arena: Arena<'arena>,
+struct Parser<'t> {
   lexer: Lexer<'t>,
   errors: ErrorSink<'t>,
   previous: Token<'t>,
@@ -25,8 +23,8 @@ struct Parser<'arena, 't> {
   eof: Token<'t>,
 }
 
-impl<'arena, 't> Parser<'arena, 't> {
-  fn new(arena: Arena<'arena>, lexer: Lexer<'t>) -> Self {
+impl<'t> Parser<'t> {
+  fn new(lexer: Lexer<'t>) -> Self {
     let source = lexer.source();
     let end = if source.is_empty() {
       0
@@ -36,19 +34,18 @@ impl<'arena, 't> Parser<'arena, 't> {
     let eof = Token::new("", end..end, TokenKind::EOF);
 
     Self {
-      arena: arena,
-      lexer: lexer,
+      lexer,
       errors: ErrorSink::new(source),
       previous: eof.clone(),
       current: eof.clone(),
-      eof: eof,
+      eof,
     }
   }
 
-  fn parse(mut self) -> Result<'arena, 't> {
+  fn parse(mut self) -> Result<'t> {
     self.advance();
 
-    let mut statements = self.arena.vec();
+    let mut statements = Vec::new();
     while !self.at_end() {
       match self.top_level_stmt() {
         Ok(stmt) => statements.push(stmt),
@@ -59,13 +56,10 @@ impl<'arena, 't> Parser<'arena, 't> {
       }
     }
 
-    Ok(Ast {
-      arena: self.arena,
-      statements,
-    })
+    Ok(Ast { statements })
   }
 
-  fn top_level_stmt(&mut self) -> ParseResult<Stmt<'arena, 't>> {
+  fn top_level_stmt(&mut self) -> ParseResult<Stmt<'t>> {
     if self.match_(&TokenKind::Import) {
       todo!("imports")
     } else if self.match_(&TokenKind::Export) {
@@ -75,7 +69,7 @@ impl<'arena, 't> Parser<'arena, 't> {
     }
   }
 
-  fn stmt(&mut self) -> ParseResult<Stmt<'arena, 't>> {
+  fn stmt(&mut self) -> ParseResult<Stmt<'t>> {
     if self.match_any(&[TokenKind::LeftBrace]) {
       return match self.previous.kind {
         TokenKind::LeftBrace => self.block_stmt(),
@@ -86,20 +80,17 @@ impl<'arena, 't> Parser<'arena, 't> {
     self.expr_stmt()
   }
 
-  fn expr_stmt(&mut self) -> ParseResult<Stmt<'arena, 't>> {
+  fn expr_stmt(&mut self) -> ParseResult<Stmt<'t>> {
     let span_start = self.previous.span.start;
     let expr = self.expr()?;
     let span_end = self.current.span.end;
 
     self.skip_semi();
     self.skip_newline();
-    Ok(Stmt::new(
-      StmtKind::ExprStmt(self.arena.boxed(expr)),
-      span_start..span_end,
-    ))
+    Ok(Stmt::new(StmtKind::ExprStmt(expr), span_start..span_end))
   }
 
-  fn expr(&mut self) -> ParseResult<Expr<'arena, 't>> {
+  fn expr(&mut self) -> ParseResult<Expr<'t>> {
     if self.match_any(&[
       TokenKind::Do,
       TokenKind::Match,
@@ -115,7 +106,7 @@ impl<'arena, 't> Parser<'arena, 't> {
     self.assignment()
   }
 
-  fn assignment(&mut self) -> ParseResult<Expr<'arena, 't>> {
+  fn assignment(&mut self) -> ParseResult<Expr<'t>> {
     let expr = self.pipeline()?;
 
     if self.match_any(&[
@@ -141,7 +132,7 @@ impl<'arena, 't> Parser<'arena, 't> {
     Ok(expr)
   }
 
-  fn pipeline(&mut self) -> ParseResult<Expr<'arena, 't>> {
+  fn pipeline(&mut self) -> ParseResult<Expr<'t>> {
     let mut expr = self.logic_or()?;
 
     // expr |> expr
@@ -150,7 +141,7 @@ impl<'arena, 't> Parser<'arena, 't> {
       let right = self.logic_or()?;
       let span = expr.span.start..right.span.end;
       expr = Expr::new(
-        ExprKind::Pipeline(self.arena.boxed(Pipeline {
+        ExprKind::Pipeline(Box::new(Pipeline {
           token,
           input: expr,
           output: right,
@@ -162,7 +153,7 @@ impl<'arena, 't> Parser<'arena, 't> {
     Ok(expr)
   }
 
-  fn logic_or(&mut self) -> ParseResult<Expr<'arena, 't>> {
+  fn logic_or(&mut self) -> ParseResult<Expr<'t>> {
     let mut expr = self.logic_and()?;
 
     while self.match_(&TokenKind::Or) {
@@ -172,7 +163,7 @@ impl<'arena, 't> Parser<'arena, 't> {
     Ok(expr)
   }
 
-  fn logic_and(&mut self) -> ParseResult<Expr<'arena, 't>> {
+  fn logic_and(&mut self) -> ParseResult<Expr<'t>> {
     let mut expr = self.bitwise_or()?;
 
     while self.match_(&TokenKind::And) {
@@ -182,7 +173,7 @@ impl<'arena, 't> Parser<'arena, 't> {
     Ok(expr)
   }
 
-  fn bitwise_or(&mut self) -> ParseResult<Expr<'arena, 't>> {
+  fn bitwise_or(&mut self) -> ParseResult<Expr<'t>> {
     let mut expr = self.bitwise_xor()?;
 
     while self.match_(&TokenKind::BitOr) {
@@ -192,7 +183,7 @@ impl<'arena, 't> Parser<'arena, 't> {
     Ok(expr)
   }
 
-  fn bitwise_xor(&mut self) -> ParseResult<Expr<'arena, 't>> {
+  fn bitwise_xor(&mut self) -> ParseResult<Expr<'t>> {
     let mut expr = self.bitwise_and()?;
 
     while self.match_(&TokenKind::BitXor) {
@@ -202,7 +193,7 @@ impl<'arena, 't> Parser<'arena, 't> {
     Ok(expr)
   }
 
-  fn bitwise_and(&mut self) -> ParseResult<Expr<'arena, 't>> {
+  fn bitwise_and(&mut self) -> ParseResult<Expr<'t>> {
     let mut expr = self.equality()?;
 
     while self.match_(&TokenKind::BitAnd) {
@@ -212,7 +203,7 @@ impl<'arena, 't> Parser<'arena, 't> {
     Ok(expr)
   }
 
-  fn equality(&mut self) -> ParseResult<Expr<'arena, 't>> {
+  fn equality(&mut self) -> ParseResult<Expr<'t>> {
     let mut expr = self.comparison()?;
 
     while self.match_any(&[TokenKind::EqualEqual, TokenKind::BangEqual]) {
@@ -222,7 +213,7 @@ impl<'arena, 't> Parser<'arena, 't> {
     Ok(expr)
   }
 
-  fn comparison(&mut self) -> ParseResult<Expr<'arena, 't>> {
+  fn comparison(&mut self) -> ParseResult<Expr<'t>> {
     let mut expr = self.bit_shift()?;
 
     while self.match_any(&[
@@ -237,7 +228,7 @@ impl<'arena, 't> Parser<'arena, 't> {
     Ok(expr)
   }
 
-  fn bit_shift(&mut self) -> ParseResult<Expr<'arena, 't>> {
+  fn bit_shift(&mut self) -> ParseResult<Expr<'t>> {
     let mut expr = self.addition()?;
 
     while self.match_any(&[TokenKind::ShiftLeft, TokenKind::ShiftRight]) {
@@ -247,7 +238,7 @@ impl<'arena, 't> Parser<'arena, 't> {
     Ok(expr)
   }
 
-  fn addition(&mut self) -> ParseResult<Expr<'arena, 't>> {
+  fn addition(&mut self) -> ParseResult<Expr<'t>> {
     let mut expr = self.multiplication()?;
 
     while self.match_any(&[TokenKind::Minus, TokenKind::Plus]) {
@@ -257,7 +248,7 @@ impl<'arena, 't> Parser<'arena, 't> {
     Ok(expr)
   }
 
-  fn multiplication(&mut self) -> ParseResult<Expr<'arena, 't>> {
+  fn multiplication(&mut self) -> ParseResult<Expr<'t>> {
     let mut expr = self.exponentiation()?;
 
     while self.match_any(&[TokenKind::Star, TokenKind::Percent, TokenKind::Slash]) {
@@ -267,7 +258,7 @@ impl<'arena, 't> Parser<'arena, 't> {
     Ok(expr)
   }
 
-  fn exponentiation(&mut self) -> ParseResult<Expr<'arena, 't>> {
+  fn exponentiation(&mut self) -> ParseResult<Expr<'t>> {
     let mut expr = self.unary()?;
 
     while self.match_any(&[TokenKind::Power]) {
@@ -277,7 +268,7 @@ impl<'arena, 't> Parser<'arena, 't> {
     Ok(expr)
   }
 
-  fn unary(&mut self) -> ParseResult<Expr<'arena, 't>> {
+  fn unary(&mut self) -> ParseResult<Expr<'t>> {
     if self.match_any(&[
       TokenKind::Bang,
       TokenKind::Minus,
@@ -289,11 +280,11 @@ impl<'arena, 't> Parser<'arena, 't> {
     ]) {
       let op = self.previous.clone();
       return Ok(match self.previous.kind {
-        TokenKind::Bang => unary!(self, self.unary()?, UnOpKind::Not, op),
-        TokenKind::Minus => unary!(self, self.unary()?, UnOpKind::Negate, op),
-        TokenKind::BitNot => unary!(self, self.unary()?, UnOpKind::BitNot, op),
-        TokenKind::Try => try_expr!(prefix => self, self.unary()?, TryKind::Try, op),
-        TokenKind::TryBang => try_expr!(prefix => self, self.unary()?, TryKind::TryUnwrap, op),
+        TokenKind::Bang => unary!(self.unary()?, UnOpKind::Not, op),
+        TokenKind::Minus => unary!(self.unary()?, UnOpKind::Negate, op),
+        TokenKind::BitNot => unary!(self.unary()?, UnOpKind::BitNot, op),
+        TokenKind::Try => try_expr!(prefix => self.unary()?, TryKind::Try, op),
+        TokenKind::TryBang => try_expr!(prefix => self.unary()?, TryKind::TryUnwrap, op),
         TokenKind::MinusMinus | TokenKind::PlusPlus => todo!(),
         _ => unreachable!(),
       });
@@ -302,7 +293,7 @@ impl<'arena, 't> Parser<'arena, 't> {
     self.postfix()
   }
 
-  fn postfix(&mut self) -> ParseResult<Expr<'arena, 't>> {
+  fn postfix(&mut self) -> ParseResult<Expr<'t>> {
     let expr = self.primary()?;
 
     while self.match_any(&[
@@ -321,7 +312,7 @@ impl<'arena, 't> Parser<'arena, 't> {
     Ok(expr)
   }
 
-  fn primary(&mut self) -> ParseResult<Expr<'arena, 't>> {
+  fn primary(&mut self) -> ParseResult<Expr<'t>> {
     if self.match_(&TokenKind::Null) {
       return Ok(literal!(self, LiteralValue::Null));
     }
@@ -373,7 +364,7 @@ impl<'arena, 't> Parser<'arena, 't> {
 
     if self.match_(&TokenKind::LeftBracket) {
       let start_span = self.previous.span.clone();
-      let mut tmp_vec = vec![];
+      let mut items = vec![];
 
       if !self.check(&TokenKind::RightBracket) {
         let mut first_spread = None;
@@ -384,7 +375,7 @@ impl<'arena, 't> Parser<'arena, 't> {
 
         if first_spread.is_none() && self.match_(&TokenKind::Semicolon) {
           let length = self.expr()?;
-          let literal = ArrayLiteral::Initialized(self.arena.boxed(InitializedArray {
+          let literal = ArrayLiteral::Initialized(Box::new(InitializedArray {
             value: first_item,
             length,
           }));
@@ -400,7 +391,7 @@ impl<'arena, 't> Parser<'arena, 't> {
           ));
         }
 
-        tmp_vec.push(ArrayItem {
+        items.push(ArrayItem {
           spread: first_spread,
           value: first_item,
         });
@@ -413,7 +404,7 @@ impl<'arena, 't> Parser<'arena, 't> {
           } else {
             None
           };
-          tmp_vec.push(ArrayItem {
+          items.push(ArrayItem {
             spread,
             value: self.expr()?,
           });
@@ -425,9 +416,7 @@ impl<'arena, 't> Parser<'arena, 't> {
         "Expected a `]` at the end of an array literal",
       )?;
 
-      let mut arena_vec = self.arena.vec_with_capacity(tmp_vec.len());
-      arena_vec.extend(tmp_vec.into_iter());
-      let literal = ArrayLiteral::Plain(arena_vec);
+      let literal = ArrayLiteral::Plain(items);
       let end_span = self.previous.span.start;
       return Ok(Expr::new(
         ExprKind::ArrayLiteral(literal),
@@ -446,10 +435,7 @@ impl<'arena, 't> Parser<'arena, 't> {
       let expr = self.expr()?;
       if self.match_(&TokenKind::RightParen) {
         let end = self.previous.span.end;
-        return Ok(Expr::new(
-          ExprKind::Grouping(self.arena.boxed(expr)),
-          start..end,
-        ));
+        return Ok(Expr::new(ExprKind::Grouping(Box::new(expr)), start..end));
       }
 
       self.consume(
@@ -457,9 +443,9 @@ impl<'arena, 't> Parser<'arena, 't> {
         "Expected a `,` after the first tuple element.",
       )?;
 
-      let mut tmp_vec = vec![expr];
+      let mut elements = vec![expr];
       while !self.check(&TokenKind::RightParen) {
-        tmp_vec.push(self.expr()?);
+        elements.push(self.expr()?);
         if !self.check(&TokenKind::RightParen) {
           self.consume(&TokenKind::Comma, "Expected a `,` after a tuple element")?;
         }
@@ -471,8 +457,6 @@ impl<'arena, 't> Parser<'arena, 't> {
       )?;
       let end = self.previous.span.end;
 
-      let mut elements = self.arena.vec_with_capacity(tmp_vec.len());
-      elements.extend(tmp_vec.into_iter());
       return Ok(Expr::new(
         ExprKind::Tuple(Tuple::Tuple(elements)),
         start..end,
@@ -490,15 +474,15 @@ impl<'arena, 't> Parser<'arena, 't> {
     self.match_(&TokenKind::LineEnd)
   }
 
-  fn block_stmt(&mut self) -> ParseResult<Stmt<'arena, 't>> {
+  fn block_stmt(&mut self) -> ParseResult<Stmt<'t>> {
     let span_start = self.previous.span.start;
     let body = self.block()?;
     let span_end = self.previous.span.end;
     Ok(Stmt::new(StmtKind::Block(body), span_start..span_end))
   }
 
-  fn block(&mut self) -> ParseResult<mu_ast::Vec![Stmt]> {
-    let mut body = self.arena.vec();
+  fn block(&mut self) -> ParseResult<Vec<Stmt<'t>>> {
+    let mut body = Vec::new();
 
     // if the next token is a RightBrace, the block is empty
     if !self.check(&TokenKind::RightBrace) {

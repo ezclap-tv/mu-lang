@@ -7,21 +7,21 @@ macro_rules! binary {
     let r = $right;
     let span = l.span.start..r.span.end;
 
-    BinOp::new(token, l, r).map(|op| Expr::new(ExprKind::BinOp($self.arena.boxed(op)), span))
+    BinOp::new(token, l, r).map(|op| Expr::new(ExprKind::BinOp(Box::new(op)), span))
   }};
 }
 
 #[macro_export]
 macro_rules! unary {
-  ($self:ident, $operand:expr, $op:path, $token:ident) => {{
+  ($operand:expr, $op:path, $token:ident) => {{
     let operand = $operand;
     let span = $token.span.start..operand.span.end;
 
     Expr::new(
-      ExprKind::UnOp($self.arena.boxed(UnOp {
+      ExprKind::UnOp(Box::new(UnOp {
         token: $token,
         kind: $op,
-        operand: operand,
+        operand,
       })),
       span,
     )
@@ -30,24 +30,24 @@ macro_rules! unary {
 
 #[macro_export]
 macro_rules! try_expr {
-  (prefix => $self:ident, $operand:expr, $op:path, $token:ident) => {
-    try_expr!(is_postfix = false | $self, $operand, $op, $token)
+  (prefix => $operand:expr, $op:path, $token:ident) => {
+    try_expr!(is_postfix = false | $operand, $op, $token)
   };
 
-  (postfix => $self:ident, $operand:expr, $op:path, $token:ident) => {
-    try_expr!(is_postfix = true | $self, $operand, $op, $token)
+  (postfix => $operand:expr, $op:path, $token:ident) => {
+    try_expr!(is_postfix = true | $operand, $op, $token)
   };
 
-  (is_postfix = $is:tt | $self:ident, $operand:expr, $op:path, $token:ident) => {{
+  (is_postfix = $is:tt | $operand:expr, $op:path, $token:ident) => {{
     let operand = $operand;
     let span = $token.span.start..operand.span.end;
 
     Expr::new(
-      ExprKind::Try($self.arena.boxed(TryExpr {
+      ExprKind::Try(Box::new(TryExpr {
         token: $token,
         kind: $op,
         is_postfix: $is,
-        operand: operand,
+        operand,
       })),
       span,
     )
@@ -61,7 +61,7 @@ macro_rules! literal {
     let span = token.span.clone();
     let value = $value;
     Expr::new(
-      ExprKind::PrimitiveLiteral($self.arena.boxed(PrimitiveLiteral { token, value })),
+      ExprKind::PrimitiveLiteral(Box::new(PrimitiveLiteral { token, value })),
       span,
     )
   }};

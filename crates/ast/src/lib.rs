@@ -4,48 +4,24 @@ pub mod ast_arena;
 pub mod dynamic_arena;
 
 pub use ast2str::{self, AstToStr};
-pub use ast_arena::{Arena, AstPtr, AstVec};
 pub use mu_lexer::{Span, Token, TokenKind};
 
 #[macro_export]
 macro_rules! Node {
   ($name:ident) => {
-    $name<'arena, 't>
+    $name<'t>
   };
   ($name:ty) => {
     $name
   };
 }
 
-#[macro_export]
-macro_rules! HeapNode {
-  ($name:ident) => {
-    AstPtr<'arena, Node![$name]>
-  };
-  ($name:ty) => {
-    AstPtr<'arena, Node![$name]>
-  };
-}
-
-#[macro_export]
-macro_rules! Vec {
-  ($name:ident) => {
-    AstVec<'arena, Node![$name]>
-  };
-  ($name:ty) => {
-    AstVec<'arena, Node![$name]>
-  };
-}
-
-pub type ExprPtr<'arena, 'text> = AstPtr<'arena, Expr<'arena, 'text>>;
-
 #[derive(Debug, Clone)]
-pub struct Ast<'arena, 't> {
-  pub arena: Arena<'arena>,
-  pub statements: Vec![Stmt],
+pub struct Ast<'t> {
+  pub statements: Vec<Stmt<'t>>,
 }
 
-impl<'arena, 't> AstToStr for Ast<'arena, 't> {
+impl<'t> AstToStr for Ast<'t> {
   fn ast_to_str_impl(&self, s: &dyn ast2str::Symbols) -> String {
     self
       .statements
@@ -75,12 +51,12 @@ pub enum BinOpKind {
 }
 
 #[derive(Debug, Clone, AstToStr)]
-pub struct BinOp<'arena, 't> {
+pub struct BinOp<'t> {
   #[skip]
   pub token: Token<'t>,
   pub kind: BinOpKind,
-  pub left: Expr<'arena, 't>,
-  pub right: Expr<'arena, 't>,
+  pub left: Expr<'t>,
+  pub right: Expr<'t>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, AstToStr)]
@@ -91,11 +67,11 @@ pub enum UnOpKind {
 }
 
 #[derive(Debug, Clone, AstToStr)]
-pub struct UnOp<'arena, 't> {
+pub struct UnOp<'t> {
   #[skip]
   pub token: Token<'t>,
   pub kind: UnOpKind,
-  pub operand: Expr<'arena, 't>,
+  pub operand: Expr<'t>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, AstToStr)]
@@ -105,16 +81,16 @@ pub enum TryKind {
 }
 
 #[derive(Debug, Clone, AstToStr)]
-pub struct TryExpr<'arena, 't> {
+pub struct TryExpr<'t> {
   #[skip]
   pub token: Token<'t>,
   pub kind: TryKind,
   pub is_postfix: bool,
-  pub operand: Expr<'arena, 't>,
+  pub operand: Expr<'t>,
 }
 
-impl<'arena, 't> BinOp<'arena, 't> {
-  pub fn new(token: Token<'t>, left: Expr<'arena, 't>, right: Expr<'arena, 't>) -> Option<Self> {
+impl<'t> BinOp<'t> {
+  pub fn new(token: Token<'t>, left: Expr<'t>, right: Expr<'t>) -> Option<Self> {
     Some(Self {
       kind: Self::kind(&token)?,
       token,
@@ -145,10 +121,10 @@ impl<'arena, 't> BinOp<'arena, 't> {
 }
 
 #[derive(Debug, Clone, AstToStr)]
-pub struct Pipeline<'arena, 't> {
+pub struct Pipeline<'t> {
   pub token: Token<'t>,
-  pub input: Node![Expr],
-  pub output: Node![Expr],
+  pub input: Expr<'t>,
+  pub output: Expr<'t>,
 }
 
 #[derive(Debug, Clone, AstToStr)]
@@ -169,75 +145,75 @@ pub struct PrimitiveLiteral<'t> {
 }
 
 #[derive(Debug, Clone, AstToStr)]
-pub struct InitializedArray<'arena, 't> {
-  pub value: Node![Expr],
-  pub length: Node![Expr],
+pub struct InitializedArray<'t> {
+  pub value: Expr<'t>,
+  pub length: Expr<'t>,
 }
 
 #[derive(Debug, Clone, AstToStr)]
-pub struct ArrayItem<'arena, 't> {
+pub struct ArrayItem<'t> {
   pub spread: Option<Token<'t>>,
-  pub value: Node![Expr],
+  pub value: Expr<'t>,
 }
 
 #[derive(Debug, Clone, AstToStr)]
-pub enum ArrayLiteral<'arena, 't> {
-  Plain(#[rename = "items"] Vec![Node![ArrayItem]]),
-  Initialized(#[forward] HeapNode![InitializedArray]),
+pub enum ArrayLiteral<'t> {
+  Plain(#[rename = "items"] Vec<ArrayItem<'t>>),
+  Initialized(#[forward] Box<InitializedArray<'t>>),
 }
 
 #[derive(Debug, Clone, AstToStr)]
-pub enum Tuple<'arena, 't> {
+pub enum Tuple<'t> {
   Unit,
-  Tuple(#[rename = "elements"] Vec![Node![Expr]]),
+  Tuple(#[rename = "elements"] Vec<Expr<'t>>),
 }
 
 #[derive(Debug, Clone, AstToStr)]
-pub enum ExprKind<'arena, 't> {
+pub enum ExprKind<'t> {
   Identifier(#[rename = "name"] Token<'t>),
-  Pipeline(#[forward] HeapNode![Pipeline]),
-  BinOp(#[forward] HeapNode![BinOp]),
-  UnOp(#[forward] HeapNode![UnOp]),
-  Try(#[forward] HeapNode![TryExpr]),
-  PrimitiveLiteral(#[forward] AstPtr<'arena, PrimitiveLiteral<'t>>),
-  ArrayLiteral(#[forward] Node![ArrayLiteral]),
-  Tuple(#[forward] Node![Tuple]),
-  Grouping(#[rename = "expr"] HeapNode![Expr]),
+  Pipeline(#[forward] Box<Pipeline<'t>>),
+  BinOp(#[forward] Box<BinOp<'t>>),
+  UnOp(#[forward] Box<UnOp<'t>>),
+  Try(#[forward] Box<TryExpr<'t>>),
+  PrimitiveLiteral(#[forward] Box<PrimitiveLiteral<'t>>),
+  ArrayLiteral(#[forward] ArrayLiteral<'t>),
+  Tuple(#[forward] Tuple<'t>),
+  Grouping(#[rename = "expr"] Box<Expr<'t>>),
 }
 
 #[derive(Debug, Clone, AstToStr)]
-pub struct ImportFragment<'arena, 't> {
+pub struct ImportFragment<'t> {
   pub root_fragment: Token<'t>,
-  pub path: Vec![Token<'t>],
-  pub end: HeapNode![ImportEnd],
+  pub path: Vec<Token<'t>>,
+  pub end: ImportEnd<'t>,
 }
 
 #[derive(AstToStr, Debug, Clone)]
-pub enum ImportEnd<'arena, 't> {
-  Block(AstVec<'arena, Stmt<'arena, 't>>),
+pub enum ImportEnd<'t> {
+  Block(Vec<Stmt<'t>>),
   Alias(Token<'t>),
 }
 
 #[derive(Debug, Clone, AstToStr)]
-pub enum StmtKind<'arena, 't> {
-  Import(Node![ImportFragment]),
-  ExprStmt(#[forward] HeapNode![Expr]),
-  Block(#[rename = "statements"] Vec![Stmt]),
+pub enum StmtKind<'t> {
+  Import(ImportFragment<'t>),
+  ExprStmt(#[forward] Expr<'t>),
+  Block(#[rename = "statements"] Vec<Stmt<'t>>),
   // NilStmts are produced by free newlines
   NilStmt,
 }
 
 #[derive(Debug, Clone, AstToStr)]
-pub struct Expr<'arena, 't> {
-  pub kind: ExprKind<'arena, 't>,
+pub struct Expr<'t> {
+  pub kind: ExprKind<'t>,
   #[skip]
   pub span: Span,
   #[skip_if = "Option::is_none"]
-  pub comments: Option<Vec![Token<'t>]>,
+  pub comments: Option<Vec<Token<'t>>>,
 }
 
-impl<'arena, 't> Expr<'arena, 't> {
-  pub fn new(kind: ExprKind<'arena, 't>, span: Span) -> Self {
+impl<'t> Expr<'t> {
+  pub fn new(kind: ExprKind<'t>, span: Span) -> Self {
     Self {
       kind,
       span,
@@ -247,16 +223,16 @@ impl<'arena, 't> Expr<'arena, 't> {
 }
 
 #[derive(Debug, Clone, AstToStr)]
-pub struct Stmt<'arena, 't> {
-  pub kind: StmtKind<'arena, 't>,
+pub struct Stmt<'t> {
+  pub kind: StmtKind<'t>,
   #[skip]
   pub span: Span,
   #[skip_if = "Option::is_none"]
-  pub comments: Option<Vec![Token<'t>]>,
+  pub comments: Option<Vec<Token<'t>>>,
 }
 
-impl<'arena, 't> Stmt<'arena, 't> {
-  pub fn new(kind: StmtKind<'arena, 't>, span: Span) -> Self {
+impl<'t> Stmt<'t> {
+  pub fn new(kind: StmtKind<'t>, span: Span) -> Self {
     Self {
       kind,
       span,
