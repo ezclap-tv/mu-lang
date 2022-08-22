@@ -207,6 +207,61 @@ pub struct Assignment<'t> {
 }
 
 #[derive(Debug, Clone, AstToStr)]
+pub enum PrimitiveType<'t> {
+  Bool,
+  Null,
+  Int,
+  Float,
+  String,
+  Named(
+    #[rename = "name"]
+    #[callback(|v: &Vec<Token<'t>>| v.iter().map(|x| x.lexeme.as_ref()).collect::<Vec<_>>().join("."))]
+    Vec<Token<'t>>,
+  ),
+}
+
+#[derive(Debug, Clone, AstToStr)]
+pub enum TupleType<'t> {
+  Unit,
+  Tuple(#[rename = "types"] Vec<TypeExpr<'t>>),
+}
+
+#[derive(Debug, Clone, AstToStr)]
+pub struct RecordType<'t>(Vec<(Token<'t>, Expr<'t>)>);
+
+#[derive(Debug, Clone, AstToStr)]
+pub enum TypeExpr<'t> {
+  Primitive(#[forward] Box<PrimitiveType<'t>>),
+  Array(#[rename = "type"] Box<TypeExpr<'t>>),
+  Record(#[forward] Box<RecordType<'t>>),
+  Tuple(#[forward] Box<TupleType<'t>>),
+  Nullable(#[rename = "type"] Box<TypeExpr<'t>>),
+  Grouping(#[rename = "type"] Box<TypeExpr<'t>>),
+}
+
+#[derive(Debug, Clone, AstToStr)]
+pub struct Param<'t> {
+  pub name: Token<'t>,
+  pub ty: Option<TypeExpr<'t>>,
+  pub value: Option<Expr<'t>>,
+}
+
+#[derive(Debug, Clone, AstToStr)]
+pub struct ParameterList<'t>(#[rename = "parameters"] pub Vec<Param<'t>>);
+
+#[derive(Debug, Clone, AstToStr)]
+pub enum LambdaParams<'t> {
+  Single(#[rename = "name"] Token<'t>),
+  List(#[forward] ParameterList<'t>),
+}
+
+#[derive(Debug, Clone, AstToStr)]
+pub struct LambdaLiteral<'t> {
+  pub params: LambdaParams<'t>,
+  pub body: Stmt<'t>,
+}
+
+#[derive(Debug, Clone, AstToStr)]
 pub enum ExprKind<'t> {
   Assignment(#[forward] Box<Assignment<'t>>),
   Identifier(#[rename = "name"] Token<'t>),
@@ -214,6 +269,7 @@ pub enum ExprKind<'t> {
   BinOp(#[forward] Box<BinOp<'t>>),
   UnOp(#[forward] Box<UnOp<'t>>),
   Try(#[forward] Box<TryExpr<'t>>),
+  LambdaLiteral(#[forward] Box<LambdaLiteral<'t>>),
   PrimitiveLiteral(#[forward] Box<PrimitiveLiteral<'t>>),
   ArrayLiteral(#[forward] ArrayLiteral<'t>),
   RecordLiteral(#[forward] RecordLiteral<'t>),

@@ -15,17 +15,23 @@ where
   }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LexerErrorKind {
   Generic,
   UnterminatedString,
   UnterminatedFragment,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ParserErrorKind {
+  Generic,
+  InvalidPrimitiveType,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ErrorKind {
   Lexer(LexerErrorKind),
-  ParseGeneric,
+  Parser(ParserErrorKind),
 }
 
 #[derive(Debug, Clone)]
@@ -70,6 +76,6 @@ impl Error {
   }
 
   pub fn parse(message: impl ErrorMsg, span: Span) -> Self {
-    Self::new(message, span, ErrorKind::ParseGeneric)
+    Self::new(message, span, ErrorKind::Parser(ParserErrorKind::Generic))
   }
 }

@@ -1,3 +1,5 @@
+use std::string::ParseError;
+
 use mu_ast::*;
 use mu_errors::{Error as MuError, ErrorMsg, ErrorSink};
 use mu_lexer::numbers::FloatBits;
@@ -397,7 +399,111 @@ impl<'t> Parser<'t> {
       return self.record_literal();
     }
 
+    if self.match_(&TokenKind::BackSlash) {
+      return self.lambda_literal();
+    }
+
     todo!("{:?} {:?}", self.previous, self.current);
+  }
+
+  fn type_expr(&mut self) -> ParseResult<TypeExpr<'t>> {
+    self.primitive_type()
+  }
+
+  fn primitive_type(&mut self) -> ParseResult<TypeExpr<'t>> {
+    let ty = if self.match_(&TokenKind::BoolType) {
+      PrimitiveType::Bool
+    } else if self.match_(&TokenKind::Null) {
+      PrimitiveType::Null
+    } else if self.match_(&TokenKind::IntType) {
+      PrimitiveType::Int
+    } else if self.match_(&TokenKind::FloatType) {
+      PrimitiveType::Float
+    } else if self.match_(&TokenKind::StringType) {
+      PrimitiveType::String
+    } else if self.match_(&TokenKind::Identifier) {
+      let mut path = vec![self.previous.clone()];
+      while self.match_(&TokenKind::Dot) {
+        let name = self.consume(
+          &TokenKind::Identifier,
+          "Expected an identifier after the `.`",
+        )?;
+        path.push(name);
+      }
+      PrimitiveType::Named(path)
+    } else {
+      return Err(MuError::new(
+        "Expected `bool`, `int`, `float`, `string`, `null`, or a type name",
+        self.current.span.clone(),
+        mu_errors::ErrorKind::Parser(mu_errors::ParserErrorKind::InvalidPrimitiveType),
+      ));
+    };
+
+    Ok(TypeExpr::Primitive(Box::new(ty)))
+  }
+
+  fn param_list(&mut self) -> ParseResult<ParameterList<'t>> {
+    let mut params = Vec::new();
+
+    if !self.check(&TokenKind::RightParen) {
+      params.push(self.param()?);
+
+      while self.match_(&TokenKind::Comma) {
+        if self.check(&TokenKind::RightParen) {
+          break;
+        }
+        params.push(self.param()?);
+      }
+    }
+
+    self.consume(
+      &TokenKind::RightParen,
+      "Expected a `)` after the parameter list.",
+    )?;
+
+    Ok(ParameterList(params))
+  }
+
+  fn param(&mut self) -> ParseResult<Param<'t>> {
+    let name = self.consume(&TokenKind::Identifier, "Expected a parameter name")?;
+    let ty = if self.match_(&TokenKind::Colon) {
+      Some(self.type_expr()?)
+    } else {
+      None
+    };
+    let value = if self.match_(&TokenKind::Equal) {
+      Some(self.expr()?)
+    } else {
+      None
+    };
+    Ok(Param { name, ty, value })
+  }
+
+  fn lambda_literal(&mut self) -> ParseResult<Expr<'t>> {
+    let start = self.current.span.start;
+    let params = if self.match_(&TokenKind::LeftParen) {
+      let params = self.param_list()?;
+      LambdaParams::List(params)
+    } else {
+      let param = self.consume(
+        &TokenKind::Identifier,
+        "Expected either a parameter name or parameter list after the `\\`.",
+      )?;
+      LambdaParams::Single(param)
+    };
+
+    self.consume(
+      &TokenKind::LeftBrace,
+      "Expected a `{` before the lambda body",
+    )?;
+    let body = self.block_stmt()?;
+    let end = body.span.end;
+
+    let lambda = LambdaLiteral { params, body };
+    Ok(Expr::new(
+      ExprKind::LambdaLiteral(Box::new(lambda)),
+      start..end,
+    ))
   }
 
   fn record_literal(&mut self) -> ParseResult<Expr<'t>> {
