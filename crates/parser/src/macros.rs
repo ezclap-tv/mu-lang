@@ -66,3 +66,19 @@ macro_rules! literal {
     )
   }};
 }
+
+#[macro_export]
+macro_rules! assignment {
+  (if $self:ident $matched:ident = [ $($op:ident),* ] => $block:expr) => {{
+    let _matched = match &$self.current.kind {
+      $(
+        TokenKind::$op => Some(mu_ast::AssignmentKind::$op),
+      )*
+      _ => None
+    };
+    if let Some($matched) = _matched {
+      $self.advance();
+      $block
+    }
+  }};
+}

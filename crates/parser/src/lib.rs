@@ -107,29 +107,46 @@ impl<'t> Parser<'t> {
   }
 
   fn assignment(&mut self) -> ParseResult<Expr<'t>> {
-    let expr = self.pipeline()?;
+    let mut expr = self.pipeline()?;
 
-    if self.match_any(&[
-      TokenKind::Equal,
-      TokenKind::PlusEqual,
-      TokenKind::MinusEqual,
-      TokenKind::SlashEqual,
-      TokenKind::StarEqual,
-      TokenKind::PercentEqual,
-      TokenKind::PowerEqual,
-      TokenKind::BitOrEqual,
-      TokenKind::BitAndEqual,
-      TokenKind::BitXorEqual,
-      TokenKind::ShiftLeftEqual,
-      TokenKind::ShiftRightEqual,
-      TokenKind::OrEqual,
-      TokenKind::AndEqual,
-      TokenKind::CoalescingEqual,
-    ]) {
-      todo!()
+    assignment! {
+      if self matched = [
+        Equal,
+        PlusEqual,
+        MinusEqual,
+        SlashEqual,
+        StarEqual,
+        PercentEqual,
+        PowerEqual,
+        BitOrEqual,
+        BitAndEqual,
+        BitXorEqual,
+        ShiftLeftEqual,
+        ShiftRightEqual,
+        OrEqual,
+        AndEqual,
+        CoalescingEqual
+      ] => {
+        self.check_assignment_target(&expr)?;
+        let start = self.previous.span.start;
+        let value = self.expr()?;
+        let end = value.span.end;
+        expr = Expr::new(ExprKind::Assignment(Box::new(Assignment {
+          operator: matched,
+          target: expr,
+          value
+        })), start..end);
+      }
     }
 
     Ok(expr)
+  }
+
+  fn check_assignment_target(&self, expr: &Expr<'t>) -> ParseResult<()> {
+    match expr.kind {
+      ExprKind::Identifier(_) => Ok(()),
+      _ => unimplemented!(),
+    }
   }
 
   fn pipeline(&mut self) -> ParseResult<Expr<'t>> {
@@ -313,6 +330,12 @@ impl<'t> Parser<'t> {
   }
 
   fn primary(&mut self) -> ParseResult<Expr<'t>> {
+    if self.match_(&TokenKind::Identifier) {
+      return Ok(Expr::new(
+        ExprKind::Identifier(self.previous.clone()),
+        self.previous.span.clone(),
+      ));
+    }
     if self.match_(&TokenKind::Null) {
       return Ok(literal!(self, LiteralValue::Null));
     }
@@ -363,107 +386,175 @@ impl<'t> Parser<'t> {
     }
 
     if self.match_(&TokenKind::LeftBracket) {
-      let start_span = self.previous.span.clone();
-      let mut items = vec![];
-
-      if !self.check(&TokenKind::RightBracket) {
-        let mut first_spread = None;
-        if self.match_(&TokenKind::Spread) {
-          first_spread = Some(self.previous.clone());
-        }
-        let first_item = self.expr()?;
-
-        if first_spread.is_none() && self.match_(&TokenKind::Semicolon) {
-          let length = self.expr()?;
-          let literal = ArrayLiteral::Initialized(Box::new(InitializedArray {
-            value: first_item,
-            length,
-          }));
-          self.consume(
-            &TokenKind::RightBracket,
-            "Expected a `]` after the array length",
-          )?;
-
-          let end_span = self.previous.span.start;
-          return Ok(Expr::new(
-            ExprKind::ArrayLiteral(literal),
-            start_span.start..end_span,
-          ));
-        }
-
-        items.push(ArrayItem {
-          spread: first_spread,
-          value: first_item,
-        });
-        while self.match_(&TokenKind::Comma) {
-          if self.check(&TokenKind::RightBracket) {
-            break;
-          }
-          let spread = if self.match_(&TokenKind::Spread) {
-            Some(self.previous.clone())
-          } else {
-            None
-          };
-          items.push(ArrayItem {
-            spread,
-            value: self.expr()?,
-          });
-        }
-      }
-
-      self.consume(
-        &TokenKind::RightBracket,
-        "Expected a `]` at the end of an array literal",
-      )?;
-
-      let literal = ArrayLiteral::Plain(items);
-      let end_span = self.previous.span.start;
-      return Ok(Expr::new(
-        ExprKind::ArrayLiteral(literal),
-        start_span.start..end_span,
-      ));
+      return self.array_literal();
     }
 
     if self.match_(&TokenKind::LeftParen) {
-      let start = self.previous.span.start;
-
-      if self.match_(&TokenKind::RightParen) {
-        let end = self.previous.span.end;
-        return Ok(Expr::new(ExprKind::Tuple(Tuple::Unit), start..end));
-      }
-
-      let expr = self.expr()?;
-      if self.match_(&TokenKind::RightParen) {
-        let end = self.previous.span.end;
-        return Ok(Expr::new(ExprKind::Grouping(Box::new(expr)), start..end));
-      }
-
-      self.consume(
-        &TokenKind::Comma,
-        "Expected a `,` after the first tuple element.",
-      )?;
-
-      let mut elements = vec![expr];
-      while !self.check(&TokenKind::RightParen) {
-        elements.push(self.expr()?);
-        if !self.check(&TokenKind::RightParen) {
-          self.consume(&TokenKind::Comma, "Expected a `,` after a tuple element")?;
-        }
-      }
-
-      self.consume(
-        &TokenKind::RightParen,
-        "Expected a `)` after the tuple elements",
-      )?;
-      let end = self.previous.span.end;
-
-      return Ok(Expr::new(
-        ExprKind::Tuple(Tuple::Tuple(elements)),
-        start..end,
-      ));
+      return self.tuple_or_grouping();
     }
 
-    todo!("{:?}", self.current);
+    if self.match_(&TokenKind::LeftBrace) {
+      return self.record_literal();
+    }
+
+    todo!("{:?} {:?}", self.previous, self.current);
+  }
+
+  fn record_literal(&mut self) -> ParseResult<Expr<'t>> {
+    let start = self.previous.span.start;
+    let mut fields = Vec::new();
+
+    while !self.check(&TokenKind::RightBrace) {
+      let start = self.current.span.start;
+
+      if self.match_(&TokenKind::Spread) {
+        let spread = self.previous.clone();
+        let field = self.consume(
+          &TokenKind::Identifier,
+          "Expected a variable name after the `...`.",
+        )?;
+        fields.push(RecordField::Spread { spread, field })
+      } else if self.match_(&TokenKind::LeftBracket) {
+        let field = self.expr()?;
+        self.consume(
+          &TokenKind::RightBracket,
+          "Expected a `]` after the computed field name.",
+        )?;
+        self.consume(&TokenKind::Colon, "Expected a `:` after the field name.")?;
+        let value = self.expr()?;
+        fields.push(RecordField::Computed { field, value });
+      } else if self.match_(&TokenKind::Identifier) {
+        let field = self.previous.clone();
+        if self.match_(&TokenKind::Colon) {
+          let value = self.expr()?;
+          fields.push(RecordField::Named { field, value })
+        } else {
+          fields.push(RecordField::Variable { field })
+        }
+      } else {
+        let end = self.advance().span.end;
+        self.errors.record(MuError::parse(
+          "Expected a field, computed field, or spread expression.",
+          start..end,
+        ));
+        continue;
+      }
+
+      let had_comma = self.match_(&TokenKind::Comma);
+      if !had_comma && !self.check(&TokenKind::RightBrace) {
+        let end = self.previous.span.end;
+        return Err(MuError::parse(
+          "Expected a `,` after a record field",
+          start..end,
+        ));
+      }
+    }
+
+    let end = self
+      .consume(
+        &TokenKind::RightBrace,
+        "Expected a `}` at the end of a record literal.",
+      )?
+      .span
+      .end;
+
+    Ok(Expr::new(
+      ExprKind::RecordLiteral(RecordLiteral(fields)),
+      start..end,
+    ))
+  }
+
+  fn tuple_or_grouping(&mut self) -> ParseResult<Expr<'t>> {
+    let start = self.previous.span.start;
+    if self.match_(&TokenKind::RightParen) {
+      let end = self.previous.span.end;
+      return Ok(Expr::new(ExprKind::Tuple(Tuple::Unit), start..end));
+    }
+    let expr = self.expr()?;
+    if self.match_(&TokenKind::RightParen) {
+      let end = self.previous.span.end;
+      return Ok(Expr::new(ExprKind::Grouping(Box::new(expr)), start..end));
+    }
+    self.consume(
+      &TokenKind::Comma,
+      "Expected a `,` after the first tuple element.",
+    )?;
+    let mut elements = vec![expr];
+    while !self.check(&TokenKind::RightParen) {
+      elements.push(self.expr()?);
+      if !self.check(&TokenKind::RightParen) {
+        self.consume(&TokenKind::Comma, "Expected a `,` after a tuple element")?;
+      }
+    }
+    self.consume(
+      &TokenKind::RightParen,
+      "Expected a `)` after the tuple elements",
+    )?;
+    let end = self.previous.span.end;
+    Ok(Expr::new(
+      ExprKind::Tuple(Tuple::Tuple(elements)),
+      start..end,
+    ))
+  }
+
+  fn array_literal(&mut self) -> ParseResult<Expr<'t>> {
+    let start_span = self.previous.span.clone();
+    let mut items = vec![];
+    if !self.check(&TokenKind::RightBracket) {
+      let mut first_spread = None;
+      if self.match_(&TokenKind::Spread) {
+        first_spread = Some(self.previous.clone());
+      }
+      let first_item = self.expr()?;
+
+      if first_spread.is_none() && self.match_(&TokenKind::Semicolon) {
+        let length = self.expr()?;
+        let literal = ArrayLiteral::Initialized(Box::new(InitializedArray {
+          value: first_item,
+          length,
+        }));
+        self.consume(
+          &TokenKind::RightBracket,
+          "Expected a `]` after the array length",
+        )?;
+
+        let end_span = self.previous.span.start;
+        return Ok(Expr::new(
+          ExprKind::ArrayLiteral(literal),
+          start_span.start..end_span,
+        ));
+      }
+
+      items.push(ArrayItem {
+        spread: first_spread,
+        value: first_item,
+      });
+      while self.match_(&TokenKind::Comma) {
+        if self.check(&TokenKind::RightBracket) {
+          break;
+        }
+        let spread = if self.match_(&TokenKind::Spread) {
+          Some(self.previous.clone())
+        } else {
+          None
+        };
+        items.push(ArrayItem {
+          spread,
+          value: self.expr()?,
+        });
+      }
+    }
+    self.consume(
+      &TokenKind::RightBracket,
+      "Expected a `]` at the end of an array literal",
+    )?;
+    let literal = ArrayLiteral::Plain(items);
+    let end_span = self.previous.span.start;
+
+    Ok(Expr::new(
+      ExprKind::ArrayLiteral(literal),
+      start_span.start..end_span,
+    ))
   }
 
   fn skip_semi(&mut self) -> bool {

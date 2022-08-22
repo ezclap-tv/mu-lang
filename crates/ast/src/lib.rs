@@ -169,7 +169,46 @@ pub enum Tuple<'t> {
 }
 
 #[derive(Debug, Clone, AstToStr)]
+pub enum RecordField<'t> {
+  Variable { field: Token<'t> },
+  Spread { spread: Token<'t>, field: Token<'t> },
+  Named { field: Token<'t>, value: Expr<'t> },
+  Computed { field: Expr<'t>, value: Expr<'t> },
+}
+
+#[derive(Debug, Clone, AstToStr)]
+pub struct RecordLiteral<'t>(#[rename = "fields"] pub Vec<RecordField<'t>>);
+
+#[derive(Debug, Clone, AstToStr)]
+pub enum AssignmentKind {
+  Equal,
+  PlusEqual,
+  MinusEqual,
+  SlashEqual,
+  StarEqual,
+  PercentEqual,
+  PowerEqual,
+  BitOrEqual,
+  BitAndEqual,
+  BitXorEqual,
+  ShiftLeftEqual,
+  ShiftRightEqual,
+  OrEqual,
+  AndEqual,
+  CoalescingEqual,
+}
+
+#[derive(Debug, Clone, AstToStr)]
+pub struct Assignment<'t> {
+  #[debug]
+  pub operator: AssignmentKind,
+  pub target: Expr<'t>,
+  pub value: Expr<'t>,
+}
+
+#[derive(Debug, Clone, AstToStr)]
 pub enum ExprKind<'t> {
+  Assignment(#[forward] Box<Assignment<'t>>),
   Identifier(#[rename = "name"] Token<'t>),
   Pipeline(#[forward] Box<Pipeline<'t>>),
   BinOp(#[forward] Box<BinOp<'t>>),
@@ -177,6 +216,7 @@ pub enum ExprKind<'t> {
   Try(#[forward] Box<TryExpr<'t>>),
   PrimitiveLiteral(#[forward] Box<PrimitiveLiteral<'t>>),
   ArrayLiteral(#[forward] ArrayLiteral<'t>),
+  RecordLiteral(#[forward] RecordLiteral<'t>),
   Tuple(#[forward] Tuple<'t>),
   Grouping(#[rename = "expr"] Box<Expr<'t>>),
 }
