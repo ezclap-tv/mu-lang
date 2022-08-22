@@ -273,7 +273,7 @@ impl<'a> Parser<'a> {
           .parse()
           .map_err(|inner| Error::InvalidNumber {
             token: self.previous.clone().into_static(),
-            inner,
+            inner: format!("{inner}"),
           })?,
       )))
     } else if self.match_(TokenKind::Bool) {
@@ -370,17 +370,6 @@ impl<'a> Parser<'a> {
     }
   }
 
-  fn consume_any(&mut self, kinds: &[TokenKind]) -> Result<Token<'a>> {
-    if self.check_any(kinds) {
-      Ok(self.advance())
-    } else {
-      Err(Error::MissingOneOf {
-        expected: kinds.to_vec(),
-        found: self.current.clone().into_static(),
-      })
-    }
-  }
-
   fn match_(&mut self, kind: TokenKind) -> bool {
     if self.check(kind) {
       self.advance();
@@ -451,82 +440,4 @@ pub fn parse(source: &str) -> std::result::Result<Vec<Expr<'_>>, Vec<Error>> {
     eof,
   }
   .run()
-}
-
-#[cfg(test)]
-mod tests {
-  use ast2str::AstToStr;
-
-  use super::*;
-
-  macro_rules! test_case {
-    ($name:ident, $source:literal) => {
-      #[test]
-      fn $name() {
-        let source = $source;
-        match parse(source) {
-          Ok(exprs) => println!("{:#?}", exprs),
-          Err(errors) => {
-            let mut buf = String::new();
-            report(source, &errors, &mut buf);
-            panic!("{buf}");
-          }
-        }
-      }
-    };
-  }
-
-  test_case!(record_type, r#"let v: {x:int, y:int} = {x: 10, y: 10};"#);
-
-  test_case!(
-    let_func,
-    r#"
-let print_square n: int -> int =
-  let r = intToStr (n * n) in
-  print n + " * " + n + " = " + r
-  ;"#
-  );
-
-  #[test]
-  fn example() {
-    let source = r#"
-    // variables
-    let v = 10;
-
-    let v: int = 10; // int
-    let v: bool = true; /// bool
-    let v: str = "test"; /// str
-    let v: {x:int, y:int} = {x: 10, y: 10}; /// record
-
-    // functions
-    // single argument
-    // parameter and return type annotations are required
-    let fib n: int -> int =
-      if n < 2 then n
-      else n * fib (n - 1)
-      ;
-
-    // function calls
-    fib (v.x);
-
-    let print_square n: int -> int =
-      let r = intToStr (n * n) in
-      print n + " * " + n + " = " + r
-      ;
-    "#;
-    match parse(source) {
-      Ok(exprs) => println!(
-        "{:#?}",
-        exprs
-          .into_iter()
-          .map(|e| e.ast_to_str())
-          .collect::<Vec<_>>()
-      ),
-      Err(errors) => {
-        let mut buf = String::new();
-        report(source, &errors, &mut buf);
-        panic!("{buf}");
-      }
-    }
-  }
 }

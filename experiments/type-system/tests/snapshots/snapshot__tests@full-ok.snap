@@ -1,0 +1,365 @@
+---
+source: tests/snapshot.rs
+expression: ast
+---
+- Let:
+    kind:
+      Var:
+        ident:
+          lexeme: v
+          span:
+            start: 18
+            end: 19
+          kind: Ident
+        value:
+          Lit:
+            Number: 10
+        type: ~
+    in: ~
+- Let:
+    kind:
+      Var:
+        ident:
+          lexeme: v
+          span:
+            start: 33
+            end: 34
+          kind: Ident
+        value:
+          Lit:
+            Number: 10
+        type:
+          Ident:
+            lexeme: int
+            span:
+              start: 36
+              end: 39
+            kind: Ident
+    in: ~
+- Let:
+    kind:
+      Var:
+        ident:
+          lexeme: v
+          span:
+            start: 58
+            end: 59
+          kind: Ident
+        value:
+          Lit:
+            Bool: true
+        type:
+          Ident:
+            lexeme: bool
+            span:
+              start: 61
+              end: 65
+            kind: Ident
+    in: ~
+- Let:
+    kind:
+      Var:
+        ident:
+          lexeme: v
+          span:
+            start: 88
+            end: 89
+          kind: Ident
+        value:
+          Lit:
+            String: "\"test\""
+        type:
+          Ident:
+            lexeme: str
+            span:
+              start: 91
+              end: 94
+            kind: Ident
+    in: ~
+- Let:
+    kind:
+      Var:
+        ident:
+          lexeme: v
+          span:
+            start: 118
+            end: 119
+          kind: Ident
+        value:
+          Lit:
+            Record:
+              - ident:
+                  lexeme: x
+                  span:
+                    start: 139
+                    end: 140
+                  kind: Ident
+                value:
+                  Lit:
+                    Number: 10
+              - ident:
+                  lexeme: y
+                  span:
+                    start: 146
+                    end: 147
+                  kind: Ident
+                value:
+                  Lit:
+                    Number: 10
+        type:
+          Record:
+            - - lexeme: x
+                span:
+                  start: 122
+                  end: 123
+                kind: Ident
+              - Ident:
+                  lexeme: int
+                  span:
+                    start: 124
+                    end: 127
+                  kind: Ident
+            - - lexeme: y
+                span:
+                  start: 129
+                  end: 130
+                kind: Ident
+              - Ident:
+                  lexeme: int
+                  span:
+                    start: 131
+                    end: 134
+                  kind: Ident
+    in: ~
+- Let:
+    kind:
+      Func:
+        ident:
+          lexeme: fib
+          span:
+            start: 261
+            end: 264
+          kind: Ident
+        param:
+          - lexeme: n
+            span:
+              start: 265
+              end: 266
+            kind: Ident
+          - Ident:
+              lexeme: int
+              span:
+                start: 268
+                end: 271
+              kind: Ident
+        ret:
+          Ident:
+            lexeme: int
+            span:
+              start: 275
+              end: 278
+            kind: Ident
+        body:
+          If:
+            cond:
+              Binary:
+                op: LessThan
+                lhs:
+                  Use:
+                    ident:
+                      lexeme: n
+                      span:
+                        start: 287
+                        end: 288
+                      kind: Ident
+                rhs:
+                  Lit:
+                    Number: 2
+            then:
+              Use:
+                ident:
+                  lexeme: n
+                  span:
+                    start: 298
+                    end: 299
+                  kind: Ident
+            else:
+              Binary:
+                op: Mult
+                lhs:
+                  Use:
+                    ident:
+                      lexeme: n
+                      span:
+                        start: 308
+                        end: 309
+                      kind: Ident
+                rhs:
+                  Call:
+                    func:
+                      Use:
+                        ident:
+                          lexeme: fib
+                          span:
+                            start: 312
+                            end: 315
+                          kind: Ident
+                    arg:
+                      Binary:
+                        op: Sub
+                        lhs:
+                          Use:
+                            ident:
+                              lexeme: n
+                              span:
+                                start: 317
+                                end: 318
+                              kind: Ident
+                        rhs:
+                          Lit:
+                            Number: 1
+    in: ~
+- Call:
+    func:
+      Use:
+        ident:
+          lexeme: fib
+          span:
+            start: 351
+            end: 354
+          kind: Ident
+    arg:
+      Access:
+        target:
+          Use:
+            ident:
+              lexeme: v
+              span:
+                start: 356
+                end: 357
+              kind: Ident
+        field:
+          lexeme: x
+          span:
+            start: 358
+            end: 359
+          kind: Ident
+- Let:
+    kind:
+      Func:
+        ident:
+          lexeme: print_square
+          span:
+            start: 369
+            end: 381
+          kind: Ident
+        param:
+          - lexeme: n
+            span:
+              start: 382
+              end: 383
+            kind: Ident
+          - Ident:
+              lexeme: int
+              span:
+                start: 385
+                end: 388
+              kind: Ident
+        ret:
+          Ident:
+            lexeme: int
+            span:
+              start: 392
+              end: 395
+            kind: Ident
+        body:
+          Let:
+            kind:
+              Var:
+                ident:
+                  lexeme: r
+                  span:
+                    start: 405
+                    end: 406
+                  kind: Ident
+                value:
+                  Call:
+                    func:
+                      Use:
+                        ident:
+                          lexeme: intToStr
+                          span:
+                            start: 409
+                            end: 417
+                          kind: Ident
+                    arg:
+                      Binary:
+                        op: Mult
+                        lhs:
+                          Use:
+                            ident:
+                              lexeme: n
+                              span:
+                                start: 419
+                                end: 420
+                              kind: Ident
+                        rhs:
+                          Use:
+                            ident:
+                              lexeme: n
+                              span:
+                                start: 423
+                                end: 424
+                              kind: Ident
+                type: ~
+            in:
+              Use:
+                ident:
+                  lexeme: print
+                  span:
+                    start: 432
+                    end: 437
+                  kind: Ident
+    in: ~
+- Binary:
+    op: Add
+    lhs:
+      Binary:
+        op: Add
+        lhs:
+          Binary:
+            op: Add
+            lhs:
+              Binary:
+                op: Add
+                lhs:
+                  Use:
+                    ident:
+                      lexeme: n
+                      span:
+                        start: 438
+                        end: 439
+                      kind: Ident
+                rhs:
+                  Lit:
+                    String: "\" * \""
+            rhs:
+              Use:
+                ident:
+                  lexeme: n
+                  span:
+                    start: 450
+                    end: 451
+                  kind: Ident
+        rhs:
+          Lit:
+            String: "\" = \""
+    rhs:
+      Use:
+        ident:
+          lexeme: r
+          span:
+            start: 462
+            end: 463
+          kind: Ident
+

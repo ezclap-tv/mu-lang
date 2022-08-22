@@ -1,10 +1,11 @@
 use std::fmt;
 
 use logos::Span;
+use serde::{Deserialize, Serialize};
 
 use crate::lexer::{Token, TokenKind};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Error {
   MissingToken {
     expected: TokenKind,
@@ -16,7 +17,7 @@ pub enum Error {
   },
   InvalidNumber {
     token: Token<'static>,
-    inner: std::num::ParseIntError,
+    inner: String,
   },
   UnexpectedToken {
     token: Token<'static>,

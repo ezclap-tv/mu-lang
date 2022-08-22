@@ -1,3 +1,7 @@
+# type-system experiment
+
+## Overview
+
 version 1: no generics, no nullability, no nominal types
 
 ```rust
@@ -22,6 +26,12 @@ fib (v.x);
 
 let print_square n: int -> int =
   let r = intToStr (n * n) in
-  print n + " * " + n + " = " + r
+  print (n + " * " + n + " = " + r)
   ;
+```
+
+### Development
+
+```
+$ cargo install insta
 ```

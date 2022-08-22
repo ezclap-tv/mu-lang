@@ -3,6 +3,13 @@ name = "type-system"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "compiler"
+path = "src/lib.rs"
+
+[[bin]]
+name = "cli"
+path = "src/main.rs"
 
 [workspace]
 
@@ -14,6 +21,15 @@ thiserror = "1.0.32"
 ast2str = "1.4.1"
 structopt = "0.3.26"
 clap = { version = "3.2.17", features = ["derive"] }
+serde = { version = "1.0.144", features = ["derive"] }
+serde_yaml = "0.9.10"
 
 [dev-dependencies]
-pretty_assertions = "1.2.1"
+anyhow = "1.0.62"
+insta = { version = "1.19.0", features = ["yaml", "glob"] }
+
+[profile.dev.package.insta]
+opt-level = 3
+
+[profile.dev.package.similar]
+opt-level = 3

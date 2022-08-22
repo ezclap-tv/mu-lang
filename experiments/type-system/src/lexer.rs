@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 
-use ast2str::AstToStr;
 use logos::Logos;
 pub use logos::Span;
+use serde::{Deserialize, Serialize};
 
 pub struct Lexer<'a> {
   inner: logos::Lexer<'a, TokenKind>,
@@ -14,8 +14,12 @@ impl<'a> Lexer<'a> {
       inner: logos::Lexer::new(source),
     }
   }
+}
 
-  pub fn next(&mut self) -> Option<Token<'a>> {
+impl<'a> Iterator for Lexer<'a> {
+  type Item = Token<'a>;
+
+  fn next(&mut self) -> Option<Self::Item> {
     self
       .inner
       .next()
@@ -23,9 +27,8 @@ impl<'a> Lexer<'a> {
   }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, AstToStr)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Token<'a> {
-  #[forward]
   pub lexeme: Cow<'a, str>,
   pub span: Span,
   pub kind: TokenKind,
@@ -53,7 +56,7 @@ impl<'a> Token<'a> {
   }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Logos)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Logos, Serialize, Deserialize)]
 pub enum TokenKind {
   #[token("{")]
   LBrace,
@@ -142,55 +145,4 @@ pub enum TokenKind {
   Error,
 
   Eof,
-}
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  fn tokenize(source: &str) -> Vec<Token<'_>> {
-    let mut lex = Lexer::new(source);
-    let mut tokens = vec![];
-    while let Some(token) = lex.next() {
-      tokens.push(token);
-    }
-    tokens
-  }
-
-  #[test]
-  fn example() {
-    let source = r#"
-// variables
-let v = 10;
-
-let v: int = 10; // int
-let v: bool = true; /// bool
-let v: str = "test"; /// str
-let v: {x:int, y:int} = {x: 10, y: 10}; /// record
-
-// functions
-// single argument
-// parameter and return type annotations are required
-let fib n: int -> int =
-  if n < 2 then n
-  else n * fib (n - 1)
-  ;
-
-// function calls
-fib (v.x);
-
-let print_square n: int -> int =
-  let r = intToStr (n * n) in
-  print n + " * " + n + " = " + r
-  ;
-"#;
-    println!(
-      "{:#?}",
-      tokenize(source)
-        .into_iter()
-        .map(|t| t.kind)
-        .collect::<Vec<_>>()
-    );
-    //assert_eq!(tokenize(source), vec![]);
-  }
 }
