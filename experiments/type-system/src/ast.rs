@@ -60,7 +60,7 @@ pub struct If<'a> {
   pub cond: Box<Expr<'a>>,
   pub then: Box<Expr<'a>>,
   #[serde(rename = "else")]
-  pub else_: Box<Expr<'a>>,
+  pub else_: Option<Box<Expr<'a>>>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

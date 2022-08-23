@@ -97,8 +97,11 @@ impl<'a> Parser<'a> {
     let cond = Box::new(self.parse_expr()?);
     self.consume(TokenKind::Then)?;
     let then = Box::new(self.parse_expr()?);
-    self.consume(TokenKind::Else)?;
-    let else_ = Box::new(self.parse_expr()?);
+    let else_ = if self.match_(TokenKind::Else) {
+      Some(Box::new(self.parse_expr()?))
+    } else {
+      None
+    };
     Ok(Expr::If(If { cond, then, else_ }))
   }
 
@@ -228,6 +231,7 @@ impl<'a> Parser<'a> {
   }
 
   fn parse_unary_expr(&mut self) -> Result<Expr<'a>> {
+    // TODO: can easily overflow the stack here
     if self.match_any(&[TokenKind::Bang, TokenKind::Minus]) {
       Ok(Expr::Unary(Unary {
         op: match self.previous.kind {
