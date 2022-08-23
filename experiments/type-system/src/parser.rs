@@ -19,7 +19,7 @@ impl<'a> Parser<'a> {
     self.advance();
 
     while !self.done() {
-      match self.parse_expr() {
+      match self.parse_top_level_expr() {
         Ok(expr) => exprs.push(expr),
         Err(error) => {
           errors.push(error);
@@ -35,6 +35,12 @@ impl<'a> Parser<'a> {
     }
   }
 
+  fn parse_top_level_expr(&mut self) -> Result<Expr<'a>> {
+    let expr = self.parse_expr()?;
+    self.consume(TokenKind::Semicolon)?;
+    Ok(expr)
+  }
+
   fn parse_expr(&mut self) -> Result<Expr<'a>> {
     let expr = if self.match_(TokenKind::Let) {
       self.parse_let_expr()
@@ -43,7 +49,6 @@ impl<'a> Parser<'a> {
     } else {
       self.parse_simple_expr()
     };
-    self.skip(&[TokenKind::Semicolon]);
     expr
   }
 
@@ -400,14 +405,6 @@ impl<'a> Parser<'a> {
     kinds.iter().any(|k| self.check(*k))
   }
 
-  fn skip(&mut self, kinds: &[TokenKind]) {
-    loop {
-      if !self.match_any(kinds) {
-        return;
-      }
-    }
-  }
-
   fn sync(&mut self) {
     while !self.done() {
       match self.current.kind {
@@ -444,4 +441,26 @@ pub fn parse(source: &str) -> std::result::Result<Vec<Expr<'_>>, Vec<Error>> {
     eof,
   }
   .run()
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn isolated() {
+    let source = r#"
+    let v = 10;
+    let v: int = 10;
+    "#;
+
+    match parse(source) {
+      Ok(_) => {}
+      Err(errors) => {
+        let mut buf = String::new();
+        crate::error::report(source, &errors, &mut buf);
+        panic!("{buf}");
+      }
+    }
+  }
 }

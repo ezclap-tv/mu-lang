@@ -19,5 +19,5 @@ fib (v.x);
 
 let print_square n: int -> int =
   let r = intToStr (n * n) in
-  print n + " * " + n + " = " + r
+  print (n + " * " + n + " = " + r)
   ;

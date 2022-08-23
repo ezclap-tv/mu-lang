@@ -96,7 +96,7 @@ pub fn report(source: &str, errors: &Vec<Error>, mut to: impl std::fmt::Write) {
     Span { start, end }
   }
   fn get_highlight(pos: usize) -> String {
-    format!("{: >start$}", "^", start = pos + 1)
+    format!("{: >pos$}", "^")
   }
   fn get_relevant_span(error: &Error) -> Span {
     match error {
@@ -109,8 +109,8 @@ pub fn report(source: &str, errors: &Vec<Error>, mut to: impl std::fmt::Write) {
   for error in errors {
     let span = get_relevant_span(error);
     let line_span = find_line_from_span(source, span.clone());
-    let line = &source[line_span.clone()];
+    let line = source[line_span.clone()].trim();
     let highlight = get_highlight(span.start - line_span.start);
-    write!(to, "\n{error}\n{line}\n{highlight}").unwrap();
+    write!(to, "{error}:\n|  {line}\n|  {highlight}\n").unwrap();
   }
 }

@@ -19,7 +19,9 @@ fn tests() {
         if name.ends_with("-fail") {
           insta::assert_yaml_snapshot!(errors)
         } else {
-          panic!("{name} should have parsed sucessfully, but it failed")
+          let mut buf = String::new();
+          error::report(&source, &errors, &mut buf);
+          panic!("{name} should have parsed sucessfully, but it failed:\n{buf}")
         }
       }
     }

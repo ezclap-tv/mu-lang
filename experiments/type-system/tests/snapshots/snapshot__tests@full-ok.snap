@@ -313,53 +313,56 @@ expression: ast
                               kind: Ident
                 type: ~
             in:
-              Use:
-                ident:
-                  lexeme: print
-                  span:
-                    start: 432
-                    end: 437
-                  kind: Ident
-    in: ~
-- Binary:
-    op: Add
-    lhs:
-      Binary:
-        op: Add
-        lhs:
-          Binary:
-            op: Add
-            lhs:
-              Binary:
-                op: Add
-                lhs:
+              Call:
+                func:
                   Use:
                     ident:
-                      lexeme: n
+                      lexeme: print
                       span:
-                        start: 438
-                        end: 439
+                        start: 432
+                        end: 437
                       kind: Ident
-                rhs:
-                  Lit:
-                    String: "\" * \""
-            rhs:
-              Use:
-                ident:
-                  lexeme: n
-                  span:
-                    start: 450
-                    end: 451
-                  kind: Ident
-        rhs:
-          Lit:
-            String: "\" = \""
-    rhs:
-      Use:
-        ident:
-          lexeme: r
-          span:
-            start: 462
-            end: 463
-          kind: Ident
+                arg:
+                  Binary:
+                    op: Add
+                    lhs:
+                      Binary:
+                        op: Add
+                        lhs:
+                          Binary:
+                            op: Add
+                            lhs:
+                              Binary:
+                                op: Add
+                                lhs:
+                                  Use:
+                                    ident:
+                                      lexeme: n
+                                      span:
+                                        start: 439
+                                        end: 440
+                                      kind: Ident
+                                rhs:
+                                  Lit:
+                                    String: "\" * \""
+                            rhs:
+                              Use:
+                                ident:
+                                  lexeme: n
+                                  span:
+                                    start: 451
+                                    end: 452
+                                  kind: Ident
+                        rhs:
+                          Lit:
+                            String: "\" = \""
+                    rhs:
+                      Use:
+                        ident:
+                          lexeme: r
+                          span:
+                            start: 463
+                            end: 464
+                          kind: Ident
+    in: ~
 
