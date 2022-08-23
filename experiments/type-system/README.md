@@ -2,8 +2,6 @@
 
 ## Overview
 
-version 1: no generics, no nullability, no nominal types
-
 ```rust
 // variables
 let v = 10;
