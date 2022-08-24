@@ -21,3 +21,7 @@ let print_square n: int -> int =
   let r = intToStr (n * n) in
   print (n + " * " + n + " = " + r)
   ;
+
+let unwrap r: {v:int} -> int = r.v;
+
+print (unwrap {v:10});

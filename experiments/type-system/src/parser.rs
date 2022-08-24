@@ -253,7 +253,7 @@ impl<'a> Parser<'a> {
 
   fn parse_call_expr(&mut self) -> Result<Expr<'a>> {
     let mut expr = self.parse_primary_expr()?;
-    while self.match_any(&[TokenKind::Dot, TokenKind::LParen]) {
+    while self.match_any(&[TokenKind::Dot, TokenKind::LParen, TokenKind::LBrace]) {
       expr = match self.previous.kind {
         TokenKind::Dot => Expr::Access(Access {
           target: Box::new(expr),
@@ -262,6 +262,14 @@ impl<'a> Parser<'a> {
         TokenKind::LParen => {
           let arg = Box::new(self.parse_expr()?);
           self.consume(TokenKind::RParen)?;
+          Expr::Call(Call {
+            func: Box::new(expr),
+            arg,
+          })
+        }
+        TokenKind::LBrace => {
+          // `parse_record_expr` consumes the `RBrace`
+          let arg = Box::new(self.parse_record_expr()?);
           Expr::Call(Call {
             func: Box::new(expr),
             arg,

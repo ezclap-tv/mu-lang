@@ -11,7 +11,7 @@ let v = 10;
 let v: int = 10; // int
 let v: bool = true; /// bool
 let v: str = "test"; /// str
-let v: {x:int, y:int} = {x: 10, y: 10}; /// record
+let v: {x:int, y:int} = {x:10, y:10}; /// record
 let v: {} = {} /// unit (empty record)
 
 // functions
@@ -30,8 +30,6 @@ fib (v.x);
 
 mvp
 
-- function calls with records as arguments should not require parentheses (`print {x:10}`)
-- `=` instead of `:` for record fields
 - type checker
   - structural type comparison
   - unidirectional type inference

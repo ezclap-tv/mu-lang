@@ -365,4 +365,86 @@ expression: ast
                             end: 464
                           kind: Ident
     in: ~
+- Let:
+    kind:
+      Func:
+        ident:
+          lexeme: unwrap
+          span:
+            start: 478
+            end: 484
+          kind: Ident
+        param:
+          - lexeme: r
+            span:
+              start: 485
+              end: 486
+            kind: Ident
+          - Record:
+              - - lexeme: v
+                  span:
+                    start: 489
+                    end: 490
+                  kind: Ident
+                - Ident:
+                    lexeme: int
+                    span:
+                      start: 491
+                      end: 494
+                    kind: Ident
+        ret:
+          Ident:
+            lexeme: int
+            span:
+              start: 499
+              end: 502
+            kind: Ident
+        body:
+          Access:
+            target:
+              Use:
+                ident:
+                  lexeme: r
+                  span:
+                    start: 505
+                    end: 506
+                  kind: Ident
+            field:
+              lexeme: v
+              span:
+                start: 507
+                end: 508
+              kind: Ident
+    in: ~
+- Call:
+    func:
+      Use:
+        ident:
+          lexeme: print
+          span:
+            start: 513
+            end: 518
+          kind: Ident
+    arg:
+      Call:
+        func:
+          Use:
+            ident:
+              lexeme: unwrap
+              span:
+                start: 520
+                end: 526
+              kind: Ident
+        arg:
+          Lit:
+            Record:
+              - ident:
+                  lexeme: v
+                  span:
+                    start: 528
+                    end: 529
+                  kind: Ident
+                value:
+                  Lit:
+                    Number: 10
 
