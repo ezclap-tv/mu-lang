@@ -31,6 +31,7 @@ fib (v.x);
 mvp
 
 - function calls with records as arguments should not require parentheses (`print {x:10}`)
+- `=` instead of `:` for record fields
 - type checker
   - structural type comparison
   - unidirectional type inference
