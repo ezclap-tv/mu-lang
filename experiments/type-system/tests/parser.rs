@@ -27,7 +27,7 @@ macro_rules! assert_error {
       let source = $source;
       let name = stringify!($name);
       match parser::parse(&source) {
-        Ok(ast) => {
+        Ok(_) => {
           panic!("{name} should have failed to parse, but it was successful");
         }
         Err(errors) => {
@@ -100,3 +100,10 @@ false;
 v;
 (((v)));
 "#);
+
+assert_error!(top_level_without_semi
+r#"
+let x = 10
+let y = 5
+"#
+);
