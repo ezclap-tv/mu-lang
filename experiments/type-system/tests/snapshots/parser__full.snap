@@ -1,5 +1,5 @@
 ---
-source: tests/snapshot.rs
+source: tests/parser.rs
 expression: ast
 ---
 - Let:
@@ -22,8 +22,8 @@ expression: ast
         ident:
           lexeme: v
           span:
-            start: 33
-            end: 34
+            start: 31
+            end: 32
           kind: Ident
         value:
           Lit:
@@ -32,8 +32,8 @@ expression: ast
           Ident:
             lexeme: int
             span:
-              start: 36
-              end: 39
+              start: 34
+              end: 37
             kind: Ident
     in: ~
 - Let:
@@ -42,8 +42,8 @@ expression: ast
         ident:
           lexeme: v
           span:
-            start: 58
-            end: 59
+            start: 55
+            end: 56
           kind: Ident
         value:
           Lit:
@@ -52,8 +52,8 @@ expression: ast
           Ident:
             lexeme: bool
             span:
-              start: 61
-              end: 65
+              start: 58
+              end: 62
             kind: Ident
     in: ~
 - Let:
@@ -62,8 +62,8 @@ expression: ast
         ident:
           lexeme: v
           span:
-            start: 88
-            end: 89
+            start: 84
+            end: 85
           kind: Ident
         value:
           Lit:
@@ -72,8 +72,8 @@ expression: ast
           Ident:
             lexeme: str
             span:
-              start: 91
-              end: 94
+              start: 87
+              end: 90
             kind: Ident
     in: ~
 - Let:
@@ -82,8 +82,8 @@ expression: ast
         ident:
           lexeme: v
           span:
-            start: 118
-            end: 119
+            start: 113
+            end: 114
           kind: Ident
         value:
           Lit:
@@ -91,8 +91,8 @@ expression: ast
               - ident:
                   lexeme: x
                   span:
-                    start: 139
-                    end: 140
+                    start: 134
+                    end: 135
                   kind: Ident
                 value:
                   Lit:
@@ -100,8 +100,8 @@ expression: ast
               - ident:
                   lexeme: y
                   span:
-                    start: 146
-                    end: 147
+                    start: 141
+                    end: 142
                   kind: Ident
                 value:
                   Lit:
@@ -110,25 +110,25 @@ expression: ast
           Record:
             - - lexeme: x
                 span:
-                  start: 122
-                  end: 123
+                  start: 117
+                  end: 118
                 kind: Ident
               - Ident:
                   lexeme: int
                   span:
-                    start: 124
-                    end: 127
+                    start: 119
+                    end: 122
                   kind: Ident
             - - lexeme: y
                 span:
-                  start: 129
-                  end: 130
+                  start: 124
+                  end: 125
                 kind: Ident
               - Ident:
                   lexeme: int
                   span:
-                    start: 131
-                    end: 134
+                    start: 126
+                    end: 129
                   kind: Ident
     in: ~
 - Let:
@@ -137,27 +137,27 @@ expression: ast
         ident:
           lexeme: fib
           span:
-            start: 261
-            end: 264
+            start: 251
+            end: 254
           kind: Ident
         param:
           - lexeme: n
             span:
-              start: 265
-              end: 266
+              start: 255
+              end: 256
             kind: Ident
           - Ident:
               lexeme: int
               span:
-                start: 268
-                end: 271
+                start: 258
+                end: 261
               kind: Ident
         ret:
           Ident:
             lexeme: int
             span:
-              start: 275
-              end: 278
+              start: 265
+              end: 268
             kind: Ident
         body:
           If:
@@ -169,8 +169,8 @@ expression: ast
                     ident:
                       lexeme: n
                       span:
-                        start: 287
-                        end: 288
+                        start: 276
+                        end: 277
                       kind: Ident
                 rhs:
                   Lit:
@@ -180,8 +180,8 @@ expression: ast
                 ident:
                   lexeme: n
                   span:
-                    start: 298
-                    end: 299
+                    start: 287
+                    end: 288
                   kind: Ident
             else:
               Binary:
@@ -191,8 +191,8 @@ expression: ast
                     ident:
                       lexeme: n
                       span:
-                        start: 308
-                        end: 309
+                        start: 296
+                        end: 297
                       kind: Ident
                 rhs:
                   Call:
@@ -201,8 +201,8 @@ expression: ast
                         ident:
                           lexeme: fib
                           span:
-                            start: 312
-                            end: 315
+                            start: 300
+                            end: 303
                           kind: Ident
                     arg:
                       Binary:
@@ -212,8 +212,8 @@ expression: ast
                             ident:
                               lexeme: n
                               span:
-                                start: 317
-                                end: 318
+                                start: 305
+                                end: 306
                               kind: Ident
                         rhs:
                           Lit:
@@ -225,8 +225,8 @@ expression: ast
         ident:
           lexeme: fib
           span:
-            start: 351
-            end: 354
+            start: 335
+            end: 338
           kind: Ident
     arg:
       Access:
@@ -235,14 +235,14 @@ expression: ast
             ident:
               lexeme: v
               span:
-                start: 356
-                end: 357
+                start: 340
+                end: 341
               kind: Ident
         field:
           lexeme: x
           span:
-            start: 358
-            end: 359
+            start: 342
+            end: 343
           kind: Ident
 - Let:
     kind:
@@ -250,27 +250,27 @@ expression: ast
         ident:
           lexeme: print_square
           span:
-            start: 369
-            end: 381
+            start: 351
+            end: 363
           kind: Ident
         param:
           - lexeme: n
             span:
-              start: 382
-              end: 383
+              start: 364
+              end: 365
             kind: Ident
           - Ident:
               lexeme: int
               span:
-                start: 385
-                end: 388
+                start: 367
+                end: 370
               kind: Ident
         ret:
           Ident:
             lexeme: int
             span:
-              start: 392
-              end: 395
+              start: 374
+              end: 377
             kind: Ident
         body:
           Let:
@@ -279,8 +279,8 @@ expression: ast
                 ident:
                   lexeme: r
                   span:
-                    start: 405
-                    end: 406
+                    start: 386
+                    end: 387
                   kind: Ident
                 value:
                   Call:
@@ -289,8 +289,8 @@ expression: ast
                         ident:
                           lexeme: intToStr
                           span:
-                            start: 409
-                            end: 417
+                            start: 390
+                            end: 398
                           kind: Ident
                     arg:
                       Binary:
@@ -300,16 +300,16 @@ expression: ast
                             ident:
                               lexeme: n
                               span:
-                                start: 419
-                                end: 420
+                                start: 400
+                                end: 401
                               kind: Ident
                         rhs:
                           Use:
                             ident:
                               lexeme: n
                               span:
-                                start: 423
-                                end: 424
+                                start: 404
+                                end: 405
                               kind: Ident
                 type: ~
             in:
@@ -319,8 +319,8 @@ expression: ast
                     ident:
                       lexeme: print
                       span:
-                        start: 432
-                        end: 437
+                        start: 412
+                        end: 417
                       kind: Ident
                 arg:
                   Binary:
@@ -339,8 +339,8 @@ expression: ast
                                     ident:
                                       lexeme: n
                                       span:
-                                        start: 439
-                                        end: 440
+                                        start: 419
+                                        end: 420
                                       kind: Ident
                                 rhs:
                                   Lit:
@@ -350,8 +350,8 @@ expression: ast
                                 ident:
                                   lexeme: n
                                   span:
-                                    start: 451
-                                    end: 452
+                                    start: 431
+                                    end: 432
                                   kind: Ident
                         rhs:
                           Lit:
@@ -361,8 +361,8 @@ expression: ast
                         ident:
                           lexeme: r
                           span:
-                            start: 463
-                            end: 464
+                            start: 443
+                            end: 444
                           kind: Ident
     in: ~
 - Let:
@@ -371,33 +371,33 @@ expression: ast
         ident:
           lexeme: unwrap
           span:
-            start: 478
-            end: 484
+            start: 455
+            end: 461
           kind: Ident
         param:
           - lexeme: r
             span:
-              start: 485
-              end: 486
+              start: 462
+              end: 463
             kind: Ident
           - Record:
               - - lexeme: v
                   span:
-                    start: 489
-                    end: 490
+                    start: 466
+                    end: 467
                   kind: Ident
                 - Ident:
                     lexeme: int
                     span:
-                      start: 491
-                      end: 494
+                      start: 468
+                      end: 471
                     kind: Ident
         ret:
           Ident:
             lexeme: int
             span:
-              start: 499
-              end: 502
+              start: 476
+              end: 479
             kind: Ident
         body:
           Access:
@@ -406,14 +406,14 @@ expression: ast
                 ident:
                   lexeme: r
                   span:
-                    start: 505
-                    end: 506
+                    start: 482
+                    end: 483
                   kind: Ident
             field:
               lexeme: v
               span:
-                start: 507
-                end: 508
+                start: 484
+                end: 485
               kind: Ident
     in: ~
 - Call:
@@ -422,8 +422,8 @@ expression: ast
         ident:
           lexeme: print
           span:
-            start: 513
-            end: 518
+            start: 488
+            end: 493
           kind: Ident
     arg:
       Call:
@@ -432,8 +432,8 @@ expression: ast
             ident:
               lexeme: unwrap
               span:
-                start: 520
-                end: 526
+                start: 495
+                end: 501
               kind: Ident
         arg:
           Lit:
@@ -441,8 +441,8 @@ expression: ast
               - ident:
                   lexeme: v
                   span:
-                    start: 528
-                    end: 529
+                    start: 503
+                    end: 504
                   kind: Ident
                 value:
                   Lit:

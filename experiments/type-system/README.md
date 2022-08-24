@@ -30,6 +30,7 @@ fib (v.x);
 
 mvp
 
+- grouping type (`(int -> int) -> int`, `int -> (int -> int)`)
 - type checker
   - structural type comparison
   - unidirectional type inference
@@ -41,13 +42,13 @@ post-mvp
 - optional return types
 - lambdas (`fn v = v`)
 - tuples using comma operator (`print (0, 1)`, `let tuple: (int, int) = 0, 1`) + tuple types
-- grouping type (`(int -> int) -> int`, `int -> (int -> int)`)
+- generics (`'t`), traits (`trait Eq = ...`), impls (`def Eq for T`, only concrete types)
 - lists
 - nominal types (`class`)
+- exceptions
 - tagged unions + pattern matching
 - reference types + mutability
 - expression chaining (side effects)
-- generics, traits, impls
 - modules
 - host interop
 - FFI (?)

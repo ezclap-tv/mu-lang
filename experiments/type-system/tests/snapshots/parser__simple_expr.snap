@@ -1,0 +1,432 @@
+---
+source: tests/parser.rs
+expression: ast
+---
+- Binary:
+    op: Or
+    lhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 1
+            end: 2
+          kind: Ident
+    rhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 6
+            end: 7
+          kind: Ident
+- Binary:
+    op: And
+    lhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 9
+            end: 10
+          kind: Ident
+    rhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 14
+            end: 15
+          kind: Ident
+- Binary:
+    op: Equal
+    lhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 17
+            end: 18
+          kind: Ident
+    rhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 22
+            end: 23
+          kind: Ident
+- Binary:
+    op: NotEqual
+    lhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 25
+            end: 26
+          kind: Ident
+    rhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 30
+            end: 31
+          kind: Ident
+- Binary:
+    op: LessThan
+    lhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 33
+            end: 34
+          kind: Ident
+    rhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 37
+            end: 38
+          kind: Ident
+- Binary:
+    op: GreaterThan
+    lhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 40
+            end: 41
+          kind: Ident
+    rhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 44
+            end: 45
+          kind: Ident
+- Binary:
+    op: LessEqual
+    lhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 47
+            end: 48
+          kind: Ident
+    rhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 52
+            end: 53
+          kind: Ident
+- Binary:
+    op: GreaterEqual
+    lhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 55
+            end: 56
+          kind: Ident
+    rhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 60
+            end: 61
+          kind: Ident
+- Binary:
+    op: Add
+    lhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 63
+            end: 64
+          kind: Ident
+    rhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 67
+            end: 68
+          kind: Ident
+- Binary:
+    op: Sub
+    lhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 70
+            end: 71
+          kind: Ident
+    rhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 74
+            end: 75
+          kind: Ident
+- Binary:
+    op: Mult
+    lhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 77
+            end: 78
+          kind: Ident
+    rhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 81
+            end: 82
+          kind: Ident
+- Binary:
+    op: Div
+    lhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 84
+            end: 85
+          kind: Ident
+    rhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 88
+            end: 89
+          kind: Ident
+- Binary:
+    op: Rem
+    lhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 91
+            end: 92
+          kind: Ident
+    rhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 95
+            end: 96
+          kind: Ident
+- Binary:
+    op: Power
+    lhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 98
+            end: 99
+          kind: Ident
+    rhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 103
+            end: 104
+          kind: Ident
+- Unary:
+    op: Negate
+    rhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 107
+            end: 108
+          kind: Ident
+- Unary:
+    op: Not
+    rhs:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 111
+            end: 112
+          kind: Ident
+- Access:
+    target:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 114
+            end: 115
+          kind: Ident
+    field:
+      lexeme: f
+      span:
+        start: 116
+        end: 117
+      kind: Ident
+- Call:
+    func:
+      Use:
+        ident:
+          lexeme: f
+          span:
+            start: 119
+            end: 120
+          kind: Ident
+    arg:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 122
+            end: 123
+          kind: Ident
+- Call:
+    func:
+      Use:
+        ident:
+          lexeme: f
+          span:
+            start: 126
+            end: 127
+          kind: Ident
+    arg:
+      Lit:
+        Record:
+          - ident:
+              lexeme: v
+              span:
+                start: 129
+                end: 130
+              kind: Ident
+            value:
+              Use:
+                ident:
+                  lexeme: v
+                  span:
+                    start: 131
+                    end: 132
+                  kind: Ident
+- Call:
+    func:
+      Access:
+        target:
+          Use:
+            ident:
+              lexeme: v
+              span:
+                start: 135
+                end: 136
+              kind: Ident
+        field:
+          lexeme: f
+          span:
+            start: 137
+            end: 138
+          kind: Ident
+    arg:
+      Use:
+        ident:
+          lexeme: v
+          span:
+            start: 140
+            end: 141
+          kind: Ident
+- Call:
+    func:
+      Access:
+        target:
+          Use:
+            ident:
+              lexeme: v
+              span:
+                start: 144
+                end: 145
+              kind: Ident
+        field:
+          lexeme: f
+          span:
+            start: 146
+            end: 147
+          kind: Ident
+    arg:
+      Lit:
+        Record:
+          - ident:
+              lexeme: v
+              span:
+                start: 149
+                end: 150
+              kind: Ident
+            value:
+              Use:
+                ident:
+                  lexeme: v
+                  span:
+                    start: 151
+                    end: 152
+                  kind: Ident
+- Lit:
+    Number: 10
+- Lit:
+    Bool: true
+- Lit:
+    Bool: false
+- Lit:
+    String: "\"test\""
+- Lit:
+    Record:
+      - ident:
+          lexeme: v
+          span:
+            start: 181
+            end: 182
+          kind: Ident
+        value:
+          Use:
+            ident:
+              lexeme: v
+              span:
+                start: 183
+                end: 184
+              kind: Ident
+- Use:
+    ident:
+      lexeme: v
+      span:
+        start: 187
+        end: 188
+      kind: Ident
+- Use:
+    ident:
+      lexeme: v
+      span:
+        start: 193
+        end: 194
+      kind: Ident
+
