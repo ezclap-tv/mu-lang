@@ -108,7 +108,6 @@ pub struct Unary<'a> {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum UnaryOp {
-  Not,
   Negate,
 }
 

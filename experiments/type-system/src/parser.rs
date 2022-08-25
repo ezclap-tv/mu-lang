@@ -244,18 +244,30 @@ impl<'a> Parser<'a> {
   }
 
   fn parse_prefix_expr(&mut self) -> Result<Expr<'a>> {
-    // TODO: can easily overflow the stack here
-    if self.bump_for(&[TokenKind::Bang, TokenKind::Minus]) {
-      Ok(Expr::Unary(Unary {
-        op: match self.previous.kind {
-          TokenKind::Bang => UnaryOp::Not,
-          TokenKind::Minus => UnaryOp::Negate,
-          _ => unreachable!(),
-        },
-        rhs: Box::new(self.parse_prefix_expr()?),
-      }))
+    if self.bump_if(TokenKind::Tilde) {
+      self.parse_negate_expr()
     } else {
       self.parse_postfix_expr()
+    }
+  }
+
+  fn parse_negate_expr(&mut self) -> Result<Expr<'a>> {
+    // `1` because we've already parsed the first `~`
+    let mut n = 1;
+    while self.bump_if(TokenKind::Tilde) {
+      n += 1;
+    }
+    let rhs = self.parse_postfix_expr()?;
+
+    if n % 2 == 0 {
+      // `N` negations cancel out for any even `N`
+      Ok(rhs)
+    } else {
+      // `N` negations are equal to 1 negation for any odd `N`
+      Ok(Expr::Unary(Unary {
+        op: UnaryOp::Negate,
+        rhs: Box::new(rhs),
+      }))
     }
   }
 

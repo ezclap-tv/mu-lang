@@ -94,6 +94,8 @@ pub enum TokenKind {
   Percent,
   #[token("!")]
   Bang,
+  #[token("~")]
+  Tilde,
   #[token("<")]
   Less,
   #[token(">")]
