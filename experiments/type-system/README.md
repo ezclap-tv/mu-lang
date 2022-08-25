@@ -30,7 +30,6 @@ fib (v.x);
 
 mvp
 
-- grouping type (`(int -> int) -> int`, `int -> (int -> int)`)
 - type checker
   - structural type comparison
   - unidirectional type inference
