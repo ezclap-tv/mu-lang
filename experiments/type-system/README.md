@@ -38,6 +38,7 @@ mvp
 
 post-mvp
 
+- integrate `codespan-reporting`
 - function types `T -> T`
 - optional return types
 - lambdas (`fn v = v`)

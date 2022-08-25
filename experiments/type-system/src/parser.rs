@@ -16,7 +16,7 @@ impl<'a> Parser<'a> {
     let mut exprs = vec![];
     let mut errors = vec![];
 
-    self.advance();
+    self.bump();
 
     while !self.done() {
       match self.parse_top_level_expr() {
@@ -37,14 +37,14 @@ impl<'a> Parser<'a> {
 
   fn parse_top_level_expr(&mut self) -> Result<Expr<'a>> {
     let expr = self.parse_expr()?;
-    self.consume(TokenKind::Semicolon)?;
+    self.expect(TokenKind::Semicolon)?;
     Ok(expr)
   }
 
   fn parse_expr(&mut self) -> Result<Expr<'a>> {
-    let expr = if self.match_(TokenKind::Let) {
+    let expr = if self.bump_if(TokenKind::Let) {
       self.parse_let_expr()
-    } else if self.match_(TokenKind::If) {
+    } else if self.bump_if(TokenKind::If) {
       self.parse_if_expr()
     } else {
       self.parse_simple_expr()
@@ -53,15 +53,15 @@ impl<'a> Parser<'a> {
   }
 
   fn parse_let_expr(&mut self) -> Result<Expr<'a>> {
-    let ident = self.consume(TokenKind::Ident)?;
+    let ident = self.expect(TokenKind::Ident)?;
 
-    let kind = if self.match_(TokenKind::Ident) {
+    let kind = if self.bump_if(TokenKind::Ident) {
       self.parse_let_func_expr(ident)?
     } else {
       self.parse_let_var_expr(ident)?
     };
 
-    let in_ = if self.match_(TokenKind::In) {
+    let in_ = if self.bump_if(TokenKind::In) {
       Some(Box::new(self.parse_expr()?))
     } else {
       None
@@ -74,13 +74,13 @@ impl<'a> Parser<'a> {
     // function
     let param = {
       let ident = self.previous.clone();
-      self.consume(TokenKind::Colon)?;
+      self.expect(TokenKind::Colon)?;
       let type_ = self.parse_type()?;
       (ident, type_)
     };
-    self.consume(TokenKind::Arrow)?;
+    self.expect(TokenKind::Arrow)?;
     let ret = self.parse_type()?;
-    self.consume(TokenKind::Equal)?;
+    self.expect(TokenKind::Equal)?;
     let body = Box::new(self.parse_expr()?);
     Ok(LetKind::Func(Func {
       ident,
@@ -91,13 +91,13 @@ impl<'a> Parser<'a> {
   }
 
   fn parse_let_var_expr(&mut self, ident: Token<'a>) -> Result<LetKind<'a>> {
-    let type_ = if self.match_(TokenKind::Colon) {
+    let type_ = if self.bump_if(TokenKind::Colon) {
       Some(self.parse_type()?)
     } else {
       None
     };
     // variable
-    self.consume(TokenKind::Equal)?;
+    self.expect(TokenKind::Equal)?;
     let value = Box::new(self.parse_expr()?);
     Ok(LetKind::Var(Var {
       ident,
@@ -108,9 +108,9 @@ impl<'a> Parser<'a> {
 
   fn parse_if_expr(&mut self) -> Result<Expr<'a>> {
     let cond = Box::new(self.parse_expr()?);
-    self.consume(TokenKind::Then)?;
+    self.expect(TokenKind::Then)?;
     let then = Box::new(self.parse_expr()?);
-    let else_ = if self.match_(TokenKind::Else) {
+    let else_ = if self.bump_if(TokenKind::Else) {
       Some(Box::new(self.parse_expr()?))
     } else {
       None
@@ -137,7 +137,7 @@ impl<'a> Parser<'a> {
 
   fn parse_or_expr(&mut self) -> Result<Expr<'a>> {
     let mut expr = self.parse_and_expr()?;
-    while self.match_(TokenKind::Or) {
+    while self.bump_if(TokenKind::Or) {
       expr = Expr::Binary(Binary {
         op: BinaryOp::Or,
         lhs: Box::new(expr),
@@ -149,7 +149,7 @@ impl<'a> Parser<'a> {
 
   fn parse_and_expr(&mut self) -> Result<Expr<'a>> {
     let mut expr = self.parse_eq_expr()?;
-    while self.match_(TokenKind::And) {
+    while self.bump_if(TokenKind::And) {
       expr = Expr::Binary(Binary {
         op: BinaryOp::And,
         lhs: Box::new(expr),
@@ -161,7 +161,7 @@ impl<'a> Parser<'a> {
 
   fn parse_eq_expr(&mut self) -> Result<Expr<'a>> {
     let mut expr = self.parse_comp_expr()?;
-    while self.match_any(&[TokenKind::EqualEqual, TokenKind::BangEqual]) {
+    while self.bump_for(&[TokenKind::EqualEqual, TokenKind::BangEqual]) {
       expr = Expr::Binary(Binary {
         op: match self.previous.kind {
           TokenKind::EqualEqual => BinaryOp::Equal,
@@ -177,7 +177,7 @@ impl<'a> Parser<'a> {
 
   fn parse_comp_expr(&mut self) -> Result<Expr<'a>> {
     let mut expr = self.parse_term_expr()?;
-    while self.match_any(&[
+    while self.bump_for(&[
       TokenKind::More,
       TokenKind::Less,
       TokenKind::MoreEqual,
@@ -200,7 +200,7 @@ impl<'a> Parser<'a> {
 
   fn parse_term_expr(&mut self) -> Result<Expr<'a>> {
     let mut expr = self.parse_factor_expr()?;
-    while self.match_any(&[TokenKind::Plus, TokenKind::Minus]) {
+    while self.bump_for(&[TokenKind::Plus, TokenKind::Minus]) {
       expr = Expr::Binary(Binary {
         op: match self.previous.kind {
           TokenKind::Plus => BinaryOp::Add,
@@ -216,7 +216,7 @@ impl<'a> Parser<'a> {
 
   fn parse_factor_expr(&mut self) -> Result<Expr<'a>> {
     let mut expr = self.parse_power_expr()?;
-    while self.match_any(&[TokenKind::Star, TokenKind::Slash, TokenKind::Percent]) {
+    while self.bump_for(&[TokenKind::Star, TokenKind::Slash, TokenKind::Percent]) {
       expr = Expr::Binary(Binary {
         op: match self.previous.kind {
           TokenKind::Star => BinaryOp::Mult,
@@ -233,7 +233,7 @@ impl<'a> Parser<'a> {
 
   fn parse_power_expr(&mut self) -> Result<Expr<'a>> {
     let mut expr = self.parse_prefix_expr()?;
-    while self.match_any(&[TokenKind::Power]) {
+    while self.bump_for(&[TokenKind::Power]) {
       expr = Expr::Binary(Binary {
         op: BinaryOp::Power,
         lhs: Box::new(expr),
@@ -245,7 +245,7 @@ impl<'a> Parser<'a> {
 
   fn parse_prefix_expr(&mut self) -> Result<Expr<'a>> {
     // TODO: can easily overflow the stack here
-    if self.match_any(&[TokenKind::Bang, TokenKind::Minus]) {
+    if self.bump_for(&[TokenKind::Bang, TokenKind::Minus]) {
       Ok(Expr::Unary(Unary {
         op: match self.previous.kind {
           TokenKind::Bang => UnaryOp::Not,
@@ -261,7 +261,7 @@ impl<'a> Parser<'a> {
 
   fn parse_postfix_expr(&mut self) -> Result<Expr<'a>> {
     let mut expr = self.parse_primary_expr()?;
-    while self.match_any(&[TokenKind::Dot, TokenKind::LParen, TokenKind::LBrace]) {
+    while self.bump_for(&[TokenKind::Dot, TokenKind::LParen, TokenKind::LBrace]) {
       expr = match self.previous.kind {
         TokenKind::Dot => self.parse_access_expr(expr)?,
         TokenKind::LParen => self.parse_call_expr(expr)?,
@@ -275,13 +275,13 @@ impl<'a> Parser<'a> {
   fn parse_access_expr(&mut self, prev: Expr<'a>) -> Result<Expr<'a>> {
     Ok(Expr::Access(Access {
       target: Box::new(prev),
-      field: self.consume(TokenKind::Ident)?,
+      field: self.expect(TokenKind::Ident)?,
     }))
   }
 
   fn parse_call_expr(&mut self, prev: Expr<'a>) -> Result<Expr<'a>> {
     let arg = Box::new(self.parse_expr()?);
-    self.consume(TokenKind::RParen)?;
+    self.expect(TokenKind::RParen)?;
     Ok(Expr::Call(Call {
       func: Box::new(prev),
       arg,
@@ -298,20 +298,20 @@ impl<'a> Parser<'a> {
   }
 
   fn parse_primary_expr(&mut self) -> Result<Expr<'a>> {
-    if self.match_(TokenKind::Integer) {
+    if self.bump_if(TokenKind::Integer) {
       self.parse_int_expr()
-    } else if self.match_(TokenKind::Bool) {
+    } else if self.bump_if(TokenKind::Bool) {
       self.parse_bool_expr()
-    } else if self.match_(TokenKind::String) {
+    } else if self.bump_if(TokenKind::String) {
       self.parse_str_expr()
-    } else if self.match_(TokenKind::LBrace) {
+    } else if self.bump_if(TokenKind::LBrace) {
       self.parse_record_expr()
-    } else if self.match_(TokenKind::Ident) {
+    } else if self.bump_if(TokenKind::Ident) {
       self.parse_use_expr()
-    } else if self.match_(TokenKind::LParen) {
+    } else if self.bump_if(TokenKind::LParen) {
       self.parse_group_expr()
     } else {
-      self.advance();
+      self.bump();
       Err(Error::UnexpectedToken {
         token: self.previous.clone().into_static(),
       })
@@ -350,43 +350,43 @@ impl<'a> Parser<'a> {
 
   fn parse_record_expr(&mut self) -> Result<Expr<'a>> {
     let mut fields = vec![];
-    if !self.check(TokenKind::RBrace) {
-      let ident = self.consume(TokenKind::Ident)?;
-      self.consume(TokenKind::Colon)?;
+    if !self.check_if(TokenKind::RBrace) {
+      let ident = self.expect(TokenKind::Ident)?;
+      self.expect(TokenKind::Colon)?;
       let value = Box::new(self.parse_expr()?);
       fields.push(Field { ident, value });
-      while self.match_(TokenKind::Comma) {
-        let ident = self.consume(TokenKind::Ident)?;
-        self.consume(TokenKind::Colon)?;
+      while self.bump_if(TokenKind::Comma) {
+        let ident = self.expect(TokenKind::Ident)?;
+        self.expect(TokenKind::Colon)?;
         let value = Box::new(self.parse_expr()?);
         fields.push(Field { ident, value })
       }
     }
-    self.consume(TokenKind::RBrace)?;
+    self.expect(TokenKind::RBrace)?;
     Ok(Expr::Lit(Lit::Record(fields)))
   }
 
   fn parse_group_expr(&mut self) -> Result<Expr<'a>> {
     // count parentheses to prevent recursion problems
     let mut n = 1;
-    while self.match_(TokenKind::LParen) {
+    while self.bump_if(TokenKind::LParen) {
       n += 1;
     }
     let expr = self.parse_expr()?;
     // consume all closing parentheses
     for _ in 0..n {
-      self.consume(TokenKind::RParen)?;
+      self.expect(TokenKind::RParen)?;
     }
     Ok(expr)
   }
 
   fn parse_type(&mut self) -> Result<Type<'a>> {
-    if self.match_(TokenKind::LBrace) {
+    if self.bump_if(TokenKind::LBrace) {
       self.parse_record_type()
-    } else if self.match_(TokenKind::Ident) {
+    } else if self.bump_if(TokenKind::Ident) {
       self.parse_use_type()
     } else {
-      self.advance();
+      self.bump();
       Err(Error::UnexpectedToken {
         token: self.previous.clone().into_static(),
       })
@@ -395,19 +395,19 @@ impl<'a> Parser<'a> {
 
   fn parse_record_type(&mut self) -> Result<Type<'a>> {
     let mut fields = vec![];
-    if !self.check(TokenKind::RBrace) {
-      let ident = self.consume(TokenKind::Ident)?;
-      self.consume(TokenKind::Colon)?;
+    if !self.check_if(TokenKind::RBrace) {
+      let ident = self.expect(TokenKind::Ident)?;
+      self.expect(TokenKind::Colon)?;
       let value = Box::new(self.parse_type()?);
       fields.push((ident, value));
-      while self.match_(TokenKind::Comma) {
-        let ident = self.consume(TokenKind::Ident)?;
-        self.consume(TokenKind::Colon)?;
+      while self.bump_if(TokenKind::Comma) {
+        let ident = self.expect(TokenKind::Ident)?;
+        self.expect(TokenKind::Colon)?;
         let value = Box::new(self.parse_type()?);
         fields.push((ident, value))
       }
     }
-    self.consume(TokenKind::RBrace)?;
+    self.expect(TokenKind::RBrace)?;
     Ok(Type::Record(fields))
   }
 
@@ -416,9 +416,11 @@ impl<'a> Parser<'a> {
     Ok(Type::Ident(ident))
   }
 
-  fn consume(&mut self, kind: TokenKind) -> Result<Token<'a>> {
-    if self.check(kind) {
-      Ok(self.advance())
+  // utilities
+
+  fn expect(&mut self, kind: TokenKind) -> Result<Token<'a>> {
+    if self.check_if(kind) {
+      Ok(self.bump())
     } else {
       Err(Error::MissingToken {
         expected: kind,
@@ -427,43 +429,33 @@ impl<'a> Parser<'a> {
     }
   }
 
-  fn match_(&mut self, kind: TokenKind) -> bool {
-    if self.check(kind) {
-      self.advance();
+  fn bump_if(&mut self, kind: TokenKind) -> bool {
+    if self.check_if(kind) {
+      self.bump();
       true
     } else {
       false
     }
   }
 
-  fn match_any(&mut self, kinds: &[TokenKind]) -> bool {
-    if self.check_any(kinds) {
-      self.advance();
+  fn bump_for(&mut self, kinds: &[TokenKind]) -> bool {
+    if self.check_for(kinds) {
+      self.bump();
       true
     } else {
       false
     }
   }
 
-  fn check(&mut self, kind: TokenKind) -> bool {
+  fn check_if(&mut self, kind: TokenKind) -> bool {
     discriminant(&self.current.kind) == discriminant(&kind)
   }
 
-  fn check_any(&mut self, kinds: &[TokenKind]) -> bool {
-    kinds.iter().any(|k| self.check(*k))
+  fn check_for(&mut self, kinds: &[TokenKind]) -> bool {
+    kinds.iter().any(|k| self.check_if(*k))
   }
 
-  fn sync(&mut self) {
-    while !self.done() {
-      match self.current.kind {
-        TokenKind::Let => return,
-        TokenKind::If => return,
-        _ => self.advance(),
-      };
-    }
-  }
-
-  fn advance(&mut self) -> Token<'a> {
+  fn bump(&mut self) -> Token<'a> {
     std::mem::swap(&mut self.previous, &mut self.current);
     self.current = self.lexer.next().unwrap_or_else(|| self.eof.clone());
     self.previous.clone()
@@ -471,6 +463,16 @@ impl<'a> Parser<'a> {
 
   fn done(&self) -> bool {
     self.current.kind == TokenKind::Eof
+  }
+
+  fn sync(&mut self) {
+    while !self.done() {
+      match self.current.kind {
+        TokenKind::Let => return,
+        TokenKind::If => return,
+        _ => self.bump(),
+      };
+    }
   }
 }
 
