@@ -385,6 +385,8 @@ impl<'a> Parser<'a> {
       self.parse_record_type()
     } else if self.bump_if(TokenKind::Ident) {
       self.parse_use_type()
+    } else if self.bump_if(TokenKind::LParen) {
+      self.parse_group_type()
     } else {
       self.bump();
       Err(Error::UnexpectedToken {
@@ -398,13 +400,13 @@ impl<'a> Parser<'a> {
     if !self.check_if(TokenKind::RBrace) {
       let ident = self.expect(TokenKind::Ident)?;
       self.expect(TokenKind::Colon)?;
-      let value = Box::new(self.parse_type()?);
-      fields.push((ident, value));
+      let ty = Box::new(self.parse_type()?);
+      fields.push((ident, ty));
       while self.bump_if(TokenKind::Comma) {
         let ident = self.expect(TokenKind::Ident)?;
         self.expect(TokenKind::Colon)?;
-        let value = Box::new(self.parse_type()?);
-        fields.push((ident, value))
+        let ty = Box::new(self.parse_type()?);
+        fields.push((ident, ty))
       }
     }
     self.expect(TokenKind::RBrace)?;
@@ -414,6 +416,20 @@ impl<'a> Parser<'a> {
   fn parse_use_type(&mut self) -> Result<Type<'a>> {
     let ident = self.previous.clone();
     Ok(Type::Ident(ident))
+  }
+
+  fn parse_group_type(&mut self) -> Result<Type<'a>> {
+    // count parentheses to prevent recursion problems
+    let mut n = 1;
+    while self.bump_if(TokenKind::LParen) {
+      n += 1;
+    }
+    let ty = self.parse_type()?;
+    // consume all closing parentheses
+    for _ in 0..n {
+      self.expect(TokenKind::RParen)?;
+    }
+    Ok(ty)
   }
 
   // utilities
