@@ -56,37 +56,9 @@ impl<'a> Parser<'a> {
     let ident = self.consume(TokenKind::Ident)?;
 
     let kind = if self.match_(TokenKind::Ident) {
-      // function
-      let param = {
-        let ident = self.previous.clone();
-        self.consume(TokenKind::Colon)?;
-        let type_ = self.parse_type()?;
-        (ident, type_)
-      };
-      self.consume(TokenKind::Arrow)?;
-      let ret = self.parse_type()?;
-      self.consume(TokenKind::Equal)?;
-      let body = Box::new(self.parse_expr()?);
-      LetKind::Func(Func {
-        ident,
-        param,
-        ret,
-        body,
-      })
+      self.parse_let_func_expr(ident)?
     } else {
-      let type_ = if self.match_(TokenKind::Colon) {
-        Some(self.parse_type()?)
-      } else {
-        None
-      };
-      // variable
-      self.consume(TokenKind::Equal)?;
-      let value = Box::new(self.parse_expr()?);
-      LetKind::Var(Var {
-        ident,
-        value,
-        type_,
-      })
+      self.parse_let_var_expr(ident)?
     };
 
     let in_ = if self.match_(TokenKind::In) {
@@ -96,6 +68,42 @@ impl<'a> Parser<'a> {
     };
 
     Ok(Expr::Let(Let { kind, in_ }))
+  }
+
+  fn parse_let_func_expr(&mut self, ident: Token<'a>) -> Result<LetKind<'a>> {
+    // function
+    let param = {
+      let ident = self.previous.clone();
+      self.consume(TokenKind::Colon)?;
+      let type_ = self.parse_type()?;
+      (ident, type_)
+    };
+    self.consume(TokenKind::Arrow)?;
+    let ret = self.parse_type()?;
+    self.consume(TokenKind::Equal)?;
+    let body = Box::new(self.parse_expr()?);
+    Ok(LetKind::Func(Func {
+      ident,
+      param,
+      ret,
+      body,
+    }))
+  }
+
+  fn parse_let_var_expr(&mut self, ident: Token<'a>) -> Result<LetKind<'a>> {
+    let type_ = if self.match_(TokenKind::Colon) {
+      Some(self.parse_type()?)
+    } else {
+      None
+    };
+    // variable
+    self.consume(TokenKind::Equal)?;
+    let value = Box::new(self.parse_expr()?);
+    Ok(LetKind::Var(Var {
+      ident,
+      value,
+      type_,
+    }))
   }
 
   fn parse_if_expr(&mut self) -> Result<Expr<'a>> {
@@ -224,18 +232,18 @@ impl<'a> Parser<'a> {
   }
 
   fn parse_power_expr(&mut self) -> Result<Expr<'a>> {
-    let mut expr = self.parse_unary_expr()?;
+    let mut expr = self.parse_prefix_expr()?;
     while self.match_any(&[TokenKind::Power]) {
       expr = Expr::Binary(Binary {
         op: BinaryOp::Power,
         lhs: Box::new(expr),
-        rhs: Box::new(self.parse_unary_expr()?),
+        rhs: Box::new(self.parse_prefix_expr()?),
       })
     }
     Ok(expr)
   }
 
-  fn parse_unary_expr(&mut self) -> Result<Expr<'a>> {
+  fn parse_prefix_expr(&mut self) -> Result<Expr<'a>> {
     // TODO: can easily overflow the stack here
     if self.match_any(&[TokenKind::Bang, TokenKind::Minus]) {
       Ok(Expr::Unary(Unary {
@@ -244,86 +252,100 @@ impl<'a> Parser<'a> {
           TokenKind::Minus => UnaryOp::Negate,
           _ => unreachable!(),
         },
-        rhs: Box::new(self.parse_unary_expr()?),
+        rhs: Box::new(self.parse_prefix_expr()?),
       }))
     } else {
-      self.parse_call_expr()
+      self.parse_postfix_expr()
     }
   }
 
-  fn parse_call_expr(&mut self) -> Result<Expr<'a>> {
+  fn parse_postfix_expr(&mut self) -> Result<Expr<'a>> {
     let mut expr = self.parse_primary_expr()?;
     while self.match_any(&[TokenKind::Dot, TokenKind::LParen, TokenKind::LBrace]) {
       expr = match self.previous.kind {
-        TokenKind::Dot => Expr::Access(Access {
-          target: Box::new(expr),
-          field: self.consume(TokenKind::Ident)?,
-        }),
-        TokenKind::LParen => {
-          let arg = Box::new(self.parse_expr()?);
-          self.consume(TokenKind::RParen)?;
-          Expr::Call(Call {
-            func: Box::new(expr),
-            arg,
-          })
-        }
-        TokenKind::LBrace => {
-          // `parse_record_expr` consumes the `RBrace`
-          let arg = Box::new(self.parse_record_expr()?);
-          Expr::Call(Call {
-            func: Box::new(expr),
-            arg,
-          })
-        }
+        TokenKind::Dot => self.parse_access_expr(expr)?,
+        TokenKind::LParen => self.parse_call_expr(expr)?,
+        TokenKind::LBrace => self.parse_record_call_expr(expr)?,
         _ => unreachable!(),
       };
     }
     Ok(expr)
   }
 
+  fn parse_access_expr(&mut self, prev: Expr<'a>) -> Result<Expr<'a>> {
+    Ok(Expr::Access(Access {
+      target: Box::new(prev),
+      field: self.consume(TokenKind::Ident)?,
+    }))
+  }
+
+  fn parse_call_expr(&mut self, prev: Expr<'a>) -> Result<Expr<'a>> {
+    let arg = Box::new(self.parse_expr()?);
+    self.consume(TokenKind::RParen)?;
+    Ok(Expr::Call(Call {
+      func: Box::new(prev),
+      arg,
+    }))
+  }
+
+  fn parse_record_call_expr(&mut self, prev: Expr<'a>) -> Result<Expr<'a>> {
+    let arg = Box::new(self.parse_record_expr()?);
+    // `parse_record_expr` consumes the `RBrace`
+    Ok(Expr::Call(Call {
+      func: Box::new(prev),
+      arg,
+    }))
+  }
+
   fn parse_primary_expr(&mut self) -> Result<Expr<'a>> {
     if self.match_(TokenKind::Integer) {
-      Ok(Expr::Lit(Lit::Number(
-        self
-          .previous
-          .lexeme
-          .parse()
-          .map_err(|inner| Error::InvalidNumber {
-            token: self.previous.clone().into_static(),
-            inner: format!("{inner}"),
-          })?,
-      )))
+      self.parse_int_expr()
     } else if self.match_(TokenKind::Bool) {
-      Ok(Expr::Lit(Lit::Bool(match self.previous.lexeme.as_ref() {
-        "true" => true,
-        "false" => false,
-        _ => unreachable!(),
-      })))
+      self.parse_bool_expr()
     } else if self.match_(TokenKind::String) {
-      Ok(Expr::Lit(Lit::String(self.previous.lexeme.clone())))
+      self.parse_str_expr()
     } else if self.match_(TokenKind::LBrace) {
       self.parse_record_expr()
     } else if self.match_(TokenKind::Ident) {
-      let ident = self.previous.clone();
-      Ok(Expr::Use(Use { ident }))
+      self.parse_use_expr()
     } else if self.match_(TokenKind::LParen) {
-      // count parentheses to prevent recursion problems
-      let mut n = 1;
-      while self.match_(TokenKind::LParen) {
-        n += 1;
-      }
-      let expr = self.parse_expr()?;
-      // consume all closing parentheses
-      for _ in 0..n {
-        self.consume(TokenKind::RParen)?;
-      }
-      Ok(expr)
+      self.parse_group_expr()
     } else {
       self.advance();
       Err(Error::UnexpectedToken {
         token: self.previous.clone().into_static(),
       })
     }
+  }
+
+  fn parse_int_expr(&mut self) -> Result<Expr<'a>> {
+    Ok(Expr::Lit(Lit::Number(
+      self
+        .previous
+        .lexeme
+        .parse()
+        .map_err(|inner| Error::InvalidNumber {
+          token: self.previous.clone().into_static(),
+          inner: format!("{inner}"),
+        })?,
+    )))
+  }
+
+  fn parse_bool_expr(&mut self) -> Result<Expr<'a>> {
+    Ok(Expr::Lit(Lit::Bool(match self.previous.lexeme.as_ref() {
+      "true" => true,
+      "false" => false,
+      _ => unreachable!(),
+    })))
+  }
+
+  fn parse_str_expr(&mut self) -> Result<Expr<'a>> {
+    Ok(Expr::Lit(Lit::String(self.previous.lexeme.clone())))
+  }
+
+  fn parse_use_expr(&mut self) -> Result<Expr<'a>> {
+    let ident = self.previous.clone();
+    Ok(Expr::Use(Use { ident }))
   }
 
   fn parse_record_expr(&mut self) -> Result<Expr<'a>> {
@@ -344,12 +366,25 @@ impl<'a> Parser<'a> {
     Ok(Expr::Lit(Lit::Record(fields)))
   }
 
+  fn parse_group_expr(&mut self) -> Result<Expr<'a>> {
+    // count parentheses to prevent recursion problems
+    let mut n = 1;
+    while self.match_(TokenKind::LParen) {
+      n += 1;
+    }
+    let expr = self.parse_expr()?;
+    // consume all closing parentheses
+    for _ in 0..n {
+      self.consume(TokenKind::RParen)?;
+    }
+    Ok(expr)
+  }
+
   fn parse_type(&mut self) -> Result<Type<'a>> {
     if self.match_(TokenKind::LBrace) {
       self.parse_record_type()
     } else if self.match_(TokenKind::Ident) {
-      let ident = self.previous.clone();
-      Ok(Type::Ident(ident))
+      self.parse_use_type()
     } else {
       self.advance();
       Err(Error::UnexpectedToken {
@@ -374,6 +409,11 @@ impl<'a> Parser<'a> {
     }
     self.consume(TokenKind::RBrace)?;
     Ok(Type::Record(fields))
+  }
+
+  fn parse_use_type(&mut self) -> Result<Type<'a>> {
+    let ident = self.previous.clone();
+    Ok(Type::Ident(ident))
   }
 
   fn consume(&mut self, kind: TokenKind) -> Result<Token<'a>> {

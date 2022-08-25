@@ -107,3 +107,10 @@ let x = 10
 let y = 5
 "#
 );
+
+assert_ok!(types
+r#"
+let v: T = v;
+let v: {v: T} = v;
+let v: {v: T, v: T} = v;
+"#);

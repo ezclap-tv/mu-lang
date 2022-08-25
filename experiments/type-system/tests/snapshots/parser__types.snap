@@ -1,0 +1,103 @@
+---
+source: tests/parser.rs
+expression: ast
+---
+- Let:
+    kind:
+      Var:
+        ident:
+          lexeme: v
+          span:
+            start: 5
+            end: 6
+          kind: Ident
+        value:
+          Use:
+            ident:
+              lexeme: v
+              span:
+                start: 12
+                end: 13
+              kind: Ident
+        type:
+          Ident:
+            lexeme: T
+            span:
+              start: 8
+              end: 9
+            kind: Ident
+    in: ~
+- Let:
+    kind:
+      Var:
+        ident:
+          lexeme: v
+          span:
+            start: 19
+            end: 20
+          kind: Ident
+        value:
+          Use:
+            ident:
+              lexeme: v
+              span:
+                start: 31
+                end: 32
+              kind: Ident
+        type:
+          Record:
+            - - lexeme: v
+                span:
+                  start: 23
+                  end: 24
+                kind: Ident
+              - Ident:
+                  lexeme: T
+                  span:
+                    start: 26
+                    end: 27
+                  kind: Ident
+    in: ~
+- Let:
+    kind:
+      Var:
+        ident:
+          lexeme: v
+          span:
+            start: 38
+            end: 39
+          kind: Ident
+        value:
+          Use:
+            ident:
+              lexeme: v
+              span:
+                start: 56
+                end: 57
+              kind: Ident
+        type:
+          Record:
+            - - lexeme: v
+                span:
+                  start: 42
+                  end: 43
+                kind: Ident
+              - Ident:
+                  lexeme: T
+                  span:
+                    start: 45
+                    end: 46
+                  kind: Ident
+            - - lexeme: v
+                span:
+                  start: 48
+                  end: 49
+                kind: Ident
+              - Ident:
+                  lexeme: T
+                  span:
+                    start: 51
+                    end: 52
+                  kind: Ident
+    in: ~
+

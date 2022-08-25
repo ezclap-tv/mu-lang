@@ -9,16 +9,17 @@ expr =
   ;
 
 
-let_expr = ( let_var_expr | let_func_expr ) ( "in" expr )? ;
+let_expr = ( let_func_expr | let_var_expr ) ( "in" expr )? ;
 
-let_var_expr = "let" identifier ( ":" type ) "=" expr ;
 let_func_expr = "let" identifier identifier ":" type "->" type "=" expr ;
+let_var_expr = "let" identifier ( ":" type ) "=" expr ;
 
 
 if_expr = "if" expr "then" expr ( "else" expr )? ;
 
 
 simple_expr = or_expr ;
+
 or_expr = and_expr ( "||" and_expr )* ;
 and_expr = eq_expr ( "&&" eq_expr )* ;
 eq_expr = comp_expr ( ( "==" | "!=" ) comp_expr )* ;
@@ -26,11 +27,15 @@ comp_expr = term_expr ( ( "<" | ">" | "<=" | ">=" ) term_expr )* ;
 term_expr = factor_expr ( ( "+" | "-" ) factor_expr )* ;
 factor_expr = power_expr ( ( "*" | "/" | "%" ) power_expr )* ;
 power_expr = prefix_expr ( ( "**" ) prefix_expr )* ;
+
 prefix_expr = ( ( "!" | "-" ) prefix_expr ) | postfix_expr ;
-postfix_expr = primary_expr ( access_expr | call_expr )* ;
+
+postfix_expr = primary_expr ( access_expr | call_expr | record_call_expr )* ;
 access_expr = "." identifier ;
 call_expr = "(" expr ")" ;
-primary_expr = int_expr | bool_expr | str_expr | use_expr | group_expr ;
+record_call_expr = record_expr ;
+
+primary_expr = int_expr | bool_expr | str_expr | record_expr | use_expr | group_expr ;
 int_expr = INTEGER ;
 bool_expr = "true" | "false" ;
 str_expr = regex{"\"([^\"\\\\]|\\\\.)*\""}
