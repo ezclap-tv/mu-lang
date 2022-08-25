@@ -39,8 +39,18 @@ primary_expr = int_expr | bool_expr | str_expr | record_expr | use_expr | group_
 int_expr = INTEGER ;
 bool_expr = "true" | "false" ;
 str_expr = regex{"\"([^\"\\\\]|\\\\.)*\""}
+record_expr = "{" list{record_expr_field, ","} "}" ;
+record_expr_field = identifier ":" expr ;
 use_expr = identifier ;
 group_expr = "(" expr ")" ;
+
+
+type = record_type | use_type | group_type ;
+
+record_type = "{" list{record_type_field, ","} "}" ;
+record_type_field = identifier ":" type ;
+use_type = identifier ;
+group_type = "(" type ")" ;
 
 
 list{`item, `sep} = ( `item ( `sep `item `sep? )* )? ;
