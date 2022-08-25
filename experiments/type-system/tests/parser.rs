@@ -113,4 +113,5 @@ r#"
 let v: T = v;
 let v: {v: T} = v;
 let v: {v: T, v: T} = v;
+let v: (((T))) = v;
 "#);

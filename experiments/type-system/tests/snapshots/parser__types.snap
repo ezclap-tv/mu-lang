@@ -100,4 +100,29 @@ expression: ast
                     end: 52
                   kind: Ident
     in: ~
+- Let:
+    kind:
+      Var:
+        ident:
+          lexeme: v
+          span:
+            start: 63
+            end: 64
+          kind: Ident
+        value:
+          Use:
+            ident:
+              lexeme: v
+              span:
+                start: 76
+                end: 77
+              kind: Ident
+        type:
+          Ident:
+            lexeme: T
+            span:
+              start: 69
+              end: 70
+            kind: Ident
+    in: ~
 
