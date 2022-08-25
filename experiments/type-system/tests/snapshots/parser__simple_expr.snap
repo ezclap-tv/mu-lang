@@ -264,30 +264,44 @@ expression: ast
             start: 107
             end: 108
           kind: Ident
+- Use:
+    ident:
+      lexeme: v
+      span:
+        start: 112
+        end: 113
+      kind: Ident
 - Unary:
-    op: Not
+    op: Negate
     rhs:
       Use:
         ident:
           lexeme: v
           span:
-            start: 111
-            end: 112
+            start: 124
+            end: 125
           kind: Ident
+- Use:
+    ident:
+      lexeme: v
+      span:
+        start: 137
+        end: 138
+      kind: Ident
 - Access:
     target:
       Use:
         ident:
           lexeme: v
           span:
-            start: 114
-            end: 115
+            start: 140
+            end: 141
           kind: Ident
     field:
       lexeme: f
       span:
-        start: 116
-        end: 117
+        start: 142
+        end: 143
       kind: Ident
 - Call:
     func:
@@ -295,16 +309,16 @@ expression: ast
         ident:
           lexeme: f
           span:
-            start: 119
-            end: 120
+            start: 145
+            end: 146
           kind: Ident
     arg:
       Use:
         ident:
           lexeme: v
           span:
-            start: 122
-            end: 123
+            start: 148
+            end: 149
           kind: Ident
 - Call:
     func:
@@ -312,8 +326,8 @@ expression: ast
         ident:
           lexeme: f
           span:
-            start: 126
-            end: 127
+            start: 152
+            end: 153
           kind: Ident
     arg:
       Lit:
@@ -321,16 +335,16 @@ expression: ast
           - ident:
               lexeme: v
               span:
-                start: 129
-                end: 130
+                start: 155
+                end: 156
               kind: Ident
             value:
               Use:
                 ident:
                   lexeme: v
                   span:
-                    start: 131
-                    end: 132
+                    start: 157
+                    end: 158
                   kind: Ident
 - Call:
     func:
@@ -340,22 +354,22 @@ expression: ast
             ident:
               lexeme: v
               span:
-                start: 135
-                end: 136
+                start: 161
+                end: 162
               kind: Ident
         field:
           lexeme: f
           span:
-            start: 137
-            end: 138
+            start: 163
+            end: 164
           kind: Ident
     arg:
       Use:
         ident:
           lexeme: v
           span:
-            start: 140
-            end: 141
+            start: 166
+            end: 167
           kind: Ident
 - Call:
     func:
@@ -365,14 +379,14 @@ expression: ast
             ident:
               lexeme: v
               span:
-                start: 144
-                end: 145
+                start: 170
+                end: 171
               kind: Ident
         field:
           lexeme: f
           span:
-            start: 146
-            end: 147
+            start: 172
+            end: 173
           kind: Ident
     arg:
       Lit:
@@ -380,16 +394,16 @@ expression: ast
           - ident:
               lexeme: v
               span:
-                start: 149
-                end: 150
+                start: 175
+                end: 176
               kind: Ident
             value:
               Use:
                 ident:
                   lexeme: v
                   span:
-                    start: 151
-                    end: 152
+                    start: 177
+                    end: 178
                   kind: Ident
 - Lit:
     Number: 10
@@ -404,29 +418,29 @@ expression: ast
       - ident:
           lexeme: v
           span:
-            start: 181
-            end: 182
+            start: 207
+            end: 208
           kind: Ident
         value:
           Use:
             ident:
               lexeme: v
               span:
-                start: 183
-                end: 184
+                start: 209
+                end: 210
               kind: Ident
 - Use:
     ident:
       lexeme: v
       span:
-        start: 187
-        end: 188
+        start: 213
+        end: 214
       kind: Ident
 - Use:
     ident:
       lexeme: v
       span:
-        start: 193
-        end: 194
+        start: 219
+        end: 220
       kind: Ident
 
