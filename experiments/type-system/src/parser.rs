@@ -12,7 +12,7 @@ struct Parser<'a> {
 }
 
 impl<'a> Parser<'a> {
-  fn run(mut self) -> std::result::Result<Vec<Expr<'a>>, Vec<Error>> {
+  fn run(mut self) -> std::result::Result<Program<'a>, Vec<Error>> {
     let mut exprs = vec![];
     let mut errors = vec![];
 

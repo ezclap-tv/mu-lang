@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::lexer::Token;
 
+pub type Program<'a> = Vec<Expr<'a>>;
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Expr<'a> {
   Lit(Lit<'a>),
