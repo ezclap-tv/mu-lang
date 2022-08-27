@@ -12,15 +12,14 @@ pub type Type<'a> = Spanned<TypeKind<'a>>;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum ExprKind<'a> {
-  Lit(Lit<'a>),
-  Let(Let<'a>),
-  Call(Call<'a>),
-  Use(Use<'a>),
-  If(If<'a>),
-  /* Assign(Assign<'a>), */
-  Access(Access<'a>),
-  Binary(Binary<'a>),
-  Unary(Unary<'a>),
+  Lit(Box<Lit<'a>>),
+  Let(Box<Let<'a>>),
+  Call(Box<Call<'a>>),
+  Use(Box<Use<'a>>),
+  If(Box<If<'a>>),
+  Access(Box<Access<'a>>),
+  Binary(Box<Binary<'a>>),
+  Unary(Box<Unary<'a>>),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -34,14 +33,14 @@ pub enum Lit<'a> {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Field<'a> {
   pub ident: Token<'a>,
-  pub value: Box<Expr<'a>>,
+  pub value: Expr<'a>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Let<'a> {
   pub kind: LetKind<'a>,
   #[serde(rename = "in")]
-  pub in_: Option<Box<Expr<'a>>>,
+  pub in_: Option<Expr<'a>>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -52,8 +51,8 @@ pub enum LetKind<'a> {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Call<'a> {
-  pub func: Box<Expr<'a>>,
-  pub arg: Box<Expr<'a>>,
+  pub func: Expr<'a>,
+  pub arg: Expr<'a>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -63,29 +62,23 @@ pub struct Use<'a> {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct If<'a> {
-  pub cond: Box<Expr<'a>>,
-  pub then: Box<Expr<'a>>,
+  pub cond: Expr<'a>,
+  pub then: Expr<'a>,
   #[serde(rename = "else")]
-  pub else_: Option<Box<Expr<'a>>>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Assign<'a> {
-  pub lhs: Box<Expr<'a>>,
-  pub rhs: Box<Expr<'a>>,
+  pub else_: Option<Expr<'a>>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Access<'a> {
-  pub target: Box<Expr<'a>>,
+  pub target: Expr<'a>,
   pub field: Token<'a>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Binary<'a> {
   pub op: BinaryOp,
-  pub lhs: Box<Expr<'a>>,
-  pub rhs: Box<Expr<'a>>,
+  pub lhs: Expr<'a>,
+  pub rhs: Expr<'a>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -109,7 +102,7 @@ pub enum BinaryOp {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Unary<'a> {
   pub op: UnaryOp,
-  pub rhs: Box<Expr<'a>>,
+  pub rhs: Expr<'a>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -120,7 +113,7 @@ pub enum UnaryOp {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Var<'a> {
   pub ident: Token<'a>,
-  pub value: Box<Expr<'a>>,
+  pub value: Expr<'a>,
   #[serde(rename = "type")]
   pub type_: Option<Type<'a>>,
 }
@@ -130,11 +123,11 @@ pub struct Func<'a> {
   pub ident: Token<'a>,
   pub param: (Token<'a>, Type<'a>),
   pub ret: Type<'a>,
-  pub body: Box<Expr<'a>>,
+  pub body: Expr<'a>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum TypeKind<'a> {
   Ident(#[serde(rename = "ident")] Token<'a>),
-  Record(#[serde(rename = "fields")] Vec<(Token<'a>, Box<Type<'a>>)>),
+  Record(#[serde(rename = "fields")] Vec<(Token<'a>, Type<'a>)>),
 }

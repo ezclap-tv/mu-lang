@@ -100,15 +100,15 @@ pub fn report(source: &str, errors: &Vec<Error>, mut to: impl std::fmt::Write) {
   }
   fn get_relevant_span(error: &Error) -> Span {
     match error {
-      Error::MissingToken { found, .. } => found.span.clone(),
-      Error::MissingOneOf { found, .. } => found.span.clone(),
-      Error::InvalidNumber { token, .. } => token.span.clone(),
-      Error::UnexpectedToken { token } => token.span.clone(),
+      Error::MissingToken { found, .. } => found.span,
+      Error::MissingOneOf { found, .. } => found.span,
+      Error::InvalidNumber { token, .. } => token.span,
+      Error::UnexpectedToken { token } => token.span,
     }
   }
   for error in errors {
     let span = get_relevant_span(error);
-    let line_span = find_line_from_span(source, span.clone());
+    let line_span = find_line_from_span(source, span);
     let line = source[line_span.start..line_span.end].trim();
     let highlight = get_highlight(span.start - line_span.start);
     write!(to, "{error}:\n|  {line}\n|  {highlight}\n").unwrap();

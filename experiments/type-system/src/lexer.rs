@@ -44,10 +44,13 @@ impl<'a> Token<'a> {
     }
   }
 
-  pub fn into_static(self) -> Token<'static> {
+  pub fn into_owned<'b>(&self) -> Token<'b> {
     Token {
-      lexeme: Cow::from(self.lexeme.into_owned()),
-      span: self.span.clone(),
+      lexeme: match &self.lexeme {
+        Cow::Borrowed(s) => Cow::Owned(s.to_string()),
+        Cow::Owned(s) => Cow::Owned(s.clone()),
+      },
+      span: self.span,
       kind: self.kind,
     }
   }
