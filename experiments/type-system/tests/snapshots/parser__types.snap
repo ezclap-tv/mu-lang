@@ -2,79 +2,187 @@
 source: tests/parser.rs
 expression: ast
 ---
-- Let:
-    kind:
-      Var:
-        ident:
-          lexeme: v
-          kind: Ident
-        value:
-          Use:
-            ident:
-              lexeme: v
-              kind: Ident
-        type:
-          Ident:
-            lexeme: T
+- item:
+    Let:
+      kind:
+        Var:
+          ident:
+            lexeme: v
+            span:
+              start: 5
+              end: 6
             kind: Ident
-    in: ~
-- Let:
-    kind:
-      Var:
-        ident:
-          lexeme: v
-          kind: Ident
-        value:
-          Use:
-            ident:
-              lexeme: v
-              kind: Ident
-        type:
-          Record:
-            - - lexeme: v
-                kind: Ident
-              - Ident:
-                  lexeme: T
+          value:
+            item:
+              Use:
+                ident:
+                  lexeme: v
+                  span:
+                    start: 12
+                    end: 13
                   kind: Ident
-    in: ~
-- Let:
-    kind:
-      Var:
-        ident:
-          lexeme: v
-          kind: Ident
-        value:
-          Use:
-            ident:
-              lexeme: v
-              kind: Ident
-        type:
-          Record:
-            - - lexeme: v
+            span:
+              start: 12
+              end: 13
+          type:
+            item:
+              Ident:
+                lexeme: T
+                span:
+                  start: 8
+                  end: 9
                 kind: Ident
-              - Ident:
-                  lexeme: T
-                  kind: Ident
-            - - lexeme: v
-                kind: Ident
-              - Ident:
-                  lexeme: T
-                  kind: Ident
-    in: ~
-- Let:
-    kind:
-      Var:
-        ident:
-          lexeme: v
-          kind: Ident
-        value:
-          Use:
-            ident:
-              lexeme: v
-              kind: Ident
-        type:
-          Ident:
-            lexeme: T
+            span:
+              start: 8
+              end: 9
+      in: ~
+  span:
+    start: 1
+    end: 13
+- item:
+    Let:
+      kind:
+        Var:
+          ident:
+            lexeme: v
+            span:
+              start: 19
+              end: 20
             kind: Ident
-    in: ~
+          value:
+            item:
+              Use:
+                ident:
+                  lexeme: v
+                  span:
+                    start: 31
+                    end: 32
+                  kind: Ident
+            span:
+              start: 31
+              end: 32
+          type:
+            item:
+              Record:
+                - - lexeme: v
+                    span:
+                      start: 23
+                      end: 24
+                    kind: Ident
+                  - item:
+                      Ident:
+                        lexeme: T
+                        span:
+                          start: 26
+                          end: 27
+                        kind: Ident
+                    span:
+                      start: 26
+                      end: 27
+            span:
+              start: 22
+              end: 28
+      in: ~
+  span:
+    start: 15
+    end: 32
+- item:
+    Let:
+      kind:
+        Var:
+          ident:
+            lexeme: v
+            span:
+              start: 38
+              end: 39
+            kind: Ident
+          value:
+            item:
+              Use:
+                ident:
+                  lexeme: v
+                  span:
+                    start: 56
+                    end: 57
+                  kind: Ident
+            span:
+              start: 56
+              end: 57
+          type:
+            item:
+              Record:
+                - - lexeme: v
+                    span:
+                      start: 42
+                      end: 43
+                    kind: Ident
+                  - item:
+                      Ident:
+                        lexeme: T
+                        span:
+                          start: 45
+                          end: 46
+                        kind: Ident
+                    span:
+                      start: 45
+                      end: 46
+                - - lexeme: v
+                    span:
+                      start: 48
+                      end: 49
+                    kind: Ident
+                  - item:
+                      Ident:
+                        lexeme: T
+                        span:
+                          start: 51
+                          end: 52
+                        kind: Ident
+                    span:
+                      start: 51
+                      end: 52
+            span:
+              start: 41
+              end: 53
+      in: ~
+  span:
+    start: 34
+    end: 57
+- item:
+    Let:
+      kind:
+        Var:
+          ident:
+            lexeme: v
+            span:
+              start: 63
+              end: 64
+            kind: Ident
+          value:
+            item:
+              Use:
+                ident:
+                  lexeme: v
+                  span:
+                    start: 76
+                    end: 77
+                  kind: Ident
+            span:
+              start: 76
+              end: 77
+          type:
+            item:
+              Ident:
+                lexeme: T
+                span:
+                  start: 69
+                  end: 70
+                kind: Ident
+            span:
+              start: 66
+              end: 73
+      in: ~
+  span:
+    start: 59
+    end: 77
 
