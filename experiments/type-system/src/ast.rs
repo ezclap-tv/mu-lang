@@ -3,11 +3,15 @@ use std::borrow::Cow;
 use serde::{Deserialize, Serialize};
 
 use crate::lexer::Token;
+use crate::span::Spanned;
 
 pub type Program<'a> = Vec<Expr<'a>>;
 
+pub type Expr<'a> = Spanned<ExprKind<'a>>;
+pub type Type<'a> = Spanned<TypeKind<'a>>;
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum Expr<'a> {
+pub enum ExprKind<'a> {
   Lit(Lit<'a>),
   Let(Let<'a>),
   Call(Call<'a>),
@@ -130,7 +134,7 @@ pub struct Func<'a> {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum Type<'a> {
+pub enum TypeKind<'a> {
   Ident(#[serde(rename = "ident")] Token<'a>),
   Record(#[serde(rename = "fields")] Vec<(Token<'a>, Box<Type<'a>>)>),
 }

@@ -3,6 +3,16 @@ use std::mem::discriminant;
 use crate::ast::*;
 use crate::error::*;
 use crate::lexer::*;
+use crate::span::{Span, Spanned};
+
+macro_rules! span {
+  ($self:ident, $f:ident) => {
+    $self.with_span(|p| p.$f())
+  };
+  ($self:ident, $f:expr) => {
+    $self.with_span($f)
+  };
+}
 
 struct Parser<'a> {
   lexer: Lexer<'a>,
@@ -42,17 +52,16 @@ impl<'a> Parser<'a> {
   }
 
   fn parse_expr(&mut self) -> Result<Expr<'a>> {
-    let expr = if self.bump_if(TokenKind::Let) {
-      self.parse_let_expr()
+    if self.bump_if(TokenKind::Let) {
+      span!(self, parse_let_expr)
     } else if self.bump_if(TokenKind::If) {
-      self.parse_if_expr()
+      span!(self, parse_if_expr)
     } else {
-      self.parse_simple_expr()
-    };
-    expr
+      span!(self, parse_simple_expr)
+    }
   }
 
-  fn parse_let_expr(&mut self) -> Result<Expr<'a>> {
+  fn parse_let_expr(&mut self) -> Result<ExprKind<'a>> {
     let ident = self.expect(TokenKind::Ident)?;
 
     let kind = if self.bump_if(TokenKind::Ident) {
@@ -67,7 +76,7 @@ impl<'a> Parser<'a> {
       None
     };
 
-    Ok(Expr::Let(Let { kind, in_ }))
+    Ok(ExprKind::Let(Let { kind, in_ }))
   }
 
   fn parse_let_func_expr(&mut self, ident: Token<'a>) -> Result<LetKind<'a>> {
@@ -106,7 +115,7 @@ impl<'a> Parser<'a> {
     }))
   }
 
-  fn parse_if_expr(&mut self) -> Result<Expr<'a>> {
+  fn parse_if_expr(&mut self) -> Result<ExprKind<'a>> {
     let cond = Box::new(self.parse_expr()?);
     self.expect(TokenKind::Then)?;
     let then = Box::new(self.parse_expr()?);
@@ -115,18 +124,18 @@ impl<'a> Parser<'a> {
     } else {
       None
     };
-    Ok(Expr::If(If { cond, then, else_ }))
+    Ok(ExprKind::If(If { cond, then, else_ }))
   }
 
-  fn parse_simple_expr(&mut self) -> Result<Expr<'a>> {
+  fn parse_simple_expr(&mut self) -> Result<ExprKind<'a>> {
     self.parse_or_expr()
   }
 
-  /* fn parse_assign_expr(&mut self) -> Result<Expr<'a>> {
+  /* fn parse_assign_expr(&mut self) -> Result<ExprKind<'a>> {
     let expr = self.parse_or_expr()?;
     if self.match_(TokenKind::Equal) {
       let rhs = Box::new(self.parse_or_expr()?);
-      Ok(Expr::Assign(Assign {
+      Ok(ExprKind::Assign(Assign {
         lhs: Box::new(expr),
         rhs,
       }))
@@ -135,115 +144,129 @@ impl<'a> Parser<'a> {
     }
   } */
 
-  fn parse_or_expr(&mut self) -> Result<Expr<'a>> {
-    let mut expr = self.parse_and_expr()?;
+  fn parse_or_expr(&mut self) -> Result<ExprKind<'a>> {
+    let mut expr = span!(self, parse_and_expr)?;
     while self.bump_if(TokenKind::Or) {
-      expr = Expr::Binary(Binary {
-        op: BinaryOp::Or,
-        lhs: Box::new(expr),
-        rhs: Box::new(self.parse_and_expr()?),
-      })
+      expr = span!(self, |p| {
+        Ok(ExprKind::Binary(Binary {
+          op: BinaryOp::Or,
+          lhs: Box::new(expr),
+          rhs: Box::new(span!(p, parse_and_expr)?),
+        }))
+      })?
     }
-    Ok(expr)
+    Ok(expr.item)
   }
 
-  fn parse_and_expr(&mut self) -> Result<Expr<'a>> {
-    let mut expr = self.parse_eq_expr()?;
+  fn parse_and_expr(&mut self) -> Result<ExprKind<'a>> {
+    let mut expr = span!(self, parse_eq_expr)?;
     while self.bump_if(TokenKind::And) {
-      expr = Expr::Binary(Binary {
-        op: BinaryOp::And,
-        lhs: Box::new(expr),
-        rhs: Box::new(self.parse_eq_expr()?),
-      })
+      expr = span!(self, |p| {
+        Ok(ExprKind::Binary(Binary {
+          op: BinaryOp::And,
+          lhs: Box::new(expr),
+          rhs: Box::new(span!(p, parse_eq_expr)?),
+        }))
+      })?
     }
-    Ok(expr)
+    Ok(expr.item)
   }
 
-  fn parse_eq_expr(&mut self) -> Result<Expr<'a>> {
-    let mut expr = self.parse_comp_expr()?;
+  fn parse_eq_expr(&mut self) -> Result<ExprKind<'a>> {
+    let mut expr = span!(self, parse_comp_expr)?;
     while self.bump_for(&[TokenKind::EqualEqual, TokenKind::BangEqual]) {
-      expr = Expr::Binary(Binary {
-        op: match self.previous.kind {
-          TokenKind::EqualEqual => BinaryOp::Equal,
-          TokenKind::BangEqual => BinaryOp::NotEqual,
-          _ => unreachable!(),
-        },
-        lhs: Box::new(expr),
-        rhs: Box::new(self.parse_comp_expr()?),
-      })
+      expr = span!(self, |p| {
+        Ok(ExprKind::Binary(Binary {
+          op: match p.previous.kind {
+            TokenKind::EqualEqual => BinaryOp::Equal,
+            TokenKind::BangEqual => BinaryOp::NotEqual,
+            _ => unreachable!(),
+          },
+          lhs: Box::new(expr),
+          rhs: Box::new(span!(p, parse_comp_expr)?),
+        }))
+      })?
     }
-    Ok(expr)
+    Ok(expr.item)
   }
 
-  fn parse_comp_expr(&mut self) -> Result<Expr<'a>> {
-    let mut expr = self.parse_term_expr()?;
+  fn parse_comp_expr(&mut self) -> Result<ExprKind<'a>> {
+    let mut expr = span!(self, parse_term_expr)?;
     while self.bump_for(&[
       TokenKind::More,
       TokenKind::Less,
       TokenKind::MoreEqual,
       TokenKind::LessEqual,
     ]) {
-      expr = Expr::Binary(Binary {
-        op: match self.previous.kind {
-          TokenKind::More => BinaryOp::GreaterThan,
-          TokenKind::Less => BinaryOp::LessThan,
-          TokenKind::MoreEqual => BinaryOp::GreaterEqual,
-          TokenKind::LessEqual => BinaryOp::LessEqual,
-          _ => unreachable!(),
-        },
-        lhs: Box::new(expr),
-        rhs: Box::new(self.parse_term_expr()?),
-      })
+      expr = span!(self, |p| {
+        Ok(ExprKind::Binary(Binary {
+          op: match p.previous.kind {
+            TokenKind::More => BinaryOp::GreaterThan,
+            TokenKind::Less => BinaryOp::LessThan,
+            TokenKind::MoreEqual => BinaryOp::GreaterEqual,
+            TokenKind::LessEqual => BinaryOp::LessEqual,
+            _ => unreachable!(),
+          },
+          lhs: Box::new(expr),
+          rhs: Box::new(span!(p, parse_term_expr)?),
+        }))
+      })?
     }
-    Ok(expr)
+    Ok(expr.item)
   }
 
-  fn parse_term_expr(&mut self) -> Result<Expr<'a>> {
-    let mut expr = self.parse_factor_expr()?;
+  fn parse_term_expr(&mut self) -> Result<ExprKind<'a>> {
+    let mut expr = span!(self, parse_factor_expr)?;
     while self.bump_for(&[TokenKind::Plus, TokenKind::Minus]) {
-      expr = Expr::Binary(Binary {
-        op: match self.previous.kind {
-          TokenKind::Plus => BinaryOp::Add,
-          TokenKind::Minus => BinaryOp::Sub,
-          _ => unreachable!(),
-        },
-        lhs: Box::new(expr),
-        rhs: Box::new(self.parse_factor_expr()?),
-      })
+      expr = span!(self, |p| {
+        Ok(ExprKind::Binary(Binary {
+          op: match p.previous.kind {
+            TokenKind::Plus => BinaryOp::Add,
+            TokenKind::Minus => BinaryOp::Sub,
+            _ => unreachable!(),
+          },
+          lhs: Box::new(expr),
+          rhs: Box::new(span!(p, parse_factor_expr)?),
+        }))
+      })?
     }
-    Ok(expr)
+    Ok(expr.item)
   }
 
-  fn parse_factor_expr(&mut self) -> Result<Expr<'a>> {
-    let mut expr = self.parse_power_expr()?;
+  fn parse_factor_expr(&mut self) -> Result<ExprKind<'a>> {
+    let mut expr = span!(self, parse_power_expr)?;
     while self.bump_for(&[TokenKind::Star, TokenKind::Slash, TokenKind::Percent]) {
-      expr = Expr::Binary(Binary {
-        op: match self.previous.kind {
-          TokenKind::Star => BinaryOp::Mult,
-          TokenKind::Slash => BinaryOp::Div,
-          TokenKind::Percent => BinaryOp::Rem,
-          _ => unreachable!(),
-        },
-        lhs: Box::new(expr),
-        rhs: Box::new(self.parse_power_expr()?),
-      })
+      expr = span!(self, |p| {
+        Ok(ExprKind::Binary(Binary {
+          op: match p.previous.kind {
+            TokenKind::Star => BinaryOp::Mult,
+            TokenKind::Slash => BinaryOp::Div,
+            TokenKind::Percent => BinaryOp::Rem,
+            _ => unreachable!(),
+          },
+          lhs: Box::new(expr),
+          rhs: Box::new(span!(p, parse_power_expr)?),
+        }))
+      })?
     }
-    Ok(expr)
+    Ok(expr.item)
   }
 
-  fn parse_power_expr(&mut self) -> Result<Expr<'a>> {
-    let mut expr = self.parse_prefix_expr()?;
+  fn parse_power_expr(&mut self) -> Result<ExprKind<'a>> {
+    let mut expr = span!(self, parse_prefix_expr)?;
     while self.bump_for(&[TokenKind::Power]) {
-      expr = Expr::Binary(Binary {
-        op: BinaryOp::Power,
-        lhs: Box::new(expr),
-        rhs: Box::new(self.parse_prefix_expr()?),
-      })
+      expr = span!(self, |p| {
+        Ok(ExprKind::Binary(Binary {
+          op: BinaryOp::Power,
+          lhs: Box::new(expr),
+          rhs: Box::new(span!(p, parse_prefix_expr)?),
+        }))
+      })?
     }
-    Ok(expr)
+    Ok(expr.item)
   }
 
-  fn parse_prefix_expr(&mut self) -> Result<Expr<'a>> {
+  fn parse_prefix_expr(&mut self) -> Result<ExprKind<'a>> {
     if self.bump_if(TokenKind::Tilde) {
       self.parse_negate_expr()
     } else {
@@ -251,65 +274,67 @@ impl<'a> Parser<'a> {
     }
   }
 
-  fn parse_negate_expr(&mut self) -> Result<Expr<'a>> {
+  fn parse_negate_expr(&mut self) -> Result<ExprKind<'a>> {
     // `1` because we've already parsed the first `~`
     let mut n = 1;
     while self.bump_if(TokenKind::Tilde) {
       n += 1;
     }
-    let rhs = self.parse_postfix_expr()?;
+    let rhs = span!(self, parse_postfix_expr)?;
 
     if n % 2 == 0 {
       // `N` negations cancel out for any even `N`
-      Ok(rhs)
+      Ok(rhs.item)
     } else {
       // `N` negations are equal to 1 negation for any odd `N`
-      Ok(Expr::Unary(Unary {
+      Ok(ExprKind::Unary(Unary {
         op: UnaryOp::Negate,
         rhs: Box::new(rhs),
       }))
     }
   }
 
-  fn parse_postfix_expr(&mut self) -> Result<Expr<'a>> {
-    let mut expr = self.parse_primary_expr()?;
+  fn parse_postfix_expr(&mut self) -> Result<ExprKind<'a>> {
+    let mut expr = span!(self, parse_primary_expr)?;
     while self.bump_for(&[TokenKind::Dot, TokenKind::LParen, TokenKind::LBrace]) {
-      expr = match self.previous.kind {
-        TokenKind::Dot => self.parse_access_expr(expr)?,
-        TokenKind::LParen => self.parse_call_expr(expr)?,
-        TokenKind::LBrace => self.parse_record_call_expr(expr)?,
-        _ => unreachable!(),
-      };
+      expr = span!(self, |p| {
+        Ok(match p.previous.kind {
+          TokenKind::Dot => p.parse_access_expr(expr)?,
+          TokenKind::LParen => p.parse_call_expr(expr)?,
+          TokenKind::LBrace => p.parse_record_call_expr(expr)?,
+          _ => unreachable!(),
+        })
+      })?;
     }
-    Ok(expr)
+    Ok(expr.item)
   }
 
-  fn parse_access_expr(&mut self, prev: Expr<'a>) -> Result<Expr<'a>> {
-    Ok(Expr::Access(Access {
+  fn parse_access_expr(&mut self, prev: Expr<'a>) -> Result<ExprKind<'a>> {
+    Ok(ExprKind::Access(Access {
       target: Box::new(prev),
       field: self.expect(TokenKind::Ident)?,
     }))
   }
 
-  fn parse_call_expr(&mut self, prev: Expr<'a>) -> Result<Expr<'a>> {
+  fn parse_call_expr(&mut self, prev: Expr<'a>) -> Result<ExprKind<'a>> {
     let arg = Box::new(self.parse_expr()?);
     self.expect(TokenKind::RParen)?;
-    Ok(Expr::Call(Call {
+    Ok(ExprKind::Call(Call {
       func: Box::new(prev),
       arg,
     }))
   }
 
-  fn parse_record_call_expr(&mut self, prev: Expr<'a>) -> Result<Expr<'a>> {
-    let arg = Box::new(self.parse_record_expr()?);
+  fn parse_record_call_expr(&mut self, prev: Expr<'a>) -> Result<ExprKind<'a>> {
+    let arg = Box::new(span!(self, parse_record_expr)?);
     // `parse_record_expr` consumes the `RBrace`
-    Ok(Expr::Call(Call {
+    Ok(ExprKind::Call(Call {
       func: Box::new(prev),
       arg,
     }))
   }
 
-  fn parse_primary_expr(&mut self) -> Result<Expr<'a>> {
+  fn parse_primary_expr(&mut self) -> Result<ExprKind<'a>> {
     if self.bump_if(TokenKind::Integer) {
       self.parse_int_expr()
     } else if self.bump_if(TokenKind::Bool) {
@@ -330,8 +355,8 @@ impl<'a> Parser<'a> {
     }
   }
 
-  fn parse_int_expr(&mut self) -> Result<Expr<'a>> {
-    Ok(Expr::Lit(Lit::Number(
+  fn parse_int_expr(&mut self) -> Result<ExprKind<'a>> {
+    Ok(ExprKind::Lit(Lit::Number(
       self
         .previous
         .lexeme
@@ -343,24 +368,26 @@ impl<'a> Parser<'a> {
     )))
   }
 
-  fn parse_bool_expr(&mut self) -> Result<Expr<'a>> {
-    Ok(Expr::Lit(Lit::Bool(match self.previous.lexeme.as_ref() {
-      "true" => true,
-      "false" => false,
-      _ => unreachable!(),
-    })))
+  fn parse_bool_expr(&mut self) -> Result<ExprKind<'a>> {
+    Ok(ExprKind::Lit(Lit::Bool(
+      match self.previous.lexeme.as_ref() {
+        "true" => true,
+        "false" => false,
+        _ => unreachable!(),
+      },
+    )))
   }
 
-  fn parse_str_expr(&mut self) -> Result<Expr<'a>> {
-    Ok(Expr::Lit(Lit::String(self.previous.lexeme.clone())))
+  fn parse_str_expr(&mut self) -> Result<ExprKind<'a>> {
+    Ok(ExprKind::Lit(Lit::String(self.previous.lexeme.clone())))
   }
 
-  fn parse_use_expr(&mut self) -> Result<Expr<'a>> {
+  fn parse_use_expr(&mut self) -> Result<ExprKind<'a>> {
     let ident = self.previous.clone();
-    Ok(Expr::Use(Use { ident }))
+    Ok(ExprKind::Use(Use { ident }))
   }
 
-  fn parse_record_expr(&mut self) -> Result<Expr<'a>> {
+  fn parse_record_expr(&mut self) -> Result<ExprKind<'a>> {
     let mut fields = vec![];
     if !self.check_if(TokenKind::RBrace) {
       let ident = self.expect(TokenKind::Ident)?;
@@ -375,10 +402,10 @@ impl<'a> Parser<'a> {
       }
     }
     self.expect(TokenKind::RBrace)?;
-    Ok(Expr::Lit(Lit::Record(fields)))
+    Ok(ExprKind::Lit(Lit::Record(fields)))
   }
 
-  fn parse_group_expr(&mut self) -> Result<Expr<'a>> {
+  fn parse_group_expr(&mut self) -> Result<ExprKind<'a>> {
     // count parentheses to prevent recursion problems
     let mut n = 1;
     while self.bump_if(TokenKind::LParen) {
@@ -389,16 +416,16 @@ impl<'a> Parser<'a> {
     for _ in 0..n {
       self.expect(TokenKind::RParen)?;
     }
-    Ok(expr)
+    Ok(expr.item)
   }
 
   fn parse_type(&mut self) -> Result<Type<'a>> {
     if self.bump_if(TokenKind::LBrace) {
-      self.parse_record_type()
+      self.with_span(|p| p.parse_record_type())
     } else if self.bump_if(TokenKind::Ident) {
-      self.parse_use_type()
+      self.with_span(|p| p.parse_use_type())
     } else if self.bump_if(TokenKind::LParen) {
-      self.parse_group_type()
+      self.with_span(|p| p.parse_group_type())
     } else {
       self.bump();
       Err(Error::UnexpectedToken {
@@ -407,7 +434,7 @@ impl<'a> Parser<'a> {
     }
   }
 
-  fn parse_record_type(&mut self) -> Result<Type<'a>> {
+  fn parse_record_type(&mut self) -> Result<TypeKind<'a>> {
     let mut fields = vec![];
     if !self.check_if(TokenKind::RBrace) {
       let ident = self.expect(TokenKind::Ident)?;
@@ -422,15 +449,15 @@ impl<'a> Parser<'a> {
       }
     }
     self.expect(TokenKind::RBrace)?;
-    Ok(Type::Record(fields))
+    Ok(TypeKind::Record(fields))
   }
 
-  fn parse_use_type(&mut self) -> Result<Type<'a>> {
+  fn parse_use_type(&mut self) -> Result<TypeKind<'a>> {
     let ident = self.previous.clone();
-    Ok(Type::Ident(ident))
+    Ok(TypeKind::Ident(ident))
   }
 
-  fn parse_group_type(&mut self) -> Result<Type<'a>> {
+  fn parse_group_type(&mut self) -> Result<TypeKind<'a>> {
     // count parentheses to prevent recursion problems
     let mut n = 1;
     while self.bump_if(TokenKind::LParen) {
@@ -441,7 +468,7 @@ impl<'a> Parser<'a> {
     for _ in 0..n {
       self.expect(TokenKind::RParen)?;
     }
-    Ok(ty)
+    Ok(ty.item)
   }
 
   // utilities
@@ -502,6 +529,17 @@ impl<'a> Parser<'a> {
       };
     }
   }
+
+  fn with_span<T>(&mut self, inner: impl FnOnce(&mut Self) -> Result<T>) -> Result<Spanned<T>> {
+    let start = self.previous.span.start;
+    inner(self).map(|item| {
+      let end = self.previous.span.start;
+      Spanned {
+        span: Span { start, end },
+        item,
+      }
+    })
+  }
 }
 
 pub fn parse(source: &str) -> std::result::Result<Vec<Expr<'_>>, Vec<Error>> {
@@ -521,7 +559,7 @@ pub fn parse(source: &str) -> std::result::Result<Vec<Expr<'_>>, Vec<Error>> {
   .run()
 }
 
-#[cfg(test)]
+/* #[cfg(test)]
 mod tests {
   use super::*;
 
@@ -541,4 +579,4 @@ mod tests {
       }
     }
   }
-}
+} */

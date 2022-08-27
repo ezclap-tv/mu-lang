@@ -1,9 +1,9 @@
 use std::fmt;
 
-use logos::Span;
 use serde::{Deserialize, Serialize};
 
 use crate::lexer::{Token, TokenKind};
+use crate::span::Span;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Error {
@@ -109,7 +109,7 @@ pub fn report(source: &str, errors: &Vec<Error>, mut to: impl std::fmt::Write) {
   for error in errors {
     let span = get_relevant_span(error);
     let line_span = find_line_from_span(source, span.clone());
-    let line = source[line_span.clone()].trim();
+    let line = source[line_span.start..line_span.end].trim();
     let highlight = get_highlight(span.start - line_span.start);
     write!(to, "{error}:\n|  {line}\n|  {highlight}\n").unwrap();
   }

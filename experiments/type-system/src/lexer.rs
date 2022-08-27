@@ -1,8 +1,9 @@
 use std::borrow::Cow;
 
 use logos::Logos;
-pub use logos::Span;
 use serde::{Deserialize, Serialize};
+
+use crate::span::Span;
 
 pub struct Lexer<'a> {
   inner: logos::Lexer<'a, TokenKind>,
@@ -23,7 +24,7 @@ impl<'a> Iterator for Lexer<'a> {
     self
       .inner
       .next()
-      .map(|next| Token::new(self.inner.slice(), self.inner.span(), next))
+      .map(|next| Token::new(self.inner.slice(), self.inner.span().into(), next))
   }
 }
 
@@ -56,7 +57,7 @@ impl<'a> Token<'a> {
   }
 
   pub fn eof(end: usize) -> Token<'a> {
-    Token::new("", end..end, TokenKind::Eof)
+    Token::new("", (end..end).into(), TokenKind::Eof)
   }
 }
 
