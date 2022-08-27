@@ -31,10 +31,6 @@ impl<'a> Iterator for Lexer<'a> {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Token<'a> {
   pub lexeme: Cow<'a, str>,
-  // Note on the `skip`:
-  // If we're deserializing, we don't have access to the original source anymore
-  // so the spans are useless. They also create a lot of noise in snapshot tests.
-  #[serde(skip)]
   pub span: Span,
   pub kind: TokenKind,
 }
