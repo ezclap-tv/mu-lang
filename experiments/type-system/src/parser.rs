@@ -314,8 +314,15 @@ impl<'a> Parser<'a> {
   }
 
   fn parse_record_call_expr(&mut self, prev: Expr<'a>) -> Result<ExprKind<'a>> {
-    let arg = span!(self, parse_record_expr)?;
+    let prev_span = self.previous.span;
+    let mut arg = span!(self, parse_record_expr)?;
     // `parse_record_expr` consumes the `RBrace`
+
+    // in `func {v:0}` the func's inner `arg` expression will have a span
+    // that when used to slice the input will return `v:0}` - note the
+    // missing `LBrace`. this is because record_call_expr is not wrapped in
+    // `parse_expr`'s top-level `span!`, so we have to manually fix it here.
+    arg.span.start = prev_span.start;
     Ok(ExprKind::Call(Box::new(Call { func: prev, arg })))
   }
 
