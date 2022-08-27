@@ -38,12 +38,12 @@ mvp
 post-mvp
 
 - integrate `codespan-reporting`
-- function types `T -> T`
 - optional return types
-- lambdas (`fn v = v`)
 - tuples using comma operator (`print (0, 1)`, `let tuple: (int, int) = 0, 1`) + tuple types
+- destructuring (`let {a, b} = {a: 0, b: 0}`)
 - generics (`'t`), traits (`trait Eq = ...`), impls (`def Eq for T`, only concrete types)
-- lists
+- function types `T -> T`, lambdas (`fn v = v`)
+- lists (`[T]`)
 - nominal types (`class`)
 - exceptions
 - tagged unions + pattern matching
