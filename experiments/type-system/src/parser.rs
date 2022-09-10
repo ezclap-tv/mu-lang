@@ -121,11 +121,8 @@ impl<'a> Parser<'a> {
     let cond = self.parse_expr()?;
     self.expect(TokenKind::Then)?;
     let then = self.parse_expr()?;
-    let else_ = if self.bump_if(TokenKind::Else) {
-      Some(self.parse_expr()?)
-    } else {
-      None
-    };
+    self.expect(TokenKind::Else)?;
+    let else_ = self.parse_expr()?;
     Ok(ExprKind::If(Box::new(If { cond, then, else_ })))
   }
 
@@ -348,7 +345,7 @@ impl<'a> Parser<'a> {
   }
 
   fn parse_int_expr(&mut self) -> Result<ExprKind<'a>> {
-    Ok(ExprKind::Lit(Box::new(Lit::Number(
+    Ok(ExprKind::Lit(Lit::Number(
       self
         .previous
         .lexeme
@@ -357,28 +354,28 @@ impl<'a> Parser<'a> {
           token: self.previous.into_owned(),
           inner: format!("{inner}"),
         })?,
-    ))))
+    )))
   }
 
   fn parse_bool_expr(&mut self) -> Result<ExprKind<'a>> {
-    Ok(ExprKind::Lit(Box::new(Lit::Bool(
+    Ok(ExprKind::Lit(Lit::Bool(
       match self.previous.lexeme.as_ref() {
         "true" => true,
         "false" => false,
         _ => unreachable!(),
       },
-    ))))
+    )))
   }
 
   fn parse_str_expr(&mut self) -> Result<ExprKind<'a>> {
-    Ok(ExprKind::Lit(Box::new(Lit::String(
+    Ok(ExprKind::Lit(Lit::String(
       self.previous.lexeme.trim_matches('"').to_string().into(),
-    ))))
+    )))
   }
 
   fn parse_use_expr(&mut self) -> Result<ExprKind<'a>> {
     let ident = self.previous.clone();
-    Ok(ExprKind::Use(Box::new(Use { ident })))
+    Ok(ExprKind::Use(Use { ident }))
   }
 
   fn parse_record_expr(&mut self) -> Result<ExprKind<'a>> {
@@ -396,7 +393,7 @@ impl<'a> Parser<'a> {
       }
     }
     self.expect(TokenKind::RBrace)?;
-    Ok(ExprKind::Lit(Box::new(Lit::Record(fields))))
+    Ok(ExprKind::Lit(Lit::Record(fields)))
   }
 
   fn parse_group_expr(&mut self) -> Result<ExprKind<'a>> {

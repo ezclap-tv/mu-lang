@@ -12,10 +12,10 @@ pub type Type<'a> = Spanned<TypeKind<'a>>;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum ExprKind<'a> {
-  Lit(Box<Lit<'a>>),
+  Lit(Lit<'a>),
   Let(Box<Let<'a>>),
   Call(Box<Call<'a>>),
-  Use(Box<Use<'a>>),
+  Use(Use<'a>),
   If(Box<If<'a>>),
   Access(Box<Access<'a>>),
   Binary(Box<Binary<'a>>),
@@ -65,7 +65,7 @@ pub struct If<'a> {
   pub cond: Expr<'a>,
   pub then: Expr<'a>,
   #[serde(rename = "else")]
-  pub else_: Option<Expr<'a>>,
+  pub else_: Expr<'a>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

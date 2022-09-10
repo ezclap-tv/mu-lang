@@ -5,6 +5,8 @@ use serde::{Deserialize, Serialize};
 use crate::lexer::{Token, TokenKind};
 use crate::span::Span;
 
+// TODO: proper diagnostics
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Error {
   MissingToken {
@@ -21,6 +23,26 @@ pub enum Error {
   },
   UnexpectedToken {
     token: Token<'static>,
+  },
+  NotCallable {
+    span: Span,
+  },
+  VarNotDefined {
+    token: Token<'static>,
+  },
+  TypeNotDefined {
+    token: Token<'static>,
+  },
+  NotRecord {
+    span: Span,
+  },
+  NotField {
+    span: Span,
+    field: Token<'static>,
+  },
+  TypeMismatch {
+    lhs: Span,
+    rhs: String,
   },
 }
 
@@ -45,6 +67,24 @@ impl fmt::Display for Error {
       }
       Error::UnexpectedToken { token } => {
         write!(f, "unexpected token: {:?}", token.kind)
+      }
+      Error::NotCallable { .. } => {
+        write!(f, "expression is not callable")
+      }
+      Error::VarNotDefined { token } => {
+        write!(f, "variable `{}` is not defined", token.lexeme)
+      }
+      Error::TypeNotDefined { token } => {
+        write!(f, "type `{}` is not defined", token.lexeme)
+      }
+      Error::NotRecord { .. } => {
+        write!(f, "expression does not evaluate to a record")
+      }
+      Error::NotField { field, .. } => {
+        write!(f, "field has no field `{}`", field.lexeme)
+      }
+      Error::TypeMismatch { rhs, .. } => {
+        write!(f, "expected type {}", rhs)
       }
     }
   }
@@ -104,6 +144,12 @@ pub fn report(source: &str, errors: &Vec<Error>, mut to: impl std::fmt::Write) {
       Error::MissingOneOf { found, .. } => found.span,
       Error::InvalidNumber { token, .. } => token.span,
       Error::UnexpectedToken { token } => token.span,
+      Error::NotCallable { span } => *span,
+      Error::VarNotDefined { token } => token.span,
+      Error::TypeNotDefined { token } => token.span,
+      Error::NotRecord { span } => *span,
+      Error::NotField { span, .. } => *span,
+      Error::TypeMismatch { lhs, .. } => *lhs,
     }
   }
   for error in errors {
