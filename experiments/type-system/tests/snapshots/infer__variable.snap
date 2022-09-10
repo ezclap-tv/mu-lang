@@ -1,0 +1,7 @@
+---
+source: tests/infer.rs
+expression: bindings
+---
+x:
+  Builtin: Int
+

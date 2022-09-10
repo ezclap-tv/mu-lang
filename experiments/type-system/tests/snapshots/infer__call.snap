@@ -1,0 +1,12 @@
+---
+source: tests/infer.rs
+expression: bindings
+---
+f:
+  Function:
+    param:
+      - a
+      - Builtin: Int
+    ret:
+      Builtin: Int
+

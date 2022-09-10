@@ -300,7 +300,7 @@ fn annotation_to_type<'a>(ann: ast::Type<'a>) -> Result<ty::Type<'a>> {
   }
 }
 
-#[cfg(test)]
+/* #[cfg(test)]
 mod tests {
 
   #[test]
@@ -326,3 +326,4 @@ mod tests {
     }
   }
 }
+ */

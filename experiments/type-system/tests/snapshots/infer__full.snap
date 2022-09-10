@@ -1,0 +1,53 @@
+---
+source: tests/infer.rs
+expression: bindings
+---
+unwrap:
+  Function:
+    param:
+      - r
+      - Record:
+          fields:
+            - ident: v
+              ty:
+                Builtin: Int
+    ret:
+      Builtin: Int
+v:
+  Record:
+    fields:
+      - ident: x
+        ty:
+          Builtin: Int
+      - ident: y
+        ty:
+          Builtin: Int
+fib:
+  Function:
+    param:
+      - n
+      - Builtin: Int
+    ret:
+      Builtin: Int
+print_square:
+  Function:
+    param:
+      - n
+      - Builtin: Int
+    ret:
+      Builtin: Int
+intToStr:
+  Function:
+    param:
+      - n
+      - Builtin: Int
+    ret:
+      Builtin: Str
+print:
+  Function:
+    param:
+      - v
+      - Builtin: Any
+    ret:
+      Builtin: Any
+

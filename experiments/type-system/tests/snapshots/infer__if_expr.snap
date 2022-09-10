@@ -1,0 +1,6 @@
+---
+source: tests/infer.rs
+expression: bindings
+---
+{}
+

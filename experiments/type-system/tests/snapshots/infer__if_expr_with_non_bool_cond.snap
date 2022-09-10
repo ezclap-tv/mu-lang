@@ -1,0 +1,10 @@
+---
+source: tests/infer.rs
+expression: errors
+---
+- TypeMismatch:
+    lhs:
+      start: 6
+      end: 7
+    rhs: bool
+
