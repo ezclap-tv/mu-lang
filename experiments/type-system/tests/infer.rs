@@ -132,3 +132,26 @@ assert_ok!(
   print (unwrap {v:10});
   "#
 );
+
+assert_ok!(
+  shadowing,
+  {
+    "intToStr" => ty::Type::Function(Box::new(ty::Function {
+      param: ("n".into(), ty::Type::Builtin(ty::Builtin::Int)),
+      ret: ty::Type::Builtin(ty::Builtin::Str)
+    })),
+    "print" => ty::Type::Function(Box::new(ty::Function {
+      param: ("v".into(), ty::Type::Builtin(ty::Builtin::Any)),
+      ret: ty::Type::Builtin(ty::Builtin::Any)
+    }))
+  },
+  r#"
+  let print_square n: int -> int =
+    let sq = intToStr (n * n) in
+    // shadows parameter with type `str`
+    let n = intToStr (n) in
+    // `+` only checks that all operands have the same type, in this case `str`
+    print (n + " * " + n + " = " + sq)
+    ;
+  "#
+);

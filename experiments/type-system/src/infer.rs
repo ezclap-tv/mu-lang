@@ -114,7 +114,8 @@ fn infer<'a>(ctx: &mut Context<'a>, expr: ast::Expr<'a>) -> Result<ty::Type<'a>>
         }
       };
 
-      // TODO: `in` should be required when not at the top-level
+      // TODO: `in` should be required when not in the context of an expression list
+      // `(a; b; c)`
       let res = match inner.in_ {
         Some(expr) => ctx.with_binding((name.clone(), ty), |ctx| infer(ctx, expr))?,
         None => {

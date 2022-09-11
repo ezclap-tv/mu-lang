@@ -1,11 +1,11 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt;
+use std::iter::FromIterator;
 use std::str::FromStr;
 
+use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
-
-pub type Bindings<'a> = HashMap<Cow<'a, str>, Type<'a>>;
 
 // TODO: spans
 
@@ -86,6 +86,67 @@ impl FromStr for Builtin {
       "bool" => Ok(Builtin::Bool),
       "str" => Ok(Builtin::Str),
       _ => Err(()),
+    }
+  }
+}
+
+#[derive(Default, Debug, Serialize, Deserialize)]
+pub struct Bindings<'a> {
+  #[serde(with = "indexmap::serde_seq")]
+  inner: IndexMap<Cow<'a, str>, Vec<Type<'a>>>,
+}
+
+impl<'a> Bindings<'a> {
+  pub fn new() -> Self {
+    Self {
+      inner: IndexMap::new(),
+    }
+  }
+
+  pub fn insert(&mut self, name: Cow<'a, str>, ty: Type<'a>) {
+    self
+      .inner
+      .entry(name.clone())
+      .or_insert_with(Vec::new)
+      .push(ty);
+  }
+
+  pub fn remove(&mut self, name: &str) {
+    let is_empty = {
+      let stack = self
+        .inner
+        .get_mut(name)
+        .expect("attempted to remove an undefined binding");
+      stack
+        .pop()
+        .expect("attempted to remove an undefined binding");
+      stack.is_empty()
+    };
+    if is_empty {
+      self.inner.remove(name);
+    }
+  }
+
+  pub fn get(&self, name: &str) -> Option<&Type<'a>> {
+    self.inner.get(name).and_then(|s| s.last())
+  }
+}
+
+impl<'a> From<HashMap<Cow<'a, str>, Type<'a>>> for Bindings<'a> {
+  fn from(map: HashMap<Cow<'a, str>, Type<'a>>) -> Self {
+    Self {
+      inner: map.into_iter().map(|(name, ty)| (name, vec![ty])).collect(),
+    }
+  }
+}
+
+impl<'a> FromIterator<(Cow<'a, str>, Type<'a>)> for Bindings<'a> {
+  fn from_iter<T: IntoIterator<Item = (Cow<'a, str>, Type<'a>)>>(iter: T) -> Self {
+    Self {
+      inner: iter
+        .into_iter()
+        .map(|(name, ty)| (name, vec![ty]))
+        .collect(),
     }
   }
 }
