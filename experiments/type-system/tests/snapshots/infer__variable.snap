@@ -2,6 +2,7 @@
 source: tests/infer.rs
 expression: bindings
 ---
-x:
-  Builtin: Int
+inner:
+  - - x
+    - - Builtin: Int
 
