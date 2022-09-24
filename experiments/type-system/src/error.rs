@@ -41,7 +41,8 @@ pub enum Error {
     field: Token<'static>,
   },
   TypeMismatch {
-    lhs: Span,
+    span: Span,
+    lhs: String,
     rhs: String,
   },
 }
@@ -83,8 +84,8 @@ impl fmt::Display for Error {
       Error::NotField { field, .. } => {
         write!(f, "field has no field `{}`", field.lexeme)
       }
-      Error::TypeMismatch { rhs, .. } => {
-        write!(f, "expected type {}", rhs)
+      Error::TypeMismatch { lhs, rhs, .. } => {
+        write!(f, "expected type {}, got {}", rhs, lhs)
       }
     }
   }
@@ -149,7 +150,7 @@ pub fn report(source: &str, errors: &Vec<Error>, mut to: impl std::fmt::Write) {
       Error::TypeNotDefined { token } => token.span,
       Error::NotRecord { span } => *span,
       Error::NotField { span, .. } => *span,
-      Error::TypeMismatch { lhs, .. } => *lhs,
+      Error::TypeMismatch { span, .. } => *span,
     }
   }
   for error in errors {

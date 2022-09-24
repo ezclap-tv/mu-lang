@@ -177,13 +177,14 @@ fn infer<'a>(ctx: &mut Context<'a>, expr: ast::Expr<'a>) -> Result<ty::Type<'a>>
           let span = $span;
           let ty = $ty;
           let lhs_ty = infer(ctx, inner.lhs)?;
-          let rhs_ty = check(ctx, inner.rhs, lhs_ty)?;
+          let rhs_ty = check(ctx, inner.rhs, lhs_ty.clone())?;
           if type_eq(&rhs_ty, &ty) {
             Ok(ty)
           } else {
             Err(Error::TypeMismatch {
-              lhs: span,
-              rhs: format!("{ty}"),
+              span,
+              lhs: format!("{lhs_ty}"),
+              rhs: format!("{rhs_ty}"),
             })
           }
         }};
@@ -202,13 +203,14 @@ fn infer<'a>(ctx: &mut Context<'a>, expr: ast::Expr<'a>) -> Result<ty::Type<'a>>
           let span = $span;
           let ty = $ty;
           let lhs_ty = infer(ctx, inner.lhs)?;
-          let rhs_ty = check(ctx, inner.rhs, lhs_ty)?;
+          let rhs_ty = check(ctx, inner.rhs, lhs_ty.clone())?;
           if type_eq(&rhs_ty, &ty) {
             Ok(builtin!(Bool))
           } else {
             Err(Error::TypeMismatch {
-              lhs: span,
-              rhs: format!("{ty}"),
+              span,
+              lhs: format!("{lhs_ty}"),
+              rhs: format!("{rhs_ty}"),
             })
           }
         }};
@@ -235,14 +237,20 @@ fn infer<'a>(ctx: &mut Context<'a>, expr: ast::Expr<'a>) -> Result<ty::Type<'a>>
   }
 }
 
-fn check<'a>(ctx: &mut Context<'a>, expr: ast::Expr<'a>, ty: ty::Type<'a>) -> Result<ty::Type<'a>> {
-  let lhs_span = expr.span;
-  if type_eq(&infer(ctx, expr)?, &ty) {
-    Ok(ty)
+fn check<'a>(
+  ctx: &mut Context<'a>,
+  expr: ast::Expr<'a>,
+  rhs: ty::Type<'a>,
+) -> Result<ty::Type<'a>> {
+  let expr_span = expr.span;
+  let lhs = infer(ctx, expr)?;
+  if type_eq(&lhs, &rhs) {
+    Ok(rhs)
   } else {
     Err(Error::TypeMismatch {
-      lhs: lhs_span,
-      rhs: format!("{ty}"),
+      span: expr_span,
+      lhs: format!("{lhs}"),
+      rhs: format!("{rhs}"),
     })
   }
 }

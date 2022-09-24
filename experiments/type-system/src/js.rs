@@ -66,6 +66,7 @@ fn emit_lit_expr(ctx: &mut Context, v: &ast::Lit) {
       for field in r {
         put!(ctx.buf(), "{}:", field.ident.lexeme);
         emit_expr(ctx, &field.value);
+        put!(ctx.buf(), ",");
       }
       put!(ctx.buf(), "}}");
     }
