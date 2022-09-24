@@ -1,6 +1,8 @@
 pub mod ast;
+pub mod builtins;
 pub mod error;
 pub mod infer;
+pub mod js;
 pub mod lexer;
 pub mod parser;
 pub mod span;

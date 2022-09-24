@@ -231,7 +231,7 @@ fn infer<'a>(ctx: &mut Context<'a>, expr: ast::Expr<'a>) -> Result<ty::Type<'a>>
         ast::BinaryOp::GreaterThan => cmp!(ctx, inner, expr_span, builtin!(Int)),
       }
     }
-    ast::ExprKind::Unary(inner) => infer(ctx, inner.rhs),
+    ast::ExprKind::Unary(inner) => check(ctx, inner.rhs, builtin!(Int)),
   }
 }
 

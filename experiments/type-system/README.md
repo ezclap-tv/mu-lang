@@ -28,17 +28,11 @@ fib (v.x);
 
 ### Roadmap
 
-mvp
-
-- type checker
-  - structural type comparison
-  - unidirectional type inference
-- emit javascript
-
 post-mvp
 
+- semicolon operator (multi-expr)
+- flatten `let::var` and `let::func`
 - integrate `codespan-reporting`
-- optional return types
 - tuples using comma operator (`print (0, 1)`, `let tuple: (int, int) = 0, 1`) + tuple types
 - destructuring (`let {a, b} = {a: 0, b: 0}`)
 - generics (`'t`), traits (`trait Eq = ...`), impls (`def Eq for T`, only concrete types)

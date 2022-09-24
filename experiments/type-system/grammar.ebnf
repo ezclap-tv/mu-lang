@@ -13,7 +13,7 @@ let_expr = ( let_func_expr | let_var_expr ) ( "in" expr )? ;
 if_expr = "if" expr "then" expr ( "else" expr )? ;
 
 simple_expr = or_expr ;
-  or_expr = and_expr ( "||" and_expr )* ;
+  or_expr = and_expr ( "||" and_expr )* ;infer(ctx, inner.rhs)
   and_expr = eq_expr ( "&&" eq_expr )* ;
   eq_expr = comp_expr ( ( "==" | "!=" ) comp_expr )* ;
   comp_expr = term_expr ( ( "<" | ">" | "<=" | ">=" ) term_expr )* ;
