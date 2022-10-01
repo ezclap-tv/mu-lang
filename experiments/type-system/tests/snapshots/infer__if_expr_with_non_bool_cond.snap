@@ -3,8 +3,9 @@ source: tests/infer.rs
 expression: errors
 ---
 - TypeMismatch:
-    lhs:
+    span:
       start: 6
       end: 7
+    lhs: int
     rhs: bool
 

@@ -4,55 +4,51 @@ expression: bindings
 ---
 inner:
   - - intToStr
-    - - Function:
-          param:
-            - n
-            - Builtin: Int
-          ret:
-            Builtin: Str
+    - Function:
+        param:
+          - n
+          - Builtin: Int
+        ret:
+          Builtin: Str
   - - print
-    - - Function:
-          param:
-            - v
-            - Builtin: Any
-          ret:
-            Builtin: Any
+    - Function:
+        param:
+          - v
+          - Builtin: Any
+        ret:
+          Builtin: Any
   - - v
-    - - Builtin: Int
-      - Builtin: Int
-      - Builtin: Bool
-      - Builtin: Str
-      - Record:
-          fields:
-            - ident: x
-              ty:
-                Builtin: Int
-            - ident: y
-              ty:
-                Builtin: Int
+    - Record:
+        fields:
+          - ident: x
+            ty:
+              Builtin: Int
+          - ident: y
+            ty:
+              Builtin: Int
   - - fib
-    - - Function:
-          param:
-            - n
-            - Builtin: Int
-          ret:
-            Builtin: Int
+    - Function:
+        param:
+          - n
+          - Builtin: Int
+        ret:
+          Builtin: Int
   - - print_square
-    - - Function:
-          param:
-            - n
-            - Builtin: Int
-          ret:
-            Builtin: Int
+    - Function:
+        param:
+          - n
+          - Builtin: Int
+        ret:
+          Builtin: Int
   - - unwrap
-    - - Function:
-          param:
-            - r
-            - Record:
-                fields:
-                  - ident: v
-                    ty:
-                      Builtin: Int
-          ret:
-            Builtin: Int
+    - Function:
+        param:
+          - r
+          - Record:
+              fields:
+                - ident: v
+                  ty:
+                    Builtin: Int
+        ret:
+          Builtin: Int
 

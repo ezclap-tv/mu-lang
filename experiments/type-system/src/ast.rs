@@ -38,7 +38,7 @@ pub struct Field<'a> {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Let<'a> {
-  pub kind: LetKind<'a>,
+  pub inner: LetKind<'a>,
   #[serde(rename = "in")]
   pub in_: Option<Expr<'a>>,
 }

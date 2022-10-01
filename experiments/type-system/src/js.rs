@@ -77,7 +77,7 @@ fn emit_let_expr(ctx: &mut Context, v: &ast::Let) {
   match &v.in_ {
     Some(in_) => {
       put!(ctx.buf(), "(()=>{{");
-      match &v.kind {
+      match &v.inner {
         ast::LetKind::Var(v) => emit_var(ctx, v),
         ast::LetKind::Func(v) => emit_func(ctx, v),
       };
@@ -86,7 +86,7 @@ fn emit_let_expr(ctx: &mut Context, v: &ast::Let) {
       put!(ctx.buf(), "}})()");
     }
     None => {
-      match &v.kind {
+      match &v.inner {
         ast::LetKind::Var(v) => emit_var(ctx, v),
         ast::LetKind::Func(v) => emit_func(ctx, v),
       };

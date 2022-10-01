@@ -35,7 +35,7 @@ macro_rules! assert_error {
     fn $name() {
       let source = $source;
       let name = stringify!($name);
-      let builtins = [$(($key, $ty)),*].into_iter().collect();
+      let builtins = [$((std::borrow::Cow::from($key), $ty)),*].into_iter().collect();
       let ast = match parser::parse(&source) {
         Ok(ast) => ast,
         Err(errors) => {
@@ -153,5 +153,19 @@ assert_ok!(
     // `+` only checks that all operands have the same type, in this case `str`
     print (n + " * " + n + " = " + sq)
     ;
+  "#
+);
+
+assert_error!(
+  scoping,
+  {
+    "print" => ty::Type::Function(Box::new(ty::Function {
+      param: ("v".into(), ty::Type::Builtin(ty::Builtin::Any)),
+      ret: ty::Type::Builtin(ty::Builtin::Any)
+    }))
+  },
+  r#"
+  let foo v: {} -> {} = let x = 10;
+  print (x);
   "#
 );

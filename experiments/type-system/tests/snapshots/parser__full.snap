@@ -4,7 +4,7 @@ expression: ast
 ---
 - item:
     Let:
-      kind:
+      inner:
         Var:
           ident:
             lexeme: v
@@ -26,7 +26,7 @@ expression: ast
     end: 24
 - item:
     Let:
-      kind:
+      inner:
         Var:
           ident:
             lexeme: v
@@ -58,7 +58,7 @@ expression: ast
     end: 42
 - item:
     Let:
-      kind:
+      inner:
         Var:
           ident:
             lexeme: v
@@ -90,7 +90,7 @@ expression: ast
     end: 69
 - item:
     Let:
-      kind:
+      inner:
         Var:
           ident:
             lexeme: v
@@ -122,7 +122,7 @@ expression: ast
     end: 99
 - item:
     Let:
-      kind:
+      inner:
         Var:
           ident:
             lexeme: v
@@ -205,7 +205,7 @@ expression: ast
     end: 147
 - item:
     Let:
-      kind:
+      inner:
         Func:
           ident:
             lexeme: fib
@@ -394,7 +394,7 @@ expression: ast
     end: 344
 - item:
     Let:
-      kind:
+      inner:
         Func:
           ident:
             lexeme: print_square
@@ -432,7 +432,7 @@ expression: ast
           body:
             item:
               Let:
-                kind:
+                inner:
                   Var:
                     ident:
                       lexeme: r
@@ -595,7 +595,7 @@ expression: ast
     end: 445
 - item:
     Let:
-      kind:
+      inner:
         Func:
           ident:
             lexeme: unwrap

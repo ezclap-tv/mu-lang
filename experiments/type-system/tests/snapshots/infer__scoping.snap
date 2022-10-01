@@ -1,0 +1,12 @@
+---
+source: tests/infer.rs
+expression: errors
+---
+- VarNotDefined:
+    token:
+      lexeme: x
+      span:
+        start: 46
+        end: 47
+      kind: Ident
+

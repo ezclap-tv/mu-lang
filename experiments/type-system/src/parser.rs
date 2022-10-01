@@ -78,7 +78,7 @@ impl<'a> Parser<'a> {
       None
     };
 
-    Ok(ExprKind::Let(Box::new(Let { kind, in_ })))
+    Ok(ExprKind::Let(Box::new(Let { inner: kind, in_ })))
   }
 
   fn parse_let_func_expr(&mut self, ident: Token<'a>) -> Result<LetKind<'a>> {

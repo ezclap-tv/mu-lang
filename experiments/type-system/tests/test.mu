@@ -3,7 +3,6 @@ let fib n: int -> int =
   else n * fib (n - 1)
 ;
 
-
 print (readFile {path:"test.txt"});
 
 let path = "v.txt";

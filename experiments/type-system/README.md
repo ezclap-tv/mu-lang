@@ -26,13 +26,19 @@ let fib n: int -> int =
 fib (v.x);
 ```
 
-### Roadmap
+### Todo
 
-post-mvp
+- fix scoping for free variables
+- convert infer to use references instead of cloning
+- `and` in `let`
+  - check recursive definitions for cycles without indirection
+- integrate `codespan-reporting`
+- record shorthand syntax (`let v = 10; {v} == {v:v}`)
+
+- pattern matching
+- tagged unions
 
 - semicolon operator (multi-expr)
-- flatten `let::var` and `let::func`
-- integrate `codespan-reporting`
 - tuples using comma operator (`print (0, 1)`, `let tuple: (int, int) = 0, 1`) + tuple types
 - destructuring (`let {a, b} = {a: 0, b: 0}`)
 - generics (`'t`), traits (`trait Eq = ...`), impls (`def Eq for T`, only concrete types)
@@ -40,7 +46,6 @@ post-mvp
 - lists (`[T]`)
 - nominal types (`class`)
 - exceptions
-- tagged unions + pattern matching
 - reference types + mutability
 - expression chaining (side effects)
 - modules

@@ -4,5 +4,5 @@ expression: bindings
 ---
 inner:
   - - x
-    - - Builtin: Int
+    - Builtin: Int
 

@@ -4,24 +4,24 @@ expression: bindings
 ---
 inner:
   - - intToStr
-    - - Function:
-          param:
-            - n
-            - Builtin: Int
-          ret:
-            Builtin: Str
+    - Function:
+        param:
+          - n
+          - Builtin: Int
+        ret:
+          Builtin: Str
   - - print
-    - - Function:
-          param:
-            - v
-            - Builtin: Any
-          ret:
-            Builtin: Any
+    - Function:
+        param:
+          - v
+          - Builtin: Any
+        ret:
+          Builtin: Any
   - - print_square
-    - - Function:
-          param:
-            - n
-            - Builtin: Int
-          ret:
-            Builtin: Int
+    - Function:
+        param:
+          - n
+          - Builtin: Int
+        ret:
+          Builtin: Int
 

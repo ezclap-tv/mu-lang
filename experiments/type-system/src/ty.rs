@@ -1,5 +1,4 @@
 use std::borrow::Cow;
-use std::collections::HashMap;
 use std::fmt;
 use std::iter::FromIterator;
 use std::str::FromStr;
@@ -93,7 +92,7 @@ impl FromStr for Builtin {
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct Bindings<'a> {
   #[serde(with = "indexmap::serde_seq")]
-  inner: IndexMap<Cow<'a, str>, Vec<Type<'a>>>,
+  inner: IndexMap<Cow<'a, str>, Type<'a>>,
 }
 
 impl<'a> Bindings<'a> {
@@ -104,49 +103,33 @@ impl<'a> Bindings<'a> {
   }
 
   pub fn insert(&mut self, name: Cow<'a, str>, ty: Type<'a>) {
-    self
-      .inner
-      .entry(name.clone())
-      .or_insert_with(Vec::new)
-      .push(ty);
+    self.inner.insert(name, ty);
   }
 
   pub fn remove(&mut self, name: &str) {
-    let is_empty = {
-      let stack = self
-        .inner
-        .get_mut(name)
-        .expect("attempted to remove an undefined binding");
-      stack
-        .pop()
-        .expect("attempted to remove an undefined binding");
-      stack.is_empty()
-    };
-    if is_empty {
-      self.inner.remove(name);
-    }
+    self.inner.remove(name);
   }
 
   pub fn get(&self, name: &str) -> Option<&Type<'a>> {
-    self.inner.get(name).and_then(|s| s.last())
+    self.inner.get(name)
+  }
+
+  #[allow(clippy::should_implement_trait)]
+  pub fn into_iter(self) -> impl Iterator<Item = (Cow<'a, str>, Type<'a>)> {
+    self.inner.into_iter()
   }
 }
 
-impl<'a> From<HashMap<Cow<'a, str>, Type<'a>>> for Bindings<'a> {
-  fn from(map: HashMap<Cow<'a, str>, Type<'a>>) -> Self {
-    Self {
-      inner: map.into_iter().map(|(name, ty)| (name, vec![ty])).collect(),
-    }
+impl<'a> From<IndexMap<Cow<'a, str>, Type<'a>>> for Bindings<'a> {
+  fn from(map: IndexMap<Cow<'a, str>, Type<'a>>) -> Self {
+    Self::from_iter(map)
   }
 }
 
 impl<'a> FromIterator<(Cow<'a, str>, Type<'a>)> for Bindings<'a> {
   fn from_iter<T: IntoIterator<Item = (Cow<'a, str>, Type<'a>)>>(iter: T) -> Self {
     Self {
-      inner: iter
-        .into_iter()
-        .map(|(name, ty)| (name, vec![ty]))
-        .collect(),
+      inner: iter.into_iter().collect(),
     }
   }
 }

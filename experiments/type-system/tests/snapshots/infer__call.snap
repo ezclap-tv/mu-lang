@@ -4,10 +4,10 @@ expression: bindings
 ---
 inner:
   - - f
-    - - Function:
-          param:
-            - a
-            - Builtin: Int
-          ret:
-            Builtin: Int
+    - Function:
+        param:
+          - a
+          - Builtin: Int
+        ret:
+          Builtin: Int
 
