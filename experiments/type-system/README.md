@@ -28,8 +28,6 @@ fib (v.x);
 
 ### Todo
 
-- fix scoping for free variables
-- convert infer to use references instead of cloning
 - `and` in `let`
   - check recursive definitions for cycles without indirection
 - integrate `codespan-reporting`
