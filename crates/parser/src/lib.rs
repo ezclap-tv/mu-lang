@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::string::ParseError;
 
 use mu_ast::*;
@@ -347,21 +348,21 @@ impl<'t> Parser<'t> {
     if self.match_(&TokenKind::False) {
       return Ok(literal!(self, LiteralValue::Bool(false)));
     }
-    if self.match_(&TokenKind::IntLit(Disregard::disregard())) {
+    if self.match_(&TokenKind::IntLit(disregard())) {
       let int = match self.previous.kind {
         TokenKind::IntLit(int) => int,
         _ => unreachable!(),
       };
       return Ok(literal!(self, LiteralValue::Int(int)));
     }
-    if self.match_(&TokenKind::FloatLit(Disregard::disregard())) {
+    if self.match_(&TokenKind::FloatLit(disregard())) {
       let float = match self.previous.kind {
         TokenKind::FloatLit(FloatBits(float)) => float,
         _ => unreachable!(),
       };
       return Ok(literal!(self, LiteralValue::Float(float)));
     }
-    if self.match_(&TokenKind::StringLit(Disregard::disregard())) {
+    if self.match_(&TokenKind::StringLit(disregard())) {
       let fragments = match &self.previous.kind {
         TokenKind::StringLit(lit) => match lit {
           StringLiteral::Interpolated(fragments) => fragments,
@@ -812,6 +813,13 @@ trait Disregard {
   fn disregard() -> Self;
 }
 
+fn disregard<T>() -> T
+where
+  T: Disregard,
+{
+  T::disregard()
+}
+
 impl Disregard for FloatBits {
   fn disregard() -> Self {
     FloatBits(0.0)
@@ -826,7 +834,7 @@ impl Disregard for i64 {
 
 impl<'t> Disregard for StringLiteral<'t> {
   fn disregard() -> Self {
-    StringLiteral::Invalid(MalformedStringLiteral::MissingQuote)
+    StringLiteral::Plain(Cow::Borrowed(""))
   }
 }
 
