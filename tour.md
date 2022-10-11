@@ -1,7 +1,7 @@
 ### Type System
 
 - static: types are checked at compile-time
-- structural: types are related using their properties, not identities
+- nominal: types are related using identity
 - strict: no null reference errors
 - strong: all type conversions are explicit
 
@@ -10,54 +10,47 @@
 Literals (null, int, float, bool, string, f-string, tuple, array, record)
 
 ```rust
-v := null
-v: null
+v := null;
+v: null;
 
-v: int
-v := 0 // int
-v := 0i
-v: float
-v := 0.0 // float
-v := 0f
+v: int;
+v := 0; // int
+v: float;
+v := 0.0; // float
 
-v := true // bool
-v: bool
+v := true; // bool
+v: bool;
 
-v := "test" // string
-v := "formatted {v}" // string interpolation
-v := "escaped curlies \{v}" // exact value is `escaped curlies {v}`
+v := "test"; // string
+v := "formatted {v}"; // string interpolation
+v := "escaped curlies \{v}"; // exact value is `escaped curlies {v}`
 // strings also support other escaped charaters such as `\n`, `\t`, `\x2800`, etc.
-v := "\x2800"
-v: string
+v := "\x2800";
+v: string;
 
-// string and number literals can also be suffixed
-// LITERALsuffix is transformed to suffix(LITERAL)
-v := 10ms // this calls the `ms` function with the value `10`
-v := "3f9a1c30-dd8f-4769-8ac7-214f94d7d70c"uuid // parses the string as a uuid
+v := (v,); // tuple
+v: (T,);
+v := (v, v);
+v: (T,T);
 
-v := (v,) // tuple
-v: (T,)
-v := (v, v)
-v: (T,T)
+v := []; // array
+v := [v, v, v, v];
+v := [v; 1024];
+v: [T];
 
-v := [] // array
-v := [v, v, v, v]
-v := [v; 1024]
-v: [T]
-
-v := { v: v, [v]: v, ...v } // record
-v: { v: T }
+v := { v: v, [v]: v, ...v }; // record
+v: { v: T };
 ```
 
 Variable declaration
 
 ```rust
 // inferred type
-name := 0
+name := 0;
 
 // explicit type
 // this declaration shadows the previous one, so its type may differ
-name: string = "value"
+name: string = "value";
 ```
 
 Operators
@@ -66,49 +59,42 @@ Operators
 - Equality (`==`, `!=`)
 - Comparison (`>`, `>=`, `<`, `<=`)
 - Boolean (`not`/`!`, `and`/`&&`, `or`/`||`)
-- Bitwise (`&`, `|`, `^`, `~`)
-- Pipeline (`|>`)
 
 ```rust
-2 + 2
-2 - 2
-2 / 2
-2 * 2
-2 % 2
-2 ** 2
-2 == 2
-2 != 2
-2 > 2
-2 >= 2
-2 < 2
-2 <= 2
-!true
-true && true
-false || true
-a ?? b
-0 & 1
-0 | 1
-0 ^ 1
-1 << 1
-1 >> 1
-~0
-a |> b
+2 + 2;
+2 - 2;
+2 / 2;
+2 * 2;
+2 % 2;
+2 ** 2;
+2 == 2;
+2 != 2;
+2 > 2;
+2 >= 2;
+2 < 2;
+2 <= 2;
+-2
+!true;
+true && true;
+false || true;
+a ?? b;
 ```
 
 Assignment and compound assignments
 
 ```rust
-name = 1
-name += 1 // desugars to `name = name + 1`
+name = 1;
 // compound assignments for all binary arithmetic and bitwise operators, and optional coalescing
-name -= 1
-name /= 1
-name *= 1
-name **= 1
-name &= 1
-name |= 1
-name ^= 1
-name ??= 1 // assigns to `name` if `name` is null
+// `ident OP= expr desugar to `ident = ident OP expr`
+name += 1;
+name -= 1;
+name /= 1;
+name *= 1;
+name %= 1;
+name **= 1;
+// assigns to `name` only if `name` is null,
+// and asserts that `name` is no longer null
+name ??= 1;
 ```
 
 If, do
@@ -131,7 +117,9 @@ v2: null = do { "value"; }
 if true return
 if true break
 if true continue
-// etc.
+if true for ...
+if true while ...
+if true loop ...
 ```
 
 Loops (for, while, loop), continue/break
@@ -157,27 +145,16 @@ loop {
   if v == 5 break
   v += 1
 }
-
-// labelled loops (applies to `for` and `while`, too)
-'a: loop {
-  'b: loop {
-    break 'a
-  }
-}
 ```
 
-Functions (generics, variadics, return, throw, pipeline operator)
+Functions (generics, variadics, return)
 
 ```rust
 fn name(a: A, b: B, c: C) {/*...*/}
 fn name[T](a: A, b: B, c: C) -> T {/*...*/}
-fn name[T](a: A, b: B, c: C) -> T throws {/*...*/}
-fn name[T, E](a: A, b: B, c: C) -> T throws E {/*...*/}
-fn name[T: Bound, E](a: A, b: B, c: C) -> T throws E {/*...*/}
-fn name[T, E](a: A, b: B, c: C) -> T throws E where T: Bound {/*...*/}
+fn name[T, E](a: A, b: B, c: C) -> T where T: Bound {/*...*/}
 
 fn name[T, E](a: A, b: B, c: C) -> T
-  throws E
   where
     A: IA,
     B: IB,
@@ -205,396 +182,133 @@ bar("a") // error: function accepts no positional args
 bar(named_only: "a") // a
 
 fn fib(n: int): int {
-  match n {
-    ..1 => 0
-    1..=2 => 1
-    _ => fib(n-1) + fib(n+1)
-  }
+  if n < 2 { n }
+  else n * fib(n - 1)
 }
 
 // return may be used to return early
-fn test() { return }
-
-// `throw` may be used to return an error
-// note that these are *not* exceptions, they do not unwind the stack, nor do they automatically propagate until caught. every error must be explicitly handled or propagated.
-// before you can throw errors, the function must be declared as fallible with `throws`
-fn fallible0(v: bool) throws {
-  if v { throw "error-like" }
+fn test() {
+  if something() { return }
+  print("yo")
 }
-
-// fallible functions collect thrown error types into an anonymous enum
-fn fallible1() throws {
-  if a() { throw A() }
-  if b() { throw B() }
-  if c() { throw C() }
-}
-
-// the set of possible errors can also be declared explicitly
-fn fallible2() throws A | B {
-  if a() { throw A() }
-  if b() { throw B() }
-  if c() { throw C() } // error: this function may only throw `A` or `B`
-}
-
 
 fn split(s: string, sep: string) -> [string] {
-  out = []
-  current = ""
+  out := [];
+  start := 0;
+  end := 0;
+
   for ch in s {
     if ch == sep {
-      out.push(current)
-      current = ""
+      out.push(s[start..end])
+      start = end;
+    } else {
+      end += 1;
     }
-    else { current += ch }
   }
-  if current.len > 0 { out.push(current) }
+
+  if current.len > 0 {
+    out.push(current);
+  }
 
   out
 }
 
-v := "a,b,c"
-split(v, sep: ",")
-
-// pipeline operator simplifies nested calls
-print(
-  [0, 1, 2, 3]
-  |> map(\x {x*x})
-  |> filter(\x {x == 0})
-  |> sum()
-  // if the function has positional arity of 1, and no required named params, then the call can be omitted
-  //
-  // |> sum
-  //
-  // this is useful when you want to use pipeline with lambdas
-  //
-  // 10 |> \x {x*x}
-  //
-  // the above is equivalent to
-  //
-  // 10 |> (\x {x*x})()
-)
-
-fn square(a: int, b: int) -> int { a * b }
-
-// `#` character can be used as a placeholder
-// it binds the expression on the left side, which is only evaluated once
-fn expensive() {
-  print("expensive")
-  2 * 2
-}
-tuple := expensive() |> (#, #, #) // prints "expensive" exactly once
-
-// if the right-side is not a function with arity=1 or a call expression using one, it *must* include the `#` character to specify where the left-side should should be placed.
-
-[1, 2, 3] |> sum // ok, function with arity=1
-[1, 2, 3] |> sum() // ok, call to fn with arity=1
-
-10 |> 5 + 5 // invalid, not call/fn, not using `#`
-10 |> # + 5 // ok
+print(split("a,b,c", sep: ","))
 ```
 
-Types, classes, enums (+ field/index access)
+Classes, traits
 
 ```rust
-type Name {
-  a: A,
-  b: B,
+trait Default {
+  fn default() -> Self;
 }
 
-v: Name = { a: ..., b: ... }
-print(v.a)
-
-type Name[T: Bound] { /*...*/ }
-type Name[T] where T: Bound { /*...*/ }
-
-type Any {
-  fn typeid() -> TypeId,
+trait Iterate {
+  type Iter: Iterator;
+  fn iter(self) -> Iter;
 }
 
-// an associated type is essentially a type parameter, but may not differ between definitions for the same type
-type AssociatedType {
-  type Test: Default
+trait Iterator {
+  type Item;
+  fn next(self) -> Item?;
+}
 
-  fn test() -> Self.Test {
-    Self.Test.default()
+class Node<T> {
+  value: T;
+  next: Node[T]?;
+}
+
+class List[T] {
+  @head: Node[T]?;
+
+  fn new() -> Self {
+    List(head: null);
+  }
+
+  fn prepend(self, value: T) {
+    next := self.head;
+    self.head = Node(value);
+    self.head.next = next;
+  }
+
+  impl Iterate {
+    type Iter = ListIter[T];
+    fn iter(self) -> Iter {
+      ListIter(node: self.head)
+    }
   }
 }
 
-type NotAssociatedType[T] where T: Default {
-  fn test() -> T { T.default() }
-}
+class ListIter[T] {
+  node: Node[T];
 
-class A[T /*: Bound*/] where T: Bound {
-  // note: commas and semicolons are interchangeable and fully optional
-  // the may be used to enhance readability:
-  a: string, b: string, c: string
-
-  type AssociatedType = T
-
-  fn static_method() -> Self.AssociatedType { /*...*/ }
-  // an instance method takes `self` as the first parameter
-  fn instance_method(self) { /*...*/ }
-}
-
-a := A("a", "b", "c")
-a := A(a: "a", b: "b", c: "c")
-
-class Constructor {
-  a, b, c: string
-  rest: [string]
-
-  fn new(parts: [string]) -> Self {
-    Constructor(...parts[0..3], parts[3..])
+  impl Iterator {
+    type Item = Node[T];
+    fn next(self) -> Item? {
+      node := self.node;
+      self.node = node.next;
+      node.value
+    }
   }
 }
 
-// classes are nominal types
-class A { v: number }
-type B = { v: number }
-fn accepts_A(v: A) { /* ... */ }
-fn accepts_B(v: B) { /* ... */ }
-a := A(v: 0)
-b := { v: 1 }
-accepts_A(a) // ok
-accepts_A(b) // error: parameter `v` only accepts instances of class `A`
-accepts_B(a) // ok
-accepts_B(b) // ok
+list := List.new();
 
-// bounds on `Self` are how you declare that you want this class to be a subtype of some `T`
-class SelfBound where Self: Default {
-  // you *must* implement `default` now
-  fn default() -> Self { /*...*/ }
+for i in 0..10 {
+  list.prepend(i);
 }
 
-v := Constructor.new(["a", "b", "c", "d"])
-
-// `Self` bounds exist here, too
-enum B[T /*: Bound*/] where T: Bound {
-  // again, commas and semicolons are optional
-  A,
-  B(T),
-  C { v: T };
-
-  type AssociatedType = T
-
-  fn static_method() -> Self.AssociatedType { /*...*/ }
-  fn instance_method(self) { /*...*/ }
-}
-
-// enums and their variants are also nominal types
-enum StuffA { A, B, C }
-enum StuffB { A, B, C }
-
-fn use_stuff_a(a: StuffA) { /*...*/ }
-use_stuff_a(StuffB.A) // error
-use_stuff_a(StuffA.A) // ok
-// may also be called like so
-use_stuff_a(.A)
-
-// since variants are types too, you can accept them directly
-fn use_stuff_variant_a(a: StuffA.A) { /*...*/ }
-use_stuff_variant_a(StuffA.B) // error
-use_stuff_variant_a(StuffA.A) // ok
-// still may be written like this
-use_stuff_variant_a(.A) // ok
-```
-
-Enums + match + patterns
-
-```rust
-enum Name {
-  Unit
-  Simple(T)
-  Tuple(A, B)
-  Struct { a: A, b: B }
-}
-
-class Test {
-  a: string
-}
-
-// pattern matching
-// it is an expression, just like `if`
-
-// numeric
-v := match v {
-  0 => /*...*/,
-  1..10 => /*...*/,
-  n if n >= 10 => /*...*/,
-  // must be exhaustive
-  _ => /*...*/
-}
-
-// stringy
-match v {
-  "test" => /*...*/,
-  _ => /*...*/
-}
-
-match v {
-  "a" => "b",
-  "b" => "c",
-  _ => "d"
-}
-
-// matching on types
-type Test {
-  a: int
-  b: int
-}
-
-v := { a: 0, b: 0 }
-v := match v {
-  { a: 1..10, b: 0 } => /*...*/,
-  { a: 0, b: 1..10 } => /*...*/,
-  _ => /*...*/
-}
-
-// matching on enums
-v := match Name.Unit {
-  .Unit => /*...*/,
-  .Tuple(a, b) => /*...*/,
-  // with nesting
-  .Tuple(a: 0, b: 10) => /*...*/,
-  // and guards
-  .Tuple(a: 0, b) if (0..10).contains(b) => /*...*/,
-  .Tuple(a, b) => /*...*/,
-  _ => /*...*/
-}
-
-// postfix match
-v := a.match { /*...*/ }
-
-// record matching
-v := match { a: /* some string */ } {
-  { a: "test" } => /*...*/
-  { a } => /*...*/
-}
-// class matching - equivalent to record matching
-v := match Test(a: /* some string */) {
-  { a: "test" } => /*...*/
-  { a } => /*...*/
-}
-
-/*
-// literals
-true as v // bound to `v`
-false as v
-null as v
-0 as v
-"test" as v
-0..10 as v // integer range
-
-// complex types
-// anywhere you'd normally place the value is where you can also match on it
-// in every case except structs, you use the `as` keyword to bind parts of the pattern
-// in case of structs, you use right-side of `:`
-
-// checks that `len` is at least `2`
-// binds `first` to index 0, `middle` to `1..=len-3`, `last` to `len-1`
-[first, .. as middle, _, last]
-
-// checks that `len` is at least `2`, and that index `0` has value `0`, and index `len-1` has value `6`
-// binds nothing
-[0, .., 6]
-
-// checks that `.2` has value `2`
-// binds `.0` to `a` and `.1` to `c`
-(a, b as c, 2, .. as rest)
-
-// checks that `d` has value `2`
-// binds `a` to `a` and `b` to `c`
-// QQQ: should `d` be bound here too?
-{ a, b: c, d: 2 }
-
-// patterns can be (almost) arbitrarily nested, for example:
-// matches the last item in the last array 3 levels deep
-[.., [[.., 0]]] => {}
-// matches an enum tuple variant with a deeply nested record
-.Tuple({ a: { b: { c: 0..10 } } }) => {}
-*/
-```
-
-With
-
-```rust
-type Disposable {
-  fn dispose(Self)
-}
-
-class File where Self: Disposable {
-  fid: int
-
-  fn open(path: string) -> File { /* ... */ }
-  fn close(self) { /* ... */ }
-
-  fn dispose(self) { self.close() }
-}
-
-// only `Disposable`s may be used in `with`
-with f := File.open("test.json") {
-  use(f)
-  // call to `f.dispose()` is inserted here
-}
-
-// `with` may contain multiple declarations
-with
-  a := fopen("a.json");
-  b := fopen("b.json");
-  c := fopen("c.json");
-{
-
+for val in list {
+  print(val);
 }
 ```
 
-Errors (throw, handling, propagation, unwrapping, + match)
+Exceptions
 
 ```rust
-type A { /*...*/ }
-type B { /*...*/ }
+class A {}
+class B {}
+class C {}
 
-fn fallible(v: bool) throws {
-  if v { throw A }
-  else { throw B }
+fn f() {
+  throw A()
 }
 
-fn fallible2() throws {
-  v := fallible() // error: must handle failure
-
-  // there are three ways to handle errors:
-  // 1. propagation
-  v := try fallible()
-  // postfix try
-  v := fallible().try
-
-  // 2. unwrapping
-  v := try! fallible()
-  v := fallible().try!
-
-  // 3. catching
-  v := catch fallible() {
-    A => /*...*/,
-    B => /*...*/,
-  }
-  // postfix catch
-  v := fallible().catch {
-    A => /*...*/,
-    B => /*...*/,
-  }
-}
-```
-
-Optional values
-
-```rust
-fn test[T](v: T?) -> T? {
-  print(v)
+v := try f() catch {
+  A => ...,
+  B => ...,
+  C => ...,
 }
 
-v: string? = null
-test(v) // prints "null"
-v = "test"
-test(v) // prints "test"
+try {
+  a();
+  b();
+  c();
+} catch {
+  A => ...
+  B => ...
+  C => ...
+}
 ```
 
 Modules
@@ -624,42 +338,77 @@ export type D {}
 
 // exports may also be grouped into a block export
 fn e() {}
-class F {}
-enum G {}
-type H {}
+traits F
+class G {}
 // symbols exported this way may be renamed using `as`
-export { e as h, F as G, G as F, H as E }
+export { e as g, F as E, G as F }
 
-// the language does not guarantee the order in which modules' top-level code is executed. module imports may be arbitrarily re-ordered and/or parallelized. the only guarantee is that code at the top-level in imported modules will be executed exactly once.
+// module imports may be arbitrarily re-ordered by the runtime, which means that
+// there is no guarantee of the order in which the "side effects" of imported modules are processed.
+// the only guarantee is that code at the top-level in imported modules will be executed exactly once.
 ```
 
 Concurrency
 
 ```rust
 /*
-Everything is asynchronous by default. All execution happens within the context of a task. Whenever you do any I/O, the task is blocked until that I/O finishes, but other tasks may be scheduled to run during during that time.
+Everything is asynchronous by default.
+All execution happens within the context of a task.
+Whenever you do any I/O, the task is blocked until that I/O finishes,
+but other tasks may be scheduled to run during during that time.
 
-The runtime is single-threaded, which means that no synchronization, such as atomics or locks, are ever needed.
+you may also know tasks under names such as:
+- stackful coroutines
+- goroutines
+- fibers
+- green threads
+
+The runtime is single-threaded, which means that no synchronization
+is ever needed, at the expense of not being able to parallelize computation.
 */
 
+// the built-in `task` module provides utilities related to managing tasks,
+// such as `sleep`, `select`, `join`, etc.
+
+// foo.mu
+import task
+
 fn perform_io(label: string) {
-  sleep(1)
+  // this is a native function which yields to the executor
+  // note that timers are *not* precise. the value should be
+  // treated as a minimum duration.
+  task.sleep(1)
   print("{label} io done")
 }
 
-// first.hr
-print("first a")
-perform_io("first")
-print("first b")
+// first.mu
+import foo
 
-// second.hr
-print("second a")
-perform_io("second")
-print("second b")
+export fn exec() {
+  print("first a");
+  foo.perform_io("first");
+  print("first b");
+}
+
+// second.mu
+import foo
+
+export fn exec() {
+  print("second a");
+  foo.perform_io("second");
+  print("second b");
+}
+
+// main.mu
+import first
+import second
+
+first.exec();
+second.exec();
 
 /*
-assuming that the I/O in `first.hr` completes before `second.hr`,
-running these modules would produce the following logs:
+assuming that the I/O in `first.mu` completes before `second.mu`,
+running `main.mu` would produce the following logs:
 
 first a
 second a
@@ -677,16 +426,33 @@ to perform more than one instance of I/O at the same time.
 for these use cases, you can use the `spawn` keyword.
 */
 
-print("first a")
-spawn perform_io("first")
-print("first b")
+// first.mu
+import foo
 
-print("second a")
-spawn perform_io("second")
-print("second b")
+export fn exec() {
+  print("first a");
+  spawn foo.perform_io("first");
+  print("first b");
+}
+
+// second.mu
+import foo
+
+export fn exec() {
+  print("second a");
+  spawn foo.perform_io("second");
+  print("second b");
+}
+
+// main.mu
+import first
+import second
+
+first.exec();
+second.exec();
 
 /*
-executing the above code will print:
+executing `main.mu` will now print:
 
 first a
 first b
@@ -697,34 +463,49 @@ second io done
 
 those last two prints may switch places if `second` completes first.
 this is because the language does not guarantee the order of
-execution of spawned tasks.
+execution of spawned tasks. if you need to guarantee the order
+of execution, don't use `spawn`.
 */
 
-// you may also know tasks under names such as:
-// - stackful coroutines
-// - goroutines
-// - fibers
-// - green threads
+/*
+spawning a function call
 
-// spawning tasks works as follows:
-// arguments are evaluated, a new stack is created, the arguments are copied over to the new stack, and the function is called in the context of the new stack.
-// because the runtime is single threaded, the spawned task won't begin executing until the current module blocks on some I/O or finishes executing.
-spawn task()
+this eagerly evaluates arguments,
+but the actual execution of `f` does not begin immediately.
+when exactly execution begins is unspecified.
+*/
+spawn f(expensive());
 
-// spawn a "block"
+// spawn a block
 // equivalent to `spawn (fn() { /*...*/ })()`
-spawn { /*...*/ }
-
-// `spawn` returns a task handle
-task := spawn { /*...*/ }
-do_something()
-if !task.done {
-  task.join() // blocks until `task` finishes executing
+spawn {
+  // because the block is a closure, `return` ends the task.
+  // the return value becomes the result of the task
+  return "baz"
 }
 
-// the `join` function from the built-in `async` module accepts multiple task handles, and blocks until all of them have finished executing.
-async.join((
-  spawn { /*...*/ },
-  spawn { /*...*/ }
-))
+// `spawn` returns a task handle
+t := spawn f();
+
+// which can be joined, causing the current task to wait for it to finish.
+t.join();
+
+// you can also check if a task is done before joining it:
+if t.done {
+  t.join();
+}
+
+// joining a task evaluates to the return value of the executed closure.
+// in case of an exception, the exception is rethrown.
+v := (spawn { return "test" }).join();
+assert(v == "test");
+
+// you may use the `try_join` function to return a result,
+// which stores the exception instead of rethrowing it.
+r := (spawn { throw "test" }).try_join();
+if r.error {
+  handle(r.error);
+} else {
+  use(r.value);
+}
 ```
