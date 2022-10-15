@@ -192,7 +192,7 @@ trait Iterator {
   fn next(self) -> Item?;
 }
 
-class Node<T> {
+class Node[T] {
   value: T;
   next: Node[T]?;
 }
@@ -297,7 +297,7 @@ export type D {}
 
 // exports may also be grouped into a block export
 fn e() {}
-traits F
+trait F
 class G {}
 // symbols exported this way may be renamed using `as`
 export { e as g, F as E, G as F }
