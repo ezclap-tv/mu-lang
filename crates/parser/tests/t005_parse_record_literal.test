@@ -1,0 +1,205 @@
+a = {}
+b = { name }
+c = { name: 1 }
+d = { ["name"]: 2  }
+e = { a, b, c: null }
+f = { a: null, b, c }
+g = { fully: 1, ["initialized"]: 2, record }
+h = { ...spread, me }
+j = { ...two, ...spreads }
+k = { ...spread, name, ["field"]: "value", ...spread }
+l = {...one,...two,...three}
+
+%output
+
+Stmt
+  kind: Expr
+    kind: Assignment
+      operator: Equal
+      target: Expr
+        kind: ExprKind::Identifier
+          name: "a"
+      value: Expr
+        kind: RecordLiteral
+          fields=
+Stmt
+  kind: Expr
+    kind: Assignment
+      operator: Equal
+      target: Expr
+        kind: ExprKind::Identifier
+          name: "b"
+      value: Expr
+        kind: RecordLiteral
+          fields=
+            RecordField::Variable
+              field: "name"
+Stmt
+  kind: Expr
+    kind: Assignment
+      operator: Equal
+      target: Expr
+        kind: ExprKind::Identifier
+          name: "c"
+      value: Expr
+        kind: RecordLiteral
+          fields=
+            RecordField::Named
+              field: "name"
+              value: Expr
+                kind: PrimitiveLiteral
+                  value: Int(1)
+Stmt
+  kind: Expr
+    kind: Assignment
+      operator: Equal
+      target: Expr
+        kind: ExprKind::Identifier
+          name: "d"
+      value: Expr
+        kind: RecordLiteral
+          fields=
+            RecordField::Computed
+              field: Expr
+                kind: PrimitiveLiteral
+                  value: String("name")
+              value: Expr
+                kind: PrimitiveLiteral
+                  value: Int(2)
+Stmt
+  kind: Expr
+    kind: Assignment
+      operator: Equal
+      target: Expr
+        kind: ExprKind::Identifier
+          name: "e"
+      value: Expr
+        kind: RecordLiteral
+          fields=
+            RecordField::Variable
+              field: "a"
+            RecordField::Variable
+              field: "b"
+            RecordField::Named
+              field: "c"
+              value: Expr
+                kind: PrimitiveLiteral
+                  value: Null
+Stmt
+  kind: Expr
+    kind: Assignment
+      operator: Equal
+      target: Expr
+        kind: ExprKind::Identifier
+          name: "f"
+      value: Expr
+        kind: RecordLiteral
+          fields=
+            RecordField::Named
+              field: "a"
+              value: Expr
+                kind: PrimitiveLiteral
+                  value: Null
+            RecordField::Variable
+              field: "b"
+            RecordField::Variable
+              field: "c"
+Stmt
+  kind: Expr
+    kind: Assignment
+      operator: Equal
+      target: Expr
+        kind: ExprKind::Identifier
+          name: "g"
+      value: Expr
+        kind: RecordLiteral
+          fields=
+            RecordField::Named
+              field: "fully"
+              value: Expr
+                kind: PrimitiveLiteral
+                  value: Int(1)
+            RecordField::Computed
+              field: Expr
+                kind: PrimitiveLiteral
+                  value: String("initialized")
+              value: Expr
+                kind: PrimitiveLiteral
+                  value: Int(2)
+            RecordField::Variable
+              field: "record"
+Stmt
+  kind: Expr
+    kind: Assignment
+      operator: Equal
+      target: Expr
+        kind: ExprKind::Identifier
+          name: "h"
+      value: Expr
+        kind: RecordLiteral
+          fields=
+            RecordField::Spread
+              spread: "..."
+              field: "spread"
+            RecordField::Variable
+              field: "me"
+Stmt
+  kind: Expr
+    kind: Assignment
+      operator: Equal
+      target: Expr
+        kind: ExprKind::Identifier
+          name: "j"
+      value: Expr
+        kind: RecordLiteral
+          fields=
+            RecordField::Spread
+              spread: "..."
+              field: "two"
+            RecordField::Spread
+              spread: "..."
+              field: "spreads"
+Stmt
+  kind: Expr
+    kind: Assignment
+      operator: Equal
+      target: Expr
+        kind: ExprKind::Identifier
+          name: "k"
+      value: Expr
+        kind: RecordLiteral
+          fields=
+            RecordField::Spread
+              spread: "..."
+              field: "spread"
+            RecordField::Variable
+              field: "name"
+            RecordField::Computed
+              field: Expr
+                kind: PrimitiveLiteral
+                  value: String("field")
+              value: Expr
+                kind: PrimitiveLiteral
+                  value: String("value")
+            RecordField::Spread
+              spread: "..."
+              field: "spread"
+Stmt
+  kind: Expr
+    kind: Assignment
+      operator: Equal
+      target: Expr
+        kind: ExprKind::Identifier
+          name: "l"
+      value: Expr
+        kind: RecordLiteral
+          fields=
+            RecordField::Spread
+              spread: "..."
+              field: "one"
+            RecordField::Spread
+              spread: "..."
+              field: "two"
+            RecordField::Spread
+              spread: "..."
+              field: "three"

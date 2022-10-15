@@ -65,7 +65,7 @@ stmt =
     | type_stmt
     | expr_stmt
     | 
-  ) ";"? ;
+  ) (";" | "\n")? ;
 
 var_decl =
   | IDENTIFIER ":=" expression

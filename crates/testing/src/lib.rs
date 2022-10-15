@@ -131,7 +131,6 @@ pub fn write_test_file(file: &TestFile<'_>, new_content: &str) {
     f.write_all("\n".as_bytes())?;
     f.write_all("\n".as_bytes())?;
     f.write_all(new_content.as_bytes())?;
-    f.flush()?;
     Ok(())
   }()
   .expect("Failed to write the snapshot");
@@ -161,7 +160,7 @@ where
 /// Compares the output of the given function and the expected output.
 pub fn test_ok<E, F>(file: TestFile<'_>, pipeline: F)
 where
-  E: std::error::Error,
+  E: std::fmt::Debug,
   F: for<'a> Fn(Cow<'a, str>) -> Result<String, E>,
 {
   let src = std::borrow::Cow::Borrowed(&file.code[..]);
@@ -231,6 +230,7 @@ macro_rules! make_test_macros {
 
         $crate::with_dollar_sign! {
             ($d:tt) => {
+                #[allow(unused_macros)]
                 macro_rules! test_ok {
                     ($test_name:ident $d( $d attr:ident ),*) => {
                         $d(#[$d attr])*
@@ -243,6 +243,7 @@ macro_rules! make_test_macros {
                     };
                 }
 
+                #[allow(unused_macros)]
                 macro_rules! test_err {
                     ($test_name:ident $d( $d attr:ident ),*) => {
                         $d (#[$d attr])*
@@ -254,13 +255,14 @@ macro_rules! make_test_macros {
                     };
                 }
 
+                #[allow(unused_macros)]
                 macro_rules! test_auto {
                     ($test_name:ident $d( $d attr:ident ),*) => {
                         $d (#[$d attr])*
                         #[test]
                         fn $test_name() {
                             let mut file = $crate::load_test_file(&__TESTS_DIR, stringify!($test_name));
-                            match file.kind {
+                            match file.output_kind {
                                 $crate::OutputKind::Err => $crate::test_err(file, $err_pipeline),
                                 _ => {
                                   file.expected = $output_preprocessor(file.expected);

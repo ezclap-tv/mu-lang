@@ -1,0 +1,7 @@
+{}
+
+%output
+
+Stmt
+  kind: StmtKind::Block
+    statements=

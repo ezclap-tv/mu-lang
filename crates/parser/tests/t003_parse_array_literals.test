@@ -1,0 +1,185 @@
+[]
+[1, 2, 3]
+[["nested"]]
+[1; 10]
+[null; 10]
+[null; null]
+[[]; [1, 2, 3]]
+[...[1 ,2 ,3], "yo", ...[3, 4]]
+[...[...[...["spread"], "it"]]]
+[...([])]
+
+%output
+
+Stmt
+  kind: Expr
+    kind: ArrayLiteral::Plain
+      items=
+Stmt
+  kind: Expr
+    kind: ArrayLiteral::Plain
+      items=
+        ArrayItem
+          spread: None
+          value: Expr
+            kind: PrimitiveLiteral
+              value: Int(1)
+        ArrayItem
+          spread: None
+          value: Expr
+            kind: PrimitiveLiteral
+              value: Int(2)
+        ArrayItem
+          spread: None
+          value: Expr
+            kind: PrimitiveLiteral
+              value: Int(3)
+Stmt
+  kind: Expr
+    kind: ArrayLiteral::Plain
+      items=
+        ArrayItem
+          spread: None
+          value: Expr
+            kind: ArrayLiteral::Plain
+              items=
+                ArrayItem
+                  spread: None
+                  value: Expr
+                    kind: PrimitiveLiteral
+                      value: String("nested")
+Stmt
+  kind: Expr
+    kind: InitializedArray
+      value: Expr
+        kind: PrimitiveLiteral
+          value: Int(1)
+      length: Expr
+        kind: PrimitiveLiteral
+          value: Int(10)
+Stmt
+  kind: Expr
+    kind: InitializedArray
+      value: Expr
+        kind: PrimitiveLiteral
+          value: Null
+      length: Expr
+        kind: PrimitiveLiteral
+          value: Int(10)
+Stmt
+  kind: Expr
+    kind: InitializedArray
+      value: Expr
+        kind: PrimitiveLiteral
+          value: Null
+      length: Expr
+        kind: PrimitiveLiteral
+          value: Null
+Stmt
+  kind: Expr
+    kind: InitializedArray
+      value: Expr
+        kind: ArrayLiteral::Plain
+          items=
+      length: Expr
+        kind: ArrayLiteral::Plain
+          items=
+            ArrayItem
+              spread: None
+              value: Expr
+                kind: PrimitiveLiteral
+                  value: Int(1)
+            ArrayItem
+              spread: None
+              value: Expr
+                kind: PrimitiveLiteral
+                  value: Int(2)
+            ArrayItem
+              spread: None
+              value: Expr
+                kind: PrimitiveLiteral
+                  value: Int(3)
+Stmt
+  kind: Expr
+    kind: ArrayLiteral::Plain
+      items=
+        ArrayItem
+          spread: "..."
+          value: Expr
+            kind: ArrayLiteral::Plain
+              items=
+                ArrayItem
+                  spread: None
+                  value: Expr
+                    kind: PrimitiveLiteral
+                      value: Int(1)
+                ArrayItem
+                  spread: None
+                  value: Expr
+                    kind: PrimitiveLiteral
+                      value: Int(2)
+                ArrayItem
+                  spread: None
+                  value: Expr
+                    kind: PrimitiveLiteral
+                      value: Int(3)
+        ArrayItem
+          spread: None
+          value: Expr
+            kind: PrimitiveLiteral
+              value: String("yo")
+        ArrayItem
+          spread: "..."
+          value: Expr
+            kind: ArrayLiteral::Plain
+              items=
+                ArrayItem
+                  spread: None
+                  value: Expr
+                    kind: PrimitiveLiteral
+                      value: Int(3)
+                ArrayItem
+                  spread: None
+                  value: Expr
+                    kind: PrimitiveLiteral
+                      value: Int(4)
+Stmt
+  kind: Expr
+    kind: ArrayLiteral::Plain
+      items=
+        ArrayItem
+          spread: "..."
+          value: Expr
+            kind: ArrayLiteral::Plain
+              items=
+                ArrayItem
+                  spread: "..."
+                  value: Expr
+                    kind: ArrayLiteral::Plain
+                      items=
+                        ArrayItem
+                          spread: "..."
+                          value: Expr
+                            kind: ArrayLiteral::Plain
+                              items=
+                                ArrayItem
+                                  spread: None
+                                  value: Expr
+                                    kind: PrimitiveLiteral
+                                      value: String("spread")
+                        ArrayItem
+                          spread: None
+                          value: Expr
+                            kind: PrimitiveLiteral
+                              value: String("it")
+Stmt
+  kind: Expr
+    kind: ArrayLiteral::Plain
+      items=
+        ArrayItem
+          spread: "..."
+          value: Expr
+            kind: ExprKind::Grouping
+              expr: Expr
+                kind: ArrayLiteral::Plain
+                  items=

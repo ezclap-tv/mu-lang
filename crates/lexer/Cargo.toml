@@ -6,6 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+ast2str = "1.4.1"
 logos = "0.12.1"
 
 [dev-dependencies]
