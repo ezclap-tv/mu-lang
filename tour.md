@@ -10,36 +10,33 @@
 Literals (null, int, float, bool, string, f-string, tuple, array, record)
 
 ```rust
+// v : null;
 v := null;
-v: null;
 
-v: int;
-v := 0; // int
-v: float;
-v := 0.0; // float
+// v : int;
+v := 0;
+// v : float;
+v := 0.0;
 
-v := true; // bool
-v: bool;
+// v : bool;
+v := true;
 
-v := "test"; // string
+// v : string
+v := "test";
 v := "formatted {v}"; // string interpolation
 v := "escaped curlies \{v}"; // exact value is `escaped curlies {v}`
 // strings also support other escaped charaters such as `\n`, `\t`, `\x2800`, etc.
 v := "\x2800";
-v: string;
 
-v := (v,); // tuple
-v: (T,);
+// v : (T,)
+v := (v,);
+// v : (T, T)
 v := (v, v);
-v: (T,T);
 
-v := []; // array
+// v : [T]
+v := [];
 v := [v, v, v, v];
 v := [v; 1024];
-v: [T];
-
-v := { v: v, [v]: v, ...v }; // record
-v: { v: T };
 ```
 
 Variable declaration
@@ -166,21 +163,6 @@ fn name[T, E](a: A, b: B, c: C) -> T
 // anonymous function
 square := \x {x*x}
 
-// positionals, defaults, rest, named + call examples
-fn foo(a, b, c: string, d = "test", rest: string..., named: string = "named") {
-  print(a, b, c, d, rest, named)
-}
-foo("a", "b", "c") // a b c test [] named
-foo("a", "b", "c", "d", "f", "g", "h") // a b c d [f g h] named
-foo("a", "b", "c", "d", "f", "g", "h", named: "i") // a b c d [f g h] i
-foo("a", b: "b", "c") // error: `c` must be labelled
-
-fn bar(..., named_only: string) {
-  print(named_only)
-}
-bar("a") // error: function accepts no positional args
-bar(named_only: "a") // a
-
 fn fib(n: int): int {
   if n < 2 { n }
   else n * fib(n - 1)
@@ -213,7 +195,7 @@ fn split(s: string, sep: string) -> [string] {
   out
 }
 
-print(split("a,b,c", sep: ","))
+print(split("a,b,c", ","))
 ```
 
 Classes, traits
@@ -294,7 +276,7 @@ fn f() {
   throw A()
 }
 
-v := try f() catch {
+v := try f() {
   A => ...,
   B => ...,
   C => ...,
