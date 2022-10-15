@@ -311,7 +311,6 @@ Concurrency
 
 ```rust
 /*
-Everything is asynchronous by default.
 All execution happens within the context of a task.
 Whenever you do any I/O, the task is blocked until that I/O finishes,
 but other tasks may be scheduled to run during during that time.
@@ -324,6 +323,13 @@ you may also know tasks under names such as:
 
 The runtime is single-threaded, which means that no synchronization
 is ever needed, at the expense of not being able to parallelize computation.
+
+Note that despite being single-threaded, the runtime may interrupt any task
+at any point, and begin executing other scheduled tasks. This is known as
+preemptive multitasking, as opposed to cooperative multitasking, where these
+interrupts may only happen at well-defined points in the program. The reason
+for preemptive multitasking is to allow the runtime to implement CPU time
+and other resource limits.
 */
 
 // the built-in `task` module provides utilities related to managing tasks,
