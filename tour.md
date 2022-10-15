@@ -173,29 +173,6 @@ fn test() {
   if something() { return }
   print("yo")
 }
-
-fn split(s: string, sep: string) -> [string] {
-  out := [];
-  start := 0;
-  end := 0;
-
-  for ch in s {
-    if ch == sep {
-      out.push(s[start..end])
-      start = end;
-    } else {
-      end += 1;
-    }
-  }
-
-  if current.len > 0 {
-    out.push(current);
-  }
-
-  out
-}
-
-print(split("a,b,c", ","))
 ```
 
 Classes, traits
