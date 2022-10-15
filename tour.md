@@ -37,6 +37,7 @@ v := (v, v);
 v := [];
 v := [v, v, v, v];
 v := [v; 1024];
+v := v[0..512];
 ```
 
 Variable declaration
