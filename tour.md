@@ -240,6 +240,39 @@ for i in 0..10 {
 for val in list {
   print(val);
 }
+
+trait Add[Rhs = Self] {
+  type Output = Self;
+  fn add(self, rhs: Rhs) -> Output;
+}
+
+trait Sub[Rhs = Self] {
+  type Output = Self;
+  fn sub(self, rhs: Rhs) -> Output;
+}
+
+class Complex {
+  real: int;
+  iota: int;
+
+  impl Add {
+    fn add(self, rhs: Self) -> Output {
+      Complex(
+        real: self.real + rhs.real,
+        iota: self.iota + rhs.iota
+      )
+    }
+  }
+
+  impl Sub {
+    fn sub(self, rhs: Self) -> Output {
+      Complex(
+        real: self.real - rhs.real,
+        iota: self.iota - rhs.iota
+      )
+    }
+  }
+}
 ```
 
 Exceptions
