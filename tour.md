@@ -95,21 +95,16 @@ name **= 1;
 name ??= 1;
 ```
 
-If, do
+Flow control
 
 ```rust
 if a() { /*...*/ }
 else if b() { /*...*/ }
 else { /*...*/ }
 
-do { /*...*/ }
-
 // both of the above are expressions:
 // the last expression in the body is the result
 v0 := if v { "a" } else { "c" }
-v1 := do { "value" }
-// to ensure that nothing is returned, put a semicolon after the last expression
-v2: null = do { "value"; }
 
 // you can use control statements without braces in `if` statements
 if true return
