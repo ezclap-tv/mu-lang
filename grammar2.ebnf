@@ -1,0 +1,312 @@
+use, pub
+
+assignment (check target)
+  = += -= /= *= %= **= ??=
+control flow
+  expr
+    if / else
+    loop / while / for
+    return / break / continue
+    throw / try / catch
+    spawn
+operators
+  expr
+    binary + - / * % ** == != > >= < <= ! && || ??
+    unary - !
+literals
+  expr
+    null
+    0 0.0 0.0e10 0.0e-10
+    true false
+    "v" "\x2800" "{v}"
+    (0,) (0, 1, ..., n)
+    [] [0, 1, 2, ..., n] [0; 0]
+    0..10 0..=10
+variable
+  stmt
+    id := expr
+    id : type = expr
+block
+  stmt
+    { body }
+function
+  stmt
+    fn name () { body }
+    fn name (params) { body }
+    fn name (params) -> return { body }
+    fn name [ type params ] (params) -> return { body }
+    fn name [ type params ] (params) -> return where bounds { body }
+  expr
+    \param { body }
+    \(params) -> return { body }
+    \[ type params ](params) -> return where bounds { body }
+type alias
+  stmt
+    type name [ type params ] = type expr
+trait
+  stmt
+    trait name [ type params ] { body(type, fn) }
+class
+  stmt
+    class name [ type params ] where bounds { body : fields / fn / type / impl }
+impl
+  stmt
+    impl name [ type params ] { body : fn / type }
+    impl [ type params ] name [ type params ] for name [ type params ]
+      where bounds { body : fn / type }
+
+(*
+Written with extended EBNF (extended extended Backus-Naur form).
+
+Extensions:
+- Syntax common in regular expressions
+  - `item?` means zero or one occurence of `item`
+  - `item*` means zero or more occurrences of `item`
+  - `item+` means one or more occurrences of `item`
+  - `item{N}` means exactly N occurrences of `item`
+  - `item{N,}` means N or more occurrences of `item`
+  - `item{N,M}` means between `N` and `M` occurrences of `item`
+  - `a | b` means either `a` or `b` may appear in this position
+  - `(a b c)` defines a group which may contain one or more items,
+                and any of the above symbols apply to the group as a whole
+- Precedence reset operator `$`
+  - It has no effect on the items, but has the highest precedence.
+    It is used as a replacement for grouping:
+      a $ b | c
+    is equivalent to
+      a (b | c)
+    instead of
+      (a b) | c
+- Terminals with substitution
+  - repeat{`item} = `item*
+
+The grammar may also contain regex terminals, written in the form `regex{"<regex>"}`.
+For example: `regex{"[a-bA-B_][a-bA-B_0-9]*"}` describes an identifier which consists
+of alphanumeric characters or underscores, except at the start, where digits may
+not appear.
+
+Terminals such as `"test"` are case-sensitive.
+
+This grammar does not describe a whitespace-sensitive language, which means that
+any amount of whitespace is allowed to exist between any two elements, and is always
+ignored, unless explicitly notated as `NEWLINE` for `\n` or `WHITESPACE` for `\s`.
+
+*)
+
+program = body:stmt* ;
+
+stmt =
+  | stmt_use ";"
+  | stmt_var ";"
+  | stmt_block
+  | stmt_fn
+  | stmt_type ";"
+  | stmt_class
+  | stmt_trait
+  | stmt_impl
+  | stmt_loop
+  | stmt_expr
+  ;
+
+  stmt_use = "use" use_path ;
+
+    use_path =
+      | identifier ("." use_path)?
+      | "{" list{use_path} "}"
+      ;
+
+  stmt_var =
+    | name:identifier ":=" value:expr
+    | name:identifier ":" type:type "=" value:expr
+    ;
+
+  stmt_block = "{" body:stmt* "}" ;
+
+  stmt_fn =
+    "pub"?
+    "fn" name:identifier
+    type_params:type_params_list?
+    params:params_list
+    ("->" return:type)?
+    ("where" bounds:list{bound})?
+    ("{" body:stmt* "}" | ";")
+    ;
+
+  stmt_type =
+    "pub"?
+    "type" name:identifier
+    type_params:type_params_list?
+    ("where" bounds:list{bound})?
+    "=" type
+    ;
+
+  stmt_class =
+    "pub"?
+    "class" name:identifier
+    type_params:type_params_list?
+    ("where" bounds:list{bound})?
+    ("{" body:class_member* "}" | ";")?
+    ;
+
+    class_member =
+      | class_field ";"
+      | stmt_fn
+      | stmt_type ";"
+      | stmt_impl
+      ;
+
+    class_field = name:identifier ":" type:type ;
+
+  stmt_trait =
+    "pub"?
+    "trait" name:identifier
+    type_params:type_params_list?
+    "{" body:trait_member* "}"
+    ;
+
+  stmt_impl =
+    | "impl" type_params:type_params_list? trait:type "for" type
+    | "impl" type_params:type_params_list? type:type 
+    $ ("{" body:trait_member* "}")?
+    ;
+
+    trait_member =
+      | stmt_fn
+      | stmt_type ";"
+      ;
+
+  stmt_loop =
+    | loop_for
+    | loop_while
+    | loop_inf
+    ;
+
+    loop_for = "for" item:identifier "in" iter:expr stmt_block ;
+    loop_while = "while" cond:expr stmt_block ;
+    loop_inf = "loop" stmt_block ;
+
+  stmt_expr = expr ;
+
+
+expr =
+  | expr_ctrl
+  | expr_if
+  | expr_try
+  | expr_spawn
+  | expr_lambda
+  | expr_simple
+  ;
+
+  expr_ctrl =
+    | "return" value:expr?
+    | "break"
+    | "continue"
+    | "throw" value:expr?
+    ;
+
+  expr_if =
+    "if" cond:expr if_body
+    ("else" "if" cond:expr if_body)*
+    ("else" if_body)?
+    ;
+  
+    if_body = 
+      | expr_ctrl
+      | stmt_loop
+      | stmt_block
+      ;
+  
+  expr_try =
+    | "try" body:expr branches:try_branch_list
+    | "try" body:stmt_block "catch" branches:try_branch_list
+    ;
+    
+    try_branch_list = "{" list{try_branch, ";"} "}" ;
+      try_branch = path "=>" stmt ;
+  
+  expr_spawn =
+    | "spawn" body:stmt_block
+    | "spawn" fn:expr args:call
+    ;
+  
+  expr_lambda =
+    "\\" $
+    | param:identifier
+    | params:list{identifier}
+    ;
+  
+  expr_simple = expr_assign ;
+
+    expr_assign =
+      | assign_target ("=" | "+=" | "-=" | "/=" | "*=" | "%=" | "**=" | "??=") expr
+      | expr_range
+      ;
+      assign_target =
+        | identifier
+        | expr_postfix field
+        | expr_postfix index
+        ;
+    expr_range = expr_binary (".." | "..=") expr_binary ;
+    expr_binary = expr_or ;
+    expr_or = expr_and (("||") expr_and)* ;
+    expr_and = expr_eq (("&&") expr_eq)* ;
+    expr_eq = expr_comp (("==" | "!=") expr_comp)* ;
+    expr_comp = expr_add ((">"  | ">=" | "<" | "<=") expr_add)* ;
+    expr_add = expr_mult (("-" | "+") expr_mult)* ;
+    expr_mult = expr_pow (("/" | "*" | "%") expr_pow)* ;
+    expr_pow = expr_unary (("**") expr_unary)* ;
+    expr_unary = expr_prefix | expr_postfix ;
+    expr_prefix = ("-" | "!") expr_unary ;
+    expr_postfix = expr_primary (call | field | index)* ;
+      call = "(" arg_list? ")" ;
+        arg_list = list{expr | identifier ":" expr} ;
+      field = "." identifier ;
+      index = "[" expr "]" ;
+    expr_primary =
+      | expr_bool
+      | expr_null
+      | expr_number
+      | expr_string
+      | expr_array
+      | expr_tuple
+      | expr_group
+      ;
+    expr_bool = "true" | "false" ;
+    expr_null = "null" ;
+    expr_number = (int | float) ;
+      int = (int_bin | int_dec | int_hex) ;
+      int_bin = regex{"0b[01]([01_]*[01])?"} ;
+      int_dec = regex{"[0-9]([0-9_]*[0-9])?"} ;
+      int_hex = regex{"0x[0-9a-fA-F]([0-9a-fA-F_]*[0-9a-fA-F])?"} ;
+      float = "inf" | regex{"[0-9]+(\.[0-9]*)?([Ee][+-]?[0-9]+)?"} ;
+    expr_string = '"' string_fragment* '"' ;
+      string_fragment =
+        | "{" expr "}"
+        | "\{" text "}"
+        | text
+        ;
+      text = UTF8* ;
+    expr_array = "[" (list{expr} | expr ";" expr) "]" ;
+    expr_tuple = "(" (expr ",")? | (expr ",")+ expr? ")" ;
+    expr_group = "(" expr ")" ;
+
+
+(* TODO *)
+type = ... ;
+
+
+bound = name:identifier ":" constraint:type ;
+
+type_params_list = "[" list{type_param} "]" ;
+
+  type_param = name:identifier ("=" default:type)? ;
+
+params_list = "(" list{param} ")"
+
+  param = name:identifier (":" type)?
+
+path = identifier ("." identifier)* ;
+
+identifier = regex{"[a-bA-B_][a-bA-B_0-9]*"} ;
+
+list{`item, `sep = ","} = (`item (`sep `item `sep?)*)? ;
