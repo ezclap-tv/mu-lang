@@ -108,6 +108,7 @@ v0 := if v { "a" } else { "c" }
 
 // you can use control statements without braces in `if` statements
 if true return
+if true throw
 if true break
 if true continue
 if true for ...
@@ -169,6 +170,14 @@ fn test() {
   if something() { return }
   print("yo")
 }
+
+// functions may also be written using dynamic typing
+// equivalent to:
+// fn foo(n: any) -> any { n * 2 }
+fn foo(n) {
+  n * 2
+}
+foo(10)
 ```
 
 Classes, traits
@@ -194,7 +203,7 @@ class Node[T] {
 }
 
 class List[T] {
-  @head: Node[T]?;
+  head: Node[T]?;
 
   fn new() -> Self {
     List(head: null);
@@ -302,34 +311,27 @@ try {
 Modules
 
 ```rust
-import module
-import module.A
-import module.{A, B}
+use module;
+use module.A;
+use module.{A, B};
 
-import nested.module.A
-import nested.module.{A, B}
+use nested.module.A;
+use nested.module.{A, B};
 
-import {
+use {
   a.{A, B},
   b.{C, D},
   nested.{
     d.{E, F},
     f.{G, H},
   }
-}
+};
 
-// you can export functions, classes, enums, and types
-export fn a() {}
-export class B {}
-export enum C {}
-export type D {}
-
-// exports may also be grouped into a block export
-fn e() {}
-trait F
-class G {}
-// symbols exported this way may be renamed using `as`
-export { e as g, F as E, G as F }
+// you can export functions, classes, traits, and type aliases
+pub fn a() {}
+pub class B {}
+pub trait C {}
+pub type D = B;
 
 // module imports may be arbitrarily re-ordered by the runtime, which means that
 // there is no guarantee of the order in which the "side effects" of imported modules are processed.
@@ -365,7 +367,7 @@ and other resource limits.
 // such as `sleep`, `select`, `join`, etc.
 
 // foo.mu
-import task
+use task;
 
 fn perform_io(label: string) {
   // this is a native function which yields to the executor
@@ -376,26 +378,26 @@ fn perform_io(label: string) {
 }
 
 // first.mu
-import foo
+use foo;
 
-export fn exec() {
+pub fn exec() {
   print("first a");
   foo.perform_io("first");
   print("first b");
 }
 
 // second.mu
-import foo
+use foo;
 
-export fn exec() {
+pub fn exec() {
   print("second a");
   foo.perform_io("second");
   print("second b");
 }
 
 // main.mu
-import first
-import second
+use first;
+use second;
 
 first.exec();
 second.exec();
@@ -421,26 +423,25 @@ for these use cases, you can use the `spawn` keyword.
 */
 
 // first.mu
-import foo
+use foo;
 
-export fn exec() {
+pub fn exec() {
   print("first a");
   spawn foo.perform_io("first");
   print("first b");
 }
 
 // second.mu
-import foo
 
-export fn exec() {
+pub fn exec() {
   print("second a");
   spawn foo.perform_io("second");
   print("second b");
 }
 
 // main.mu
-import first
-import second
+use first;
+use second;
 
 first.exec();
 second.exec();
