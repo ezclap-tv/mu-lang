@@ -1,60 +1,3 @@
-use, pub
-
-assignment (check target)
-  = += -= /= *= %= **= ??=
-control flow
-  expr
-    if / else
-    loop / while / for
-    return / break / continue
-    throw / try / catch
-    spawn
-operators
-  expr
-    binary + - / * % ** == != > >= < <= ! && || ??
-    unary - !
-literals
-  expr
-    null
-    0 0.0 0.0e10 0.0e-10
-    true false
-    "v" "\x2800" "{v}"
-    (0,) (0, 1, ..., n)
-    [] [0, 1, 2, ..., n] [0; 0]
-    0..10 0..=10
-variable
-  stmt
-    id := expr
-    id : type = expr
-block
-  stmt
-    { body }
-function
-  stmt
-    fn name () { body }
-    fn name (params) { body }
-    fn name (params) -> return { body }
-    fn name [ type params ] (params) -> return { body }
-    fn name [ type params ] (params) -> return where bounds { body }
-  expr
-    \param { body }
-    \(params) -> return { body }
-    \[ type params ](params) -> return where bounds { body }
-type alias
-  stmt
-    type name [ type params ] = type expr
-trait
-  stmt
-    trait name [ type params ] { body(type, fn) }
-class
-  stmt
-    class name [ type params ] where bounds { body : fields / fn / type / impl }
-impl
-  stmt
-    impl name [ type params ] { body : fn / type }
-    impl [ type params ] name [ type params ] for name [ type params ]
-      where bounds { body : fn / type }
-
 (*
 Written with extended EBNF (extended extended Backus-Naur form).
 
@@ -93,7 +36,7 @@ ignored, unless explicitly notated as `NEWLINE` for `\n` or `WHITESPACE` for `\s
 
 *)
 
-program = body:stmt* ;
+module = body:stmt* ;
 
 stmt =
   | stmt_use ";"
@@ -129,7 +72,7 @@ stmt =
     params:params_list
     ("->" return:type)?
     ("where" bounds:list{bound})?
-    ("{" body:stmt* "}" | ";")
+    (stmt_block | ";")
     ;
 
   stmt_type =
@@ -185,7 +128,10 @@ stmt =
     loop_while = "while" cond:expr stmt_block ;
     loop_inf = "loop" stmt_block ;
 
-  stmt_expr = expr ;
+  stmt_expr =
+    expr
+    ";" (* semicolon is only required if previous token != `}` *)
+    ;
 
 
 expr =
@@ -222,7 +168,7 @@ expr =
     ;
     
     try_branch_list = "{" list{try_branch, ";"} "}" ;
-      try_branch = path "=>" stmt ;
+      try_branch = type "=>" stmt ;
   
   expr_spawn =
     | "spawn" body:stmt_block
@@ -232,7 +178,8 @@ expr =
   expr_lambda =
     "\\" $
     | param:identifier
-    | params:list{identifier}
+    | "(" params:list{identifier} ")"
+    $ stmt_block
     ;
   
   expr_simple = expr_assign ;
@@ -247,7 +194,8 @@ expr =
         | expr_postfix index
         ;
     expr_range = expr_binary (".." | "..=") expr_binary ;
-    expr_binary = expr_or ;
+    expr_binary = expr_opt ;
+    expr_opt = expr_or (("??") expr_or)* ;
     expr_or = expr_and (("||") expr_and)* ;
     expr_and = expr_eq (("&&") expr_eq)* ;
     expr_eq = expr_comp (("==" | "!=") expr_comp)* ;
@@ -258,10 +206,11 @@ expr =
     expr_unary = expr_prefix | expr_postfix ;
     expr_prefix = ("-" | "!") expr_unary ;
     expr_postfix = expr_primary (call | field | index)* ;
-      call = "(" arg_list? ")" ;
+      (* "?" means optional call, field access, or index *)
+      call = "?"? "(" arg_list? ")" ;
         arg_list = list{expr | identifier ":" expr} ;
-      field = "." identifier ;
-      index = "[" expr "]" ;
+      field = "?"? "." identifier ;
+      index = "?"? "[" expr "]" ;
     expr_primary =
       | expr_bool
       | expr_null
@@ -292,20 +241,37 @@ expr =
 
 
 (* TODO *)
-type = ... ;
+type = type_optional ;
+  type_optional = type_postfix "?" ;
+  type_postfix = type_primary (path | generic)* ;
+    path = "." identifier ;
+    generic = "[" list{type} "]" ;
+  type_primary =
+    | identifier
+    | type_fn
+    | type_array
+    | type_tuple
+    | type_group
+    ;
+  type_fn =
+    "fn"
+    "(" list{type} ")"
+    ("->" type)?
+    "throws"?
+    ;
+  type_array = "[" type "]" ;
+  type_tuple = "(" (type ",")? | (type ",")+ type? ")" ;
+  type_group = "(" type ")" ;
 
 
-bound = name:identifier ":" constraint:type ;
+bound = name:type ":" constraint:constraint ;
+  constraint = type ("+" type)* ;
 
 type_params_list = "[" list{type_param} "]" ;
-
   type_param = name:identifier ("=" default:type)? ;
 
 params_list = "(" list{param} ")"
-
   param = name:identifier (":" type)?
-
-path = identifier ("." identifier)* ;
 
 identifier = regex{"[a-bA-B_][a-bA-B_0-9]*"} ;
 
