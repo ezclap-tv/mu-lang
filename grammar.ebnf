@@ -1,16 +1,27 @@
 (*
-Written with regex-like extensions and interpolations on top of EBNF.
+Written with extended EBNF (extended extended Backus-Naur form).
 
-Regex-like extensions:
-- `element?` means zero or one occurence of `element`
-- `element*` means zero or more occurrences of `element`
-- `element+` means one or more occurrences of `element`
-- `element{N}` means exactly N occurrences of `element`
-- `element{N,}` means N or more occurrences of `element`
-- `element{N,M}` means between `N` and `M` occurrences of `element`
-- `a | b` means either `a` or `b` may appear in this position
-- `( a b c )` defines a group which may contain one or more elements,
-              and any of the above symbols apply to the group as a whole
+Extensions:
+- Syntax common in regular expressions
+  - `item?` means zero or one occurence of `item`
+  - `item*` means zero or more occurrences of `item`
+  - `item+` means one or more occurrences of `item`
+  - `item{N}` means exactly N occurrences of `item`
+  - `item{N,}` means N or more occurrences of `item`
+  - `item{N,M}` means between `N` and `M` occurrences of `item`
+  - `a | b` means either `a` or `b` may appear in this position
+  - `(a b c)` defines a group which may contain one or more items,
+                and any of the above symbols apply to the group as a whole
+- Precedence reset operator `$`
+  - It has no effect on the items, but has the highest precedence.
+    It is used as a replacement for grouping:
+      a $ b | c
+    is equivalent to
+      a (b | c)
+    instead of
+      (a b) | c
+- Terminals with substitution
+  - repeat{`item} = `item*
 
 The grammar may also contain regex terminals, written in the form `regex{"<regex>"}`.
 For example: `regex{"[a-bA-B_][a-bA-B_0-9]*"}` describes an identifier which consists
@@ -23,409 +34,245 @@ This grammar does not describe a whitespace-sensitive language, which means that
 any amount of whitespace is allowed to exist between any two elements, and is always
 ignored, unless explicitly notated as `NEWLINE` for `\n` or `WHITESPACE` for `\s`.
 
-TODO: comments
-
 *)
 
-program = top_level_stmt* EOF ;
-
-top_level_stmt =
-  | import
-  | export
-  | stmt
-  ;
-
-import = "import" import_list ";"? ;
-import_list = import_block | import_fragment ;
-import_block = "{" import_fragment ( "," import_fragment ","? )* "}" ;
-import_fragment = import_alias | import_nested ;
-import_alias = IDENTIFIER "as" IDENTIFIER ;
-import_nested = IDENTIFIER ( "." import_list )? ;
-
-export = "export" export_item ";"? ;
-export_item =
-  | export_block
-  | fn_stmt
-  | class_stmt
-  | enum_stmt
-  | type_stmt
-  ;
-export_block = "{" export_alias ( "," export_alias ","? )* "}" ;
-export_alias = IDENTIFIER "as" IDENTIFIER ;
+module = body:stmt* ;
 
 stmt =
-  ( | var_decl
-    | block_stmt
-    | loop_stmt
-    | ctrl_stmt
-    | with_stmt
-    | fn_stmt
-    | class_stmt
-    | enum_stmt
-    | type_stmt
-    | expr_stmt
-    | 
-  ) (";" | "\n")? ;
-
-var_decl =
-  | IDENTIFIER ":=" expression
-  | IDENTIFIER ":" type_expr ( "=" expression )?
+  | stmt_use ";"
+  | stmt_var ";"
+  | stmt_block
+  | stmt_fn
+  | stmt_type ";"
+  | stmt_class
+  | stmt_trait
+  | stmt_impl
+  | stmt_loop
+  | stmt_expr
   ;
 
-block_stmt = "{" stmt* "}" ;
+  stmt_use = "use" use_path ;
 
-loop_stmt =
-  | for_loop_stmt
-  | while_loop_stmt
-  | inf_loop_stmt
-  ;
-for_loop_stmt = label? "for" IDENTIFIER "in" expr loop_body ;
-while_loop_stmt = label? "while" expr loop_body ;
-inf_loop_stmt = label? "loop" loop_body ;
-loop_body = block_stmt ;
+    use_path =
+      | identifier ("." use_path)?
+      | "{" list{use_path} "}"
+      ;
 
-label = regex{"'[a-bA-B_][a-bA-B_0-9]*"};
+  stmt_var =
+    | name:identifier ":=" value:expr
+    | name:identifier ":" type:type "=" value:expr
+    ;
 
-ctrl_stmt =
-  | return_stmt
-  | throw_stmt
-  | break_stmt
-  | continue_stmt
-  ;
-return_stmt = "return" expr? ;
-throw_stmt = "throw" expr ;
-break_stmt = "break" label? ;
-continue_stmt = "continue" label? ;
+  stmt_block = "{" body:stmt* "}" ;
 
-with_stmt = "with" with_decl ( ";" with_decl ";"? )* block_stmt ;
-with_decl = ( IDENTIFIER ":=" )? expr ;
+  stmt_fn =
+    "pub"?
+    "fn" name:identifier
+    type_params:type_params_list?
+    params:params_list
+    ("->" return:type)?
+    ("where" bounds:list{bound})?
+    (stmt_block | ";")
+    ;
 
-fn_stmt = fn ;
-fn = "fn" IDENTIFIER type_param_list? param_list fn_attributes? block_stmt ;
-fn_attributes = fn_returns? fn_throws? constraint? ;
-fn_returns = "->" type_expr ;
-fn_throws = "throws" IDENTIFIER ( "," IDENTIFIER ","? )* ;
+  stmt_type =
+    "pub"?
+    "type" name:identifier
+    type_params:type_params_list?
+    ("where" bounds:list{bound})?
+    "=" type
+    ;
 
-class_stmt = class ;
-class = "class" IDENTIFIER type_param_list? constraint? "{" class_member_list? "}" ;
-class_member_list = class_member ( separator class_member separator? )* ;
-class_member =
-  | class_member_field
-  | class_member_method
-  | class_member_type
-  ;
-class_member_field = IDENTIFIER ( ":" type_expr )? ( "=" expr )? ;
-class_member_method = fn_stmt ;
-class_member_type = type_stmt ;
+  stmt_class =
+    "pub"?
+    "class" name:identifier
+    type_params:type_params_list?
+    ("where" bounds:list{bound})?
+    ("{" body:class_member* "}" | ";")?
+    ;
 
-enum_stmt = enum ;
-enum = "enum" IDENTIFIER type_param_list? constraint? "{" enum_variant_list? class_member_list? "}" ;
-enum_variant_list =
-  "|"? enum_variant ( ( "|" | "," ) enum_variant ( "|" | "," )? )* ;
-enum_variant = IDENTIFIER enum_variant_inner?;
-enum_variant_inner =
-  | "(" type_expr ( "," type_expr ","? )* ")"
-  | record_type
-  ;
+    class_member =
+      | class_field ";"
+      | stmt_fn
+      | stmt_type ";"
+      | stmt_impl
+      ;
 
-type_stmt = "type" IDENTIFIER type_param_list? constraint? type_stmt_init ;
-type_stmt_init =
-  | record_type
-  | "=" type_expr
-  ;
+    class_field = name:identifier ":" type:type ;
 
-type_expr = type_intersection ;
+  stmt_trait =
+    "pub"?
+    "trait" name:identifier
+    type_params:type_params_list?
+    "{" body:trait_member* "}"
+    ;
 
-(* intersections are only valid on types that reduce to record types *)
-type_intersection = nullable_type ( "+" nullable_type )* ;
+  stmt_impl =
+    | "impl" type_params:type_params_list? trait:type "for" type
+    | "impl" type_params:type_params_list? type:type 
+    $ ("{" body:trait_member* "}")?
+    ;
 
-nullable_type = primary_type "?" ;
+    trait_member =
+      | stmt_fn
+      | stmt_type ";"
+      ;
 
-primary_type =
-  | fn_type
-  | array_type
-  | record_type
-  | tuple_type
-  | enum_type
-  | primitive_type
-  | grouping_type
-  ;
+  stmt_loop =
+    | loop_for
+    | loop_while
+    | loop_inf
+    ;
 
-fn_type = "fn" "(" fn_type_param_list? ")" fn_returns? fn_throws? ;
-fn_type_param_list = type_expr ( "," type_expr ","? )* ;
+    loop_for = "for" item:identifier "in" iter:expr stmt_block ;
+    loop_while = "while" cond:expr stmt_block ;
+    loop_inf = "loop" stmt_block ;
 
-array_type = "[" type_expr "]" ;
+  stmt_expr =
+    expr
+    ";" (* semicolon is only required if previous token != `}` *)
+    ;
 
-record_type = "{" record_type_pair ( "," record_type_pair ","? )* "}" ;
-record_type_pair = IDENTIFIER ":" type_expr ;
-
-tuple_type = "(" ( ( type_expr "," )+ type_expr? )? ")" ;
-
-enum_type = "|"? enum_variant ( "|" enum_variant )* ;
-
-primitive_type =
-  | "bool"
-  | "null"
-  | "int"
-  | "float"
-  | "string"
-  | IDENTIFIER ( "." IDENTIFIER )*
-  ;
-
-grouping_type = "(" type_expr ")" ;
-
-type_param_list = "[" ( type_param ( "," type_param ","? )* )? "]" ;
-type_param = IDENTIFIER ( ":" type_expr )? ( "=" type_expr ) ;
-param_list = "(" ( param ( "," param ","? )* )? ")" ;
-param = IDENTIFIER ( ":" type_expr )? ( "=" expr )? ;
-
-constraint = "where" constraint_bound_list ;
-constraint_bound_list = constraint_bound ( "," constraint_bound ","? )* ;
-constraint_bound = IDENTIFIER ":" type_expr ;
-
-expr_stmt = expr ;
 
 expr =
-  | do_block_expr
-  | if_expr
-  | match_expr
-  | catch_expr
-  | fn_expr
-  | class_expr
-  | enum_expr
-  | spawn_expr
-  | assignment_expr
+  | expr_ctrl
+  | expr_if
+  | expr_try
+  | expr_spawn
+  | expr_lambda
+  | expr_simple
   ;
 
-do_block_expr = "do" block_stmt ;
+  expr_ctrl =
+    | "return" value:expr?
+    | "break"
+    | "continue"
+    | "throw" value:expr?
+    ;
 
-if_expr = "if" condition if_expr_body ( "else" ( if_expr | block ) )? ;
-if_expr_body =
-  | block_stmt
-  | ctrl_stmt
-  ;
+  expr_if =
+    "if" cond:expr if_body
+    ("else" "if" cond:expr if_body)*
+    ("else" if_body)?
+    ;
+  
+    if_body = 
+      | expr_ctrl
+      | stmt_loop
+      | stmt_block
+      ;
+  
+  expr_try =
+    | "try" body:expr branches:try_branch_list
+    | "try" body:stmt_block "catch" branches:try_branch_list
+    ;
+    
+    try_branch_list = "{" list{try_branch, ";"} "}" ;
+      try_branch = type "=>" stmt ;
+  
+  expr_spawn =
+    | "spawn" body:stmt_block
+    | "spawn" fn:expr args:call
+    ;
+  
+  expr_lambda =
+    "\\" $
+    | param:identifier
+    | "(" params:list{identifier} ")"
+    $ stmt_block
+    ;
+  
+  expr_simple = expr_assign ;
 
-(* `match` and `catch` are parsed the same way *)
-match_expr = "match" match_expr_body ;
-catch_expr = "catch" match_expr_body ;
-match_expr_body = expr "{" match_case_list "}" ;
-match_case_list = match_case ( separator match_case separator? )* ;
-match_case = pattern case_guard? "=>" stmt ;
+    expr_assign =
+      | assign_target ("=" | "+=" | "-=" | "/=" | "*=" | "%=" | "**=" | "??=") expr
+      | expr_range
+      ;
+      assign_target =
+        | identifier
+        | expr_postfix field
+        | expr_postfix index
+        ;
+    expr_range = expr_binary (".." | "..=") expr_binary ;
+    expr_binary = expr_opt ;
+    expr_opt = expr_or (("??") expr_or)* ;
+    expr_or = expr_and (("||") expr_and)* ;
+    expr_and = expr_eq (("&&") expr_eq)* ;
+    expr_eq = expr_comp (("==" | "!=") expr_comp)* ;
+    expr_comp = expr_add ((">"  | ">=" | "<" | "<=") expr_add)* ;
+    expr_add = expr_mult (("-" | "+") expr_mult)* ;
+    expr_mult = expr_pow (("/" | "*" | "%") expr_pow)* ;
+    expr_pow = expr_unary (("**") expr_unary)* ;
+    expr_unary = expr_prefix | expr_postfix ;
+    expr_prefix = ("-" | "!") expr_unary ;
+    expr_postfix = expr_primary (call | field | index)* ;
+      (* "?" means optional call, field access, or index *)
+      call = "?"? "(" arg_list? ")" ;
+        arg_list = list{expr | identifier ":" expr} ;
+      field = "?"? "." identifier ;
+      index = "?"? "[" expr "]" ;
+    expr_primary =
+      | expr_bool
+      | expr_null
+      | expr_number
+      | expr_string
+      | expr_array
+      | expr_tuple
+      | expr_group
+      ;
+    expr_bool = "true" | "false" ;
+    expr_null = "null" ;
+    expr_number = (int | float) ;
+      int = (int_bin | int_dec | int_hex) ;
+      int_bin = regex{"0b[01]([01_]*[01])?"} ;
+      int_dec = regex{"[0-9]([0-9_]*[0-9])?"} ;
+      int_hex = regex{"0x[0-9a-fA-F]([0-9a-fA-F_]*[0-9a-fA-F])?"} ;
+      float = "inf" | regex{"[0-9]+(\.[0-9]*)?([Ee][+-]?[0-9]+)?"} ;
+    expr_string = '"' string_fragment* '"' ;
+      string_fragment =
+        | "{" expr "}"
+        | "\{" text "}"
+        | text
+        ;
+      text = UTF8* ;
+    expr_array = "[" (list{expr} | expr ";" expr) "]" ;
+    expr_tuple = "(" (expr ",")? | (expr ",")+ expr? ")" ;
+    expr_group = "(" expr ")" ;
 
-case_guard = "if" expr ;
 
-pattern =
-  | any_pattern
-  | ignore_pattern
-  | bool_pattern
-  | null_pattern
-  | integer_pattern
-  | range_pattern
-  | string_pattern
-  | array_pattern
-  | tuple_pattern
-  | record_pattern
-  | enum_pattern
-  ;
+(* TODO *)
+type = type_optional ;
+  type_optional = type_postfix "?" ;
+  type_postfix = type_primary (path | generic)* ;
+    path = "." identifier ;
+    generic = "[" list{type} "]" ;
+  type_primary =
+    | identifier
+    | type_fn
+    | type_array
+    | type_tuple
+    | type_group
+    ;
+  type_fn =
+    "fn"
+    "(" list{type} ")"
+    ("->" type)?
+    "throws"?
+    ;
+  type_array = "[" type "]" ;
+  type_tuple = "(" (type ",")? | (type ",")+ type? ")" ;
+  type_group = "(" type ")" ;
 
-rest_pattern =
-  | ".." pattern_binding?
-  | pattern
-  ;
 
-any_pattern = IDENTIFIER ;
-ignore_pattern = "_" ;
-bool_pattern = ( "true" | "false" ) pattern_binding? ;
-null_pattern = "null" pattern_binding? ;
-integer_pattern = integer pattern_binding? ;
-range_pattern =
-  ( | integer ".." integer
-    | integer ".."
-    | ".." integer
-  ) pattern_binding? ;
-string_pattern =
-  | quote text quote
-  | apos text apos
-  ;
-array_pattern = "[" rest_pattern ( "," rest_pattern ","? )* "]" ;
-tuple_pattern = "(" rest_pattern ( "," rest_pattern ","? )* ")" ;
-record_pattern = "{" record_pattern_item ( "," record_pattern_item ","? )* "}" ;
-record_pattern_item =
-  | IDENTIFIER
-  | IDENTIFIER ":" pattern
-  | rest_pattern
-  ;
-(* if matching on a result, `IDENTIFIER` must be `error` and it is not optional *)
-enum_pattern = IDENTIFIER? "." IDENTIFIER ( tuple_pattern | record_pattern )? ;
-pattern_binding = "as" IDENTIFIER ;
+bound = name:type ":" constraint:constraint ;
+  constraint = type ("+" type)* ;
 
-(* these exist only because they have different scoping rules. specifically,
-   the name is not declared in the enclosing scope, only in its own body *)
-fn_expr = fn ;
-class_expr = class ;
-enum_expr = enum ;
+type_params_list = "[" list{type_param} "]" ;
+  type_param = name:identifier ("=" default:type)? ;
 
-spawn_expr = "spawn" spawn_expr_body ;
-spawn_expr_body =
-  | block_stmt
-  | call
-  ;
+params_list = "(" list{param} ")"
+  param = name:identifier (":" type)?
 
-assignment_expr = 
-  | assignment_target ( assignment_op expression )?
-  | pipeline_expr 
-  ;
-assignment_op = "=" | "+=" | "-=" | "/=" | "*=" | "%=" | "**=" | "&=" | "|=" | "^=" | "<<=" | ">>=" | "||=" | "&&=" | "??=" ;
-assignment_target =
-  | IDENTIFIER
-  | call_expr field_access_expr
-  | call_expr item_access_expr
-  ;
+identifier = regex{"[a-bA-B_][a-bA-B_0-9]*"} ;
 
-(* `#` is allowed as an identifier in the context of a placeholder's right expression *)
-pipeline_expr = logic_or_expr ( "|>" logic_or_expr )* ;
-logic_or_expr = logic_and_expr ( "||" logic_and_expr )* ;
-logic_and_expr = bitwise_or_expr ( "&&" bitwise_or_expr )* ;
-bitwise_or_expr = bitwise_xor_expr ( "|" bitwise_xor_expr )* ;
-bitwise_xor_expr = bitwise_and_expr ( "^" bitwise_and_expr )* ;
-bitwise_and_expr = equality_expr ( "&" equality_expr )* ;
-equality_expr = comparison_expr ( ( "==" | "!=" ) comparison_expr )* ;
-comparison_expr = bitshift_expr ( ( ">" | ">=" | "<" | "<=" ) bitshift_expr )* ;
-bitshift_expr = addition_expr ( ( "<<" | ">>" ) addition_expr )* ;
-addition_expr = multiplication_expr ( ( "-" | "+" ) multiplication_expr )* ;
-multiplication_expr = exponentiation_expr ( ("/" | "*" | "%" ) exponentiation_expr )* ;
-exponentiation_expr = unary_expr ( "**" unary_expr )* ;
-
-unary_expr = prefix_expr | inc_expr | dec_expr | postfix_expr ;
-prefix_expr = ( "!" | "-" | "~" | "try" | "try!" ) unary_expr ;
-inc_expr = "++" assignment_target | assignment_target "++" ;
-dec_expr = "--" assignment_target | assignment_target "--" ;
-postfix_expr = primary_expr
-  ( | call_expr
-    | try_expr
-    | postfix_match_expr
-    | postfix_catch_expr
-    | field_access_expr
-    | item_access_expr )* ;
-call_expr = "(" args? ")" ;
-try_expr = "." ( "try" | "try!" ) ;
-postfix_match_expr = "." match_expr ;
-postfix_catch_expr = "." catch_expr ;
-field_access_expr = ( "." | "?." ) IDENTIFIER ;
-item_access_expr = "[" expr "]" ;
-
-primary_expr =
-  | bool_expr
-  | null_expr
-  | number_expr
-  | string_expr
-  | range_expr
-  | array_expr
-  | record_expr
-  | lambda_expr
-  | tuple_expr
-  | grouping_expr
-  ;
-
-bool_expr = "true" | "false" ;
-
-null_expr = "null" ;
-
-(*
-valid numbers:
-  0b0000_0000
-  -149120421940
-  0xb00ba
-  -inf
-  1.0e5
-  3.14e-5
-  1f
-  1i
-also with prefixes:
-  10ms
-  5.1s
-integers have higher precedence than floats
-*)
-number_expr = ( integer | float ) IDENTIFIER? ;
-integer = ( base_2 | base_10 | base_16 ) suffix? ;
-integer_base_2 = regex{"0b[01]([01_]*[01])?"} ;
-integer_base_10 = regex{"[0-9]([0-9_]*[0-9])?"} ;
-integer_base_16 = regex{"0x[0-9a-fA-F]([0-9a-fA-F_]*[0-9a-fA-F])?"} ;
-float =
-  | "inf"
-  | ( regex{"[0-9]+(\.[0-9]*)?([Ee][+-]?[0-9]+)?"} suffix? )
-  ;
-suffix = IDENTIFIER ;
-
-(* strings also support escapes such as \n \t \x2800 etc.*)
-string_expr =
-  | ( quote string_fragment* quote ) suffix?
-  | ( apos string_fragment* apos ) suffix?
-  ;
-string_fragment =
-  | "{" expr "}"
-  | "\{" text "}"
-  | text
-  ;
-text = UTF8* ;
-apos = "'" ;
-quote = '"' ;
-
-range_expr =
-  (* exclusive end *)
-  | expr ".." expr
-  (* exclusive end, start=0 *)
-  | ".." expr
-  (* inclusive end *)
-  | expr "..=" expr
-  (* inclusive end, start=0 *)
-  | "..=" expr
-  (* full *)
-  | ".."
-  | expr
-  ;
-
-array_expr = "[" ( array_item_list | array_len_init ) "]" ;
-array_item_list = spread_expr ( "," spread_expr ","? )* ;
-array_len_init = expr ";" expr ;
-
-record_expr = "{" record_fields "}" ;
-record_field_list = record_field ( "," record_field ","? )* ;
-record_field =
-  | IDENTIFIER
-  | IDENTIFIER ":" expr
-  | "[" expr "]" ":" expr
-  | spread_expr
-  ;
-
-lambda_expr = "\\" lambda_param_list block_stmt ;
-lambda_param_list = IDENTIFIER | param_list ;
-
-(*
-  0 elements  -> no comma
-  1 element   -> ends with comma
-  >1 elements -> separated by comma + optional trailing comma
-
-() // tuple
-(a) // group
-(a,) // tuple
-(a,b) // tuple
-*)
-tuple_expr = "(" ( tuple_expr_single | tuple_expr_multi ) ")" ;
-tuple_expr_single = ( expr "," )? ;
-tuple_expr_multi = ( expr "," )+ expr? ;
-
-grouping_expr = "(" expr ")" ;
-
-spread_expr = "..."? expr ;
-
-separator = "," | ";" | NEWLINE ;
-
-IDENTIFIER = regex{"[a-bA-B_][a-bA-B_0-9]*"} ;
-
-NEWLINE = regex{"\n"} ;
-
-COMMENT = regex{"\/\/[^\n]*"}
-
-// Multiline comments can be nested.
-MULTI_LINE_COMMENT = "/*" ( MULTI_LINE_COMMENT | regex{"(?:(?!\*\/).)+"} ) "*/"
+list{`item, `sep = ","} = (`item (`sep `item `sep?)*)? ;
