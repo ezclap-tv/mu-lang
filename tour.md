@@ -7,7 +7,7 @@
 
 ### Language features
 
-Literals (null, int, float, bool, string, f-string, tuple, array, record)
+Literals (null, int, float, bool, string, tuple, array)
 
 ```rust
 // v : null;
