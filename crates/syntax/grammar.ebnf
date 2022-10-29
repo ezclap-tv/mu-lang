@@ -36,25 +36,31 @@ ignored, unless explicitly notated as `NEWLINE` for `\n` or `WHITESPACE` for `\s
 
 *)
 
-module = body:stmt* ;
+module = body:top_level_stmt* ;
 
-stmt =
+top_level_stmt =
   | stmt_use ";"
-  | stmt_var ";"
-  | stmt_block
   | stmt_fn
-  | stmt_type ";"
   | stmt_class
   | stmt_trait
-  | stmt_impl
+  | stmt_type ";"
+  (* | stmt_impl *)
+  | stmt
+  ;
+
+block = "{" body:stmt* "}" ;
+
+stmt =
+  | stmt_var ";"
   | stmt_loop
-  | stmt_expr
+  (* semicolon after expr is only required if previous token != `}` *)
+  | stmt_expr ";"
   ;
 
   stmt_use = "use" use_path ;
 
     use_path =
-      | identifier ("." use_path)?
+      | identifier ("." use_path)? ("as" identifier)?
       | "{" list{use_path} "}"
       ;
 
@@ -63,8 +69,6 @@ stmt =
     | name:identifier ":" type:type "=" value:expr
     ;
 
-  stmt_block = "{" body:stmt* "}" ;
-
   stmt_fn =
     "pub"?
     "fn" name:identifier
@@ -72,7 +76,7 @@ stmt =
     params:params_list
     ("->" return:type)?
     ("where" bounds:list{bound})?
-    (stmt_block | ";")
+    (block | ";")
     ;
 
   stmt_type =
@@ -124,18 +128,16 @@ stmt =
     | loop_inf
     ;
 
-    loop_for = "for" item:identifier "in" iter:expr stmt_block ;
-    loop_while = "while" cond:expr stmt_block ;
-    loop_inf = "loop" stmt_block ;
+    loop_for = "for" item:identifier "in" iter:expr block ;
+    loop_while = "while" cond:expr block ;
+    loop_inf = "loop" block ;
 
-  stmt_expr =
-    expr
-    ";" (* semicolon is only required if previous token != `}` *)
-    ;
+  stmt_expr = expr ;
 
 
 expr =
   | expr_ctrl
+  | expr_block
   | expr_if
   | expr_try
   | expr_spawn
@@ -149,6 +151,9 @@ expr =
     | "continue"
     | "throw" value:expr?
     ;
+  
+  (* last expr in the block is the return value *)
+  expr_block = block ;
 
   expr_if =
     "if" cond:expr if_body
@@ -159,19 +164,19 @@ expr =
     if_body = 
       | expr_ctrl
       | stmt_loop
-      | stmt_block
+      | block
       ;
   
   expr_try =
     | "try" body:expr branches:try_branch_list
-    | "try" body:stmt_block "catch" branches:try_branch_list
+    | "try" body:block "catch" branches:try_branch_list
     ;
     
     try_branch_list = "{" list{try_branch, ";"} "}" ;
       try_branch = type "=>" stmt ;
   
   expr_spawn =
-    | "spawn" body:stmt_block
+    | "spawn" body:block
     | "spawn" fn:expr args:call
     ;
   
@@ -179,7 +184,7 @@ expr =
     "\\" $
     | param:identifier
     | "(" params:list{identifier} ")"
-    $ stmt_block
+    $ block
     ;
   
   expr_simple = expr_assign ;
@@ -195,22 +200,22 @@ expr =
         ;
     expr_range = expr_binary (".." | "..=") expr_binary ;
     expr_binary = expr_opt ;
-    expr_opt = expr_or (("??") expr_or)* ;
-    expr_or = expr_and (("||") expr_and)* ;
-    expr_and = expr_eq (("&&") expr_eq)* ;
-    expr_eq = expr_comp (("==" | "!=") expr_comp)* ;
-    expr_comp = expr_add ((">"  | ">=" | "<" | "<=") expr_add)* ;
-    expr_add = expr_mult (("-" | "+") expr_mult)* ;
-    expr_mult = expr_pow (("/" | "*" | "%") expr_pow)* ;
-    expr_pow = expr_unary (("**") expr_unary)* ;
+      expr_opt = expr_or (("??") expr_or)* ;
+      expr_or = expr_and (("||") expr_and)* ;
+      expr_and = expr_eq (("&&") expr_eq)* ;
+      expr_eq = expr_comp (("==" | "!=") expr_comp)* ;
+      expr_comp = expr_add ((">"  | ">=" | "<" | "<=") expr_add)* ;
+      expr_add = expr_mult (("-" | "+") expr_mult)* ;
+      expr_mult = expr_pow (("/" | "*" | "%") expr_pow)* ;
+      expr_pow = expr_unary (("**") expr_unary)* ;
     expr_unary = expr_prefix | expr_postfix ;
-    expr_prefix = ("-" | "!") expr_unary ;
-    expr_postfix = expr_primary (call | field | index)* ;
-      (* "?" means optional call, field access, or index *)
-      call = "?"? "(" arg_list? ")" ;
-        arg_list = list{expr | identifier ":" expr} ;
-      field = "?"? "." identifier ;
-      index = "?"? "[" expr "]" ;
+      expr_prefix = ("-" | "!") expr_unary ;
+      expr_postfix = expr_primary (call | field | index)* ;
+        (* "?" means optional call, field access, or index *)
+        call = "?"? "(" arg_list? ")" ;
+          arg_list = list{expr | identifier ":" expr} ;
+        field = "?"? "." identifier ;
+        index = "?"? "[" expr "]" ;
     expr_primary =
       | expr_bool
       | expr_null
@@ -236,7 +241,7 @@ expr =
         ;
       text = UTF8* ;
     expr_array = "[" (list{expr} | expr ";" expr) "]" ;
-    expr_tuple = "(" (expr ",")? | (expr ",")+ expr? ")" ;
+    expr_tuple = "(" ((expr ",")? | (expr ",")+ expr?) ")" ;
     expr_group = "(" expr ")" ;
 
 
@@ -257,21 +262,20 @@ type = type_optional ;
     "fn"
     "(" list{type} ")"
     ("->" type)?
-    "throws"?
     ;
   type_array = "[" type "]" ;
-  type_tuple = "(" (type ",")? | (type ",")+ type? ")" ;
+  type_tuple = "(" ((type ",")? | (type ",")+ type?) ")" ;
   type_group = "(" type ")" ;
 
 
-bound = name:type ":" constraint:constraint ;
+bound = ty:type ":" constraint:constraint ;
   constraint = type ("+" type)* ;
 
 type_params_list = "[" list{type_param} "]" ;
   type_param = name:identifier ("=" default:type)? ;
 
-params_list = "(" list{param} ")"
-  param = name:identifier (":" type)?
+params_list = "(" list{param} ")" ;
+  param = name:identifier (":" type)? ("=" expr)? ;
 
 identifier = regex{"[a-bA-B_][a-bA-B_0-9]*"} ;
 
