@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use logos::Logos;
+use logos::{FilterResult, Logos};
 use serde::{Deserialize, Serialize};
 
 use crate::span::Span;
@@ -41,6 +41,8 @@ pub enum TokenKind {
   // keywords
   #[token("use")]
   Use,
+  #[token("as")]
+  As,
   #[token("pub")]
   Pub,
   #[token("fn")]
@@ -197,7 +199,7 @@ pub enum TokenKind {
   Eof,
 }
 
-fn lex_multi_line_comment(lex: &mut logos::Lexer<'_, TokenKind>) -> bool {
+fn lex_multi_line_comment(lex: &mut logos::Lexer<'_, TokenKind>) -> FilterResult<()> {
   // how many characters we went through
   let mut n = 0;
   // Mitigate DOS attacks on the lexer with many unclosed comments:
@@ -238,10 +240,10 @@ fn lex_multi_line_comment(lex: &mut logos::Lexer<'_, TokenKind>) -> bool {
 
   if opening_count == 0 {
     lex.bump(n);
-    true
+    FilterResult::Skip
   } else {
     lex.bump(n_at_last_seen_opening);
-    false
+    FilterResult::Error
   }
 }
 
@@ -249,8 +251,8 @@ fn lex_multi_line_comment(lex: &mut logos::Lexer<'_, TokenKind>) -> bool {
 pub enum StringKind {
   // This string does not contain any interpolations
   Plain,
-  // This string contains interpolatins, and has to be further processed by the parser
-  Interpolated,
+  // This string has to be further processed by the parser
+  Fmt,
 }
 
 fn lex_string(lex: &mut logos::Lexer<'_, TokenKind>) -> Option<StringKind> {
@@ -268,11 +270,11 @@ fn lex_string(lex: &mut logos::Lexer<'_, TokenKind>) -> Option<StringKind> {
   let mut count = 0;
   let mut previous = b'"';
   let mut result = None;
-  for ch in lex.remainder().bytes() {
+  for current in lex.remainder().bytes() {
     count += 1;
 
     if previous != b'\\' {
-      match (state, ch) {
+      match (state, current) {
         // Close string (root)
         (State::String(0), b'"') => {
           result = Some(kind);
@@ -282,7 +284,7 @@ fn lex_string(lex: &mut logos::Lexer<'_, TokenKind>) -> Option<StringKind> {
         (State::String(n), b'"') => state = State::Expr(n - 1),
         // Open expr
         (State::String(n), b'{') => {
-          kind = StringKind::Interpolated;
+          kind = StringKind::Fmt;
           state = State::Expr(n + 1);
         }
 
@@ -292,6 +294,16 @@ fn lex_string(lex: &mut logos::Lexer<'_, TokenKind>) -> Option<StringKind> {
         (State::Expr(n), b'}') => state = State::String(n - 1),
         // Error: Opening expr within another expr
         (State::Expr(_), b'{') => {
+          // Consume bytes until we find an unescaped quote
+          let mut previous = b'{';
+          for current in lex.remainder()[count..].bytes() {
+            count += 1;
+            if previous != b'\\' && current == b'"' {
+              break;
+            }
+            previous = current;
+          }
+
           result = None;
           break;
         }
@@ -300,7 +312,7 @@ fn lex_string(lex: &mut logos::Lexer<'_, TokenKind>) -> Option<StringKind> {
       }
     }
 
-    previous = ch;
+    previous = current;
   }
 
   lex.bump(count);
@@ -336,10 +348,24 @@ mod tests {
   }
 
   #[test]
+  fn test_lex_comments() {
+    use TokenKind::*;
+
+    let src = r#"
+      test // test
+      test /* test */
+      test /* /* /* /* /* /* /* test */ */ */ */ */ */ */
+    "#;
+    let tokens = &[(Ident, "test"), (Ident, "test"), (Ident, "test")];
+
+    compare(src, tokens)
+  }
+
+  #[test]
   fn test_lex_numbers() {
     use TokenKind::*;
 
-    let src: &str = r#"123
+    let src = r#"123
       123_321
       1_2_3_4_5
       999_999_999
@@ -384,7 +410,7 @@ mod tests {
       (Float, "1e1"),
       (Float, "1e+1"),
       (Float, "1e-1"),
-    ][..];
+    ];
 
     compare(src, tokens);
   }
@@ -394,16 +420,32 @@ mod tests {
     use StringKind::*;
     use TokenKind::*;
 
-    let src = r#" "a" "{a}" "\{a}" "{"a"}" "\{"a"}" "#;
+    let src = r#"
+      "a"
+      "{a}"
+      "\{a}"
+      "{"a"}"
+      "\{"a"}"
+      "{{}"
+      "{{}\""
+      "{{"
+      "{{\""
+      "a"
+    "#;
     let tokens = &[
       (String(Plain), r#""a""#),
-      (String(Interpolated), r#""{a}""#),
+      (String(Fmt), r#""{a}""#),
       (String(Plain), r#""\{a}""#),
-      (String(Interpolated), r#""{"a"}""#),
+      (String(Fmt), r#""{"a"}""#),
       (String(Plain), r#""\{""#),
       (Ident, r#"a"#),
       (String(Plain), r#""}""#),
-    ][..];
+      (Error, r#""{{}""#),
+      (Error, r#""{{}\"""#),
+      (Error, r#""{{""#),
+      (Error, r#""{{\"""#),
+      (String(Plain), r#""a""#),
+    ];
 
     compare(src, tokens);
   }
