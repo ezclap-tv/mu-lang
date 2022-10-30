@@ -34,6 +34,9 @@ This grammar does not describe a whitespace-sensitive language, which means that
 any amount of whitespace is allowed to exist between any two elements, and is always
 ignored, unless explicitly notated as `NEWLINE` for `\n` or `WHITESPACE` for `\s`.
 
+TODO: `do`
+TODO: class instance with {} instead of call
+
 *)
 
 module = body:top_level_stmt* ;
@@ -60,7 +63,8 @@ stmt =
   stmt_use = "use" use_path ;
 
     use_path =
-      | identifier ("." use_path)? ("as" identifier)?
+      | identifier ("as" identifier)?
+      | identifier ("." use_path)? 
       | "{" list{use_path} "}"
       ;
 
@@ -152,8 +156,7 @@ expr =
     | "throw" value:expr?
     ;
   
-  (* last expr in the block is the return value *)
-  expr_block = block ;
+  expr_block = "do" block ;
 
   expr_if =
     "if" cond:expr if_body
@@ -210,12 +213,11 @@ expr =
       expr_pow = expr_unary (("**") expr_unary)* ;
     expr_unary = expr_prefix | expr_postfix ;
       expr_prefix = ("-" | "!") expr_unary ;
-      expr_postfix = expr_primary (call | field | index)* ;
+      expr_postfix = expr_primary (expr_call | expr_field | expr_index)* ;
         (* "?" means optional call, field access, or index *)
-        call = "?"? "(" arg_list? ")" ;
-          arg_list = list{expr | identifier ":" expr} ;
-        field = "?"? "." identifier ;
-        index = "?"? "[" expr "]" ;
+        expr_call = "?"? "(" args:list{expr}? ")" ;
+        expr_field = "?"? "." name:identifier ;
+        expr_index = "?"? "[" key:expr "]" ;
     expr_primary =
       | expr_bool
       | expr_null
@@ -223,6 +225,8 @@ expr =
       | expr_string
       | expr_array
       | expr_tuple
+      | expr_init
+      | expr_var
       | expr_group
       ;
     expr_bool = "true" | "false" ;
@@ -242,20 +246,22 @@ expr =
       text = UTF8* ;
     expr_array = "[" (list{expr} | expr ";" expr) "]" ;
     expr_tuple = "(" ((expr ",")? | (expr ",")+ expr?) ")" ;
+    expr_init = path "{" fields:list{identifier ":" expr} "}" ;
+    expr_var = path ;
     expr_group = "(" expr ")" ;
 
 
 (* TODO *)
 type = type_optional ;
   type_optional = type_postfix "?" ;
-  type_postfix = type_primary (path | generic)* ;
-    path = "." identifier ;
-    generic = "[" list{type} "]" ;
+  type_postfix = type_primary (type_path | type_inst)* ;
+    type_path = "." identifier
+    type_inst = "[" list{type} "]" ;
   type_primary =
-    | identifier
     | type_fn
     | type_array
     | type_tuple
+    | type_var
     | type_group
     ;
   type_fn =
@@ -265,6 +271,7 @@ type = type_optional ;
     ;
   type_array = "[" type "]" ;
   type_tuple = "(" ((type ",")? | (type ",")+ type?) ")" ;
+  type_var = path ;
   type_group = "(" type ")" ;
 
 
@@ -278,5 +285,7 @@ params_list = "(" list{param} ")" ;
   param = name:identifier (":" type)? ("=" expr)? ;
 
 identifier = regex{"[a-bA-B_][a-bA-B_0-9]*"} ;
+
+path = identifier ("." identifier)* ;
 
 list{`item, `sep = ","} = (`item (`sep `item `sep?)*)? ;
