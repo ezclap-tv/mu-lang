@@ -23,7 +23,7 @@ v := true;
 
 // v : string
 v := "test";
-v := "formatted {v}"; // string interpolation
+v := "formatted {v}"; // string formatting
 v := "escaped curlies \{v}"; // exact value is `escaped curlies {v}`
 // strings also support other escaped charaters such as `\n`, `\t`, `\x2800`, etc.
 v := "\x2800";
@@ -95,7 +95,7 @@ name **= 1;
 name ??= 1;
 ```
 
-Flow control
+Flow control, blocks, do
 
 ```rust
 if a() { /*...*/ }
@@ -114,6 +114,16 @@ if true continue
 if true for ...
 if true while ...
 if true loop ...
+
+{
+  x := 0
+} // x is not accessible after this point
+
+// value of a `do` block is the last expression in the body
+v := do {
+  x := 0
+  x
+}
 ```
 
 Loops (for, while, loop), continue/break
