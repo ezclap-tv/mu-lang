@@ -249,6 +249,7 @@ pub enum UnaryOp {
 }
 
 pub struct Call<'a> {
+  pub opt: bool,
   pub target: Expr<'a>,
   pub args: Args<'a>,
 }
@@ -259,11 +260,13 @@ pub struct Args<'a> {
 }
 
 pub struct Field<'a> {
+  pub opt: bool,
   pub target: Expr<'a>,
   pub name: Ident<'a>,
 }
 
 pub struct Index<'a> {
+  pub opt: bool,
   pub target: Expr<'a>,
   pub key: Expr<'a>,
 }
