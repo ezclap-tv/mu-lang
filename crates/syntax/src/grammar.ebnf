@@ -34,9 +34,6 @@ This grammar does not describe a whitespace-sensitive language, which means that
 any amount of whitespace is allowed to exist between any two elements, and is always
 ignored, unless explicitly notated as `NEWLINE` for `\n` or `WHITESPACE` for `\s`.
 
-TODO: `do`
-TODO: class instance with {} instead of call
-
 *)
 
 module = body:top_level_stmt* ;
