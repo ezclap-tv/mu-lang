@@ -1,3 +1,12 @@
+//! This module contains the implementation of Mu's lexer.
+//! The lexer performs [lexical analysis](https://en.wikipedia.org/wiki/Lexical_analysis),
+//! transforming the source code into a stream of [`Token`].
+//! The implementation is generated from the [`TokenKind`] enum using [Logos](https://github.com/maciejhirsz/logos).
+//!
+//! The entrypoints for this module are:
+//! - [`Lexer`]
+//! - [`Token`]
+
 use std::borrow::Cow;
 
 use logos::{FilterResult, Logos};
