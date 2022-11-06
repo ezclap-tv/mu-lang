@@ -26,6 +26,7 @@
 #![allow(clippy::needless_lifetimes)]
 
 use std::borrow::Cow;
+use std::ops::Deref;
 
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
@@ -71,10 +72,11 @@ pub type Block<'a> = Spanned<Vec<StmtKind<'a>>>;
 /// A module is the basic building block of Mu programs.
 ///
 /// Each module contains a list of imports and exported symbols.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct Module<'a> {
   pub imports: Vec<Import<'a>>,
-  pub symbols: Map<'a, (Vis, Symbol<'a>)>,
+  pub symbols: Symbols<'a>,
+  pub top_level: Vec<Stmt<'a>>,
 }
 
 /// A normalized import, which may optionally be renamed.
@@ -118,35 +120,119 @@ pub struct Import<'a> {
   pub span: Span,
 }
 
-/// A visibility modifier.
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
-pub enum Vis {
-  /// `pub`
-  Public,
-  /// There is no syntax for this, symbols are private by default.
-  Private,
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct Symbols<'a> {
+  pub fns: Map<'a, symbol::Fn<'a>>,
+  pub classes: Map<'a, symbol::Class<'a>>,
+  pub traits: Map<'a, symbol::Trait<'a>>,
+  pub aliases: Map<'a, symbol::Alias<'a>>,
 }
 
-/// Symbols are static (lexically scoped) module items.
-///
-/// For more information about a specific symbol kind, see its inner type.
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub enum SymbolKind<'a> {
-  Fn(Box<symbol::Fn<'a>>),
-  Class(Box<symbol::Class<'a>>),
-  Trait(Box<symbol::Trait<'a>>),
-  Alias(Box<symbol::Alias<'a>>),
-}
+impl<'a> Symbols<'a> {
+  // Helper function to simplify adding `Fn` symbols
+  #[inline]
+  pub fn add_fn(
+    &mut self,
+    name: Ident<'a>,
+    tparams: Vec<symbol::TParam<'a>>,
+    params: Vec<symbol::Param<'a>>,
+    ret: Type<'a>,
+    bounds: Vec<symbol::Bound<'a>>,
+    body: Option<expr::Do<'a>>,
+    span: Span,
+  ) {
+    self.fns.insert(
+      name.deref().clone(),
+      symbol::Fn {
+        name,
+        tparams,
+        params,
+        ret,
+        bounds,
+        body,
+        span,
+      },
+    );
+  }
 
-/// Symbols are static (lexically scoped) module items.
-///
-/// For more information about a specific symbol kind, see its inner type.
-pub type Symbol<'a> = Spanned<SymbolKind<'a>>;
+  // Helper function to simplify adding `Class` symbols
+  #[inline]
+  pub fn add_class(
+    &mut self,
+    name: Ident<'a>,
+    tparams: Vec<symbol::TParam<'a>>,
+    bounds: Vec<symbol::Bound<'a>>,
+    members: Vec<symbol::ClassMember<'a>>,
+    span: Span,
+  ) {
+    self.classes.insert(
+      name.deref().clone(),
+      symbol::Class {
+        name,
+        tparams,
+        bounds,
+        members,
+        span,
+      },
+    );
+  }
+
+  // Helper function to simplify adding `Trait` symbols
+  #[inline]
+  pub fn add_trait(
+    &mut self,
+    name: Ident<'a>,
+    tparams: Vec<symbol::TParam<'a>>,
+    members: Vec<symbol::TraitMember<'a>>,
+    span: Span,
+  ) {
+    self.traits.insert(
+      name.deref().clone(),
+      symbol::Trait {
+        name,
+        tparams,
+        members,
+        span,
+      },
+    );
+  }
+
+  // Helper function to simplify adding `Alias` symbols
+  #[inline]
+  pub fn add_alias(
+    &mut self,
+    name: Ident<'a>,
+    tparams: Vec<symbol::TParam<'a>>,
+    bounds: Vec<symbol::Bound<'a>>,
+    ty: Type<'a>,
+    span: Span,
+  ) {
+    self.aliases.insert(
+      name.deref().clone(),
+      symbol::Alias {
+        name,
+        tparams,
+        bounds,
+        ty,
+        span,
+      },
+    );
+  }
+}
 
 pub mod symbol {
   use serde::{Deserialize, Serialize};
 
-  use super::{expr, Expr, Ident, Span, SymbolKind, Type};
+  use super::{expr, Expr, Ident, Span, Type};
+
+  /// A visibility modifier.
+  #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+  pub enum Vis {
+    /// `pub`
+    Public,
+    /// There is no syntax for this, symbols are private by default.
+    Private,
+  }
 
   /// Functions are bundles of code.
   ///
@@ -171,28 +257,6 @@ pub mod symbol {
     pub span: Span,
   }
 
-  /// Helper function to construct a boxed and `Symbol`-wrapped `Fn`.
-  #[inline]
-  pub fn fn_<'a>(
-    name: Ident<'a>,
-    tparams: Vec<TParam<'a>>,
-    params: Vec<Param<'a>>,
-    ret: Type<'a>,
-    bounds: Vec<Bound<'a>>,
-    body: Option<expr::Do<'a>>,
-    span: Span,
-  ) -> SymbolKind<'a> {
-    SymbolKind::Fn(Box::new(Fn {
-      name,
-      tparams,
-      params,
-      ret,
-      bounds,
-      body,
-      span,
-    }))
-  }
-
   /// Classes encapsulate data, and operations on that data.
   ///
   /// ```no_run
@@ -209,24 +273,6 @@ pub mod symbol {
     pub bounds: Vec<Bound<'a>>,
     pub members: Vec<ClassMember<'a>>,
     pub span: Span,
-  }
-
-  /// Helper function to construct a boxed and `Symbol`-wrapped `Class`.
-  #[inline]
-  pub fn class<'a>(
-    name: Ident<'a>,
-    tparams: Vec<TParam<'a>>,
-    bounds: Vec<Bound<'a>>,
-    members: Vec<ClassMember<'a>>,
-    span: Span,
-  ) -> SymbolKind<'a> {
-    SymbolKind::Class(Box::new(Class {
-      name,
-      tparams,
-      bounds,
-      members,
-      span,
-    }))
   }
 
   /// Traits encapsulate behavior.
@@ -250,22 +296,6 @@ pub mod symbol {
     pub span: Span,
   }
 
-  /// Helper function to construct a boxed and `Symbol`-wrapped `Trait`.
-  #[inline]
-  pub fn trait_<'a>(
-    name: Ident<'a>,
-    tparams: Vec<TParam<'a>>,
-    members: Vec<TraitMember<'a>>,
-    span: Span,
-  ) -> SymbolKind<'a> {
-    SymbolKind::Trait(Box::new(Trait {
-      name,
-      tparams,
-      members,
-      span,
-    }))
-  }
-
   /// A type alias allows renaming types and partially instantiating generic
   /// types.
   ///
@@ -281,24 +311,6 @@ pub mod symbol {
     pub bounds: Vec<Bound<'a>>,
     pub ty: Type<'a>,
     pub span: Span,
-  }
-
-  /// Helper function to construct a boxed and `Symbol`-wrapped `Alias`.
-  #[inline]
-  pub fn alias<'a>(
-    name: Ident<'a>,
-    tparams: Vec<TParam<'a>>,
-    bounds: Vec<Bound<'a>>,
-    ty: Type<'a>,
-    span: Span,
-  ) -> SymbolKind<'a> {
-    SymbolKind::Alias(Box::new(Alias {
-      name,
-      tparams,
-      bounds,
-      ty,
-      span,
-    }))
   }
 
   #[derive(Clone, Debug, Serialize, Deserialize)]
