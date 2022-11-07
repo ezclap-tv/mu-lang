@@ -39,12 +39,11 @@ ignored, unless explicitly notated as `NEWLINE` for `\n` or `WHITESPACE` for `\s
 module = body:top_level_stmt* ;
 
 top_level_stmt =
-  | stmt_use ";"
   | stmt_fn
   | stmt_class
   | stmt_trait
   | stmt_type ";"
-  (* | stmt_impl *)
+  | stmt_use ";"
   | stmt
   ;
 
@@ -136,116 +135,103 @@ stmt =
   stmt_expr = expr ;
 
 
-expr =
-  | expr_ctrl
-  | expr_block
-  | expr_if
-  | expr_try
-  | expr_spawn
-  | expr_lambda
-  | expr_simple
-  ;
-
+expr = expr_assign ;
+  expr_assign =
+    | assign_target ("=" | "+=" | "-=" | "/=" | "*=" | "%=" | "**=" | "??=") expr
+    | expr_range
+    ;
+    assign_target =
+      | identifier
+      | expr_postfix field
+      | expr_postfix index
+      ;
+  expr_range = expr_binary (".." | "..=") expr_binary ;
+  expr_binary = expr_opt ;
+    expr_opt = expr_or (("??") expr_or)* ;
+    expr_or = expr_and (("||") expr_and)* ;
+    expr_and = expr_eq (("&&") expr_eq)* ;
+    expr_eq = expr_comp (("==" | "!=") expr_comp)* ;
+    expr_comp = expr_add ((">"  | ">=" | "<" | "<=") expr_add)* ;
+    expr_add = expr_mult (("-" | "+") expr_mult)* ;
+    expr_mult = expr_pow (("/" | "*" | "%") expr_pow)* ;
+    expr_pow = expr_unary (("**") expr_unary)* ;
+  expr_unary = expr_prefix | expr_postfix ;
+    expr_prefix = ("-" | "!") expr_unary ;
+    expr_postfix = expr_primary (expr_call | expr_field | expr_index)* ;
+      (* "?" means optional call, field access, or index *)
+      expr_call = "?"? "(" args:list{expr}? ")" ;
+      expr_field = "?"? "." name:identifier ;
+      expr_index = "?"? "[" key:expr "]" ;
+  expr_primary =
+    | expr_bool
+    | expr_null
+    | expr_number
+    | expr_string
+    | expr_array
+    | expr_tuple
+    | expr_init
+    | expr_var
+    | expr_ctrl
+    | expr_block
+    | expr_if
+    | expr_try
+    | expr_spawn
+    | expr_lambda
+    | expr_group
+    ;
+  expr_bool = "true" | "false" ;
+  expr_null = "null" ;
+  expr_number = (int | float) ;
+    int = (int_bin | int_dec | int_hex) ;
+    int_bin = regex{"0b[01]([01_]*[01])?"} ;
+    int_dec = regex{"[0-9]([0-9_]*[0-9])?"} ;
+    int_hex = regex{"0x[0-9a-fA-F]([0-9a-fA-F_]*[0-9a-fA-F])?"} ;
+    float = "inf" | regex{"[0-9]+(\.[0-9]*)?([Ee][+-]?[0-9]+)?"} ;
+  expr_string = '"' string_fragment* '"' ;
+    string_fragment =
+      | "{" expr "}"
+      | "\{" text "}"
+      | text
+      ;
+    text = UTF8* ;
+  expr_array = "[" (list{expr} | expr ";" expr) "]" ;
+  expr_tuple = "(" ((expr ",")? | (expr ",")+ expr?) ")" ;
+  expr_init = path "{" fields:list{identifier ":" expr} "}" ;
+  expr_var = path ;
   expr_ctrl =
     | "return" value:expr?
     | "break"
     | "continue"
     | "throw" value:expr?
     ;
-  
   expr_block = "do" block ;
-
   expr_if =
     "if" cond:expr if_body
     ("else" "if" cond:expr if_body)*
     ("else" if_body)?
     ;
-  
     if_body = 
       | expr_ctrl
       | stmt_loop
       | block
       ;
-  
   expr_try =
     | "try" body:expr branches:try_branch_list
     | "try" body:block "catch" branches:try_branch_list
     ;
-    
     try_branch_list = "{" list{try_branch, ";"} "}" ;
       try_branch = type "=>" stmt ;
-  
   expr_spawn =
     | "spawn" body:block
     | "spawn" fn:expr args:call
     ;
-  
   expr_lambda =
     "\\" $
     | param:identifier
     | "(" params:list{identifier} ")"
     $ block
     ;
-  
-  expr_simple = expr_assign ;
-
-    expr_assign =
-      | assign_target ("=" | "+=" | "-=" | "/=" | "*=" | "%=" | "**=" | "??=") expr
-      | expr_range
-      ;
-      assign_target =
-        | identifier
-        | expr_postfix field
-        | expr_postfix index
-        ;
-    expr_range = expr_binary (".." | "..=") expr_binary ;
-    expr_binary = expr_opt ;
-      expr_opt = expr_or (("??") expr_or)* ;
-      expr_or = expr_and (("||") expr_and)* ;
-      expr_and = expr_eq (("&&") expr_eq)* ;
-      expr_eq = expr_comp (("==" | "!=") expr_comp)* ;
-      expr_comp = expr_add ((">"  | ">=" | "<" | "<=") expr_add)* ;
-      expr_add = expr_mult (("-" | "+") expr_mult)* ;
-      expr_mult = expr_pow (("/" | "*" | "%") expr_pow)* ;
-      expr_pow = expr_unary (("**") expr_unary)* ;
-    expr_unary = expr_prefix | expr_postfix ;
-      expr_prefix = ("-" | "!") expr_unary ;
-      expr_postfix = expr_primary (expr_call | expr_field | expr_index)* ;
-        (* "?" means optional call, field access, or index *)
-        expr_call = "?"? "(" args:list{expr}? ")" ;
-        expr_field = "?"? "." name:identifier ;
-        expr_index = "?"? "[" key:expr "]" ;
-    expr_primary =
-      | expr_bool
-      | expr_null
-      | expr_number
-      | expr_string
-      | expr_array
-      | expr_tuple
-      | expr_init
-      | expr_var
-      | expr_group
-      ;
-    expr_bool = "true" | "false" ;
-    expr_null = "null" ;
-    expr_number = (int | float) ;
-      int = (int_bin | int_dec | int_hex) ;
-      int_bin = regex{"0b[01]([01_]*[01])?"} ;
-      int_dec = regex{"[0-9]([0-9_]*[0-9])?"} ;
-      int_hex = regex{"0x[0-9a-fA-F]([0-9a-fA-F_]*[0-9a-fA-F])?"} ;
-      float = "inf" | regex{"[0-9]+(\.[0-9]*)?([Ee][+-]?[0-9]+)?"} ;
-    expr_string = '"' string_fragment* '"' ;
-      string_fragment =
-        | "{" expr "}"
-        | "\{" text "}"
-        | text
-        ;
-      text = UTF8* ;
-    expr_array = "[" (list{expr} | expr ";" expr) "]" ;
-    expr_tuple = "(" ((expr ",")? | (expr ",")+ expr?) ")" ;
-    expr_init = path "{" fields:list{identifier ":" expr} "}" ;
-    expr_var = path ;
-    expr_group = "(" expr ")" ;
+  expr_group = "(" expr ")" ;
 
 
 (* TODO *)
