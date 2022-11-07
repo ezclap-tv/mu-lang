@@ -11,40 +11,40 @@ Literals (null, int, float, bool, string, tuple, array)
 
 ```rust
 // v : null;
-v := null;
+let v = null;
 
 // v : int;
-v := 0;
+let v = 0;
 // v : float;
-v := 0.0;
+let v = 0.0;
 
 // v : bool;
-v := true;
+let v = true;
 
 // v : string
-v := "test";
-v := "formatted {v}"; // string formatting
-v := "escaped curlies \{v}"; // exact value is `escaped curlies {v}`
+let v = "test";
+let v = "formatted {v}"; // string formatting
+let v = "escaped curlies \{v}"; // exact value is `escaped curlies {v}`
 // strings also support other escaped charaters such as `\n`, `\t`, `\x2800`, etc.
-v := "\x2800";
+let v = "\x2800";
 
 // v : (T,)
-v := (v,);
+let v = (v,);
 // v : (T, T)
-v := (v, v);
+let v = (v, v);
 
 // v : [T]
-v := [];
-v := [v, v, v, v];
-v := [v; 1024];
-v := v[0..512];
+let v = [];
+let v = [v, v, v, v];
+let v = [v; 1024];
+let v = v[0..512];
 ```
 
 Variable declaration
 
 ```rust
 // inferred type
-name := 0;
+let name = 0;
 
 // explicit type
 // this declaration shadows the previous one, so its type may differ
@@ -104,7 +104,7 @@ else { /*...*/ }
 
 // both of the above are expressions:
 // the last expression in the body is the result
-v0 := if v { "a" } else { "c" }
+let v0 = if v { "a" } else { "c" }
 
 // you can use control statements without braces in `if` statements
 if true return
@@ -116,12 +116,12 @@ if true while ...
 if true loop ...
 
 {
-  x := 0
+  let x = 0
 } // x is not accessible after this point
 
 // value of a `do` block is the last expression in the body
-v := do {
-  x := 0
+let v = do {
+  let x = 0
   x
 }
 ```
@@ -138,13 +138,13 @@ for i in 0..10 {
   print(i)
 }
 
-v := 10
+let v = 10
 while v >= 0 {
   print(v)
   v -= 1
 }
 
-v := 0
+let v = 0
 loop {
   if v == 5 break
   v += 1
@@ -168,7 +168,7 @@ fn name[T, E](a: A, b: B, c: C) -> T
 }
 
 // anonymous function
-square := \x {x*x}
+let square = \x {x*x}
 
 fn fib(n: int): int {
   if n < 2 { n }
@@ -220,7 +220,7 @@ class List[T] {
   }
 
   fn prepend(self, value: T) {
-    next := self.head;
+    let next = self.head;
     self.head = Node(value);
     self.head.next = next;
   }
@@ -239,14 +239,14 @@ class ListIter[T] {
   impl Iterator {
     type Item = Node[T];
     fn next(self) -> Item? {
-      node := self.node;
+      let node = self.node;
       self.node = node.next;
       node.value
     }
   }
 }
 
-list := List.new();
+let list = List.new();
 
 for i in 0..10 {
   list.prepend(i);
@@ -301,7 +301,7 @@ fn f() {
   throw A()
 }
 
-v := try f() {
+let v = try f() {
   A => ...,
   B => ...,
   C => ...,
@@ -490,7 +490,7 @@ spawn {
 }
 
 // `spawn` returns a task handle
-t := spawn f();
+let t = spawn f();
 
 // which can be joined, causing the current task to wait for it to finish.
 t.join();
@@ -502,12 +502,12 @@ if t.done {
 
 // joining a task evaluates to the return value of the executed closure.
 // in case of an exception, the exception is rethrown.
-v := (spawn { return "test" }).join();
+let v = (spawn { return "test" }).join();
 assert(v == "test");
 
 // you may use the `try_join` function to return a result,
 // which stores the exception instead of rethrowing it.
-r := (spawn { throw "test" }).try_join();
+let r = (spawn { throw "test" }).try_join();
 if r.error {
   handle(r.error);
 } else {
