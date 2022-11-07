@@ -31,8 +31,13 @@ pub struct Spanned<T> {
   pub span: Span,
 }
 
-pub fn spanned<T>(value: T, span: Span) -> Spanned<T> {
-  Spanned { value, span }
+impl<T> Spanned<T> {
+  pub fn new(value: T, span: impl Into<Span>) -> Spanned<T> {
+    Spanned {
+      value,
+      span: span.into(),
+    }
+  }
 }
 
 impl<T> Deref for Spanned<T> {
@@ -80,7 +85,7 @@ mod tests {
       nested: Nested,
     }
 
-    let mut t = spanned(Test::default(), Span { start: 0, end: 10 });
+    let mut t = Spanned::new(Test::default(), 0..10);
 
     t.span.start;
     t.span.end;
