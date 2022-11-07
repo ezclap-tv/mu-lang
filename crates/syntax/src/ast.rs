@@ -130,8 +130,9 @@ pub struct Symbols<'a> {
 
 impl<'a> Symbols<'a> {
   // Helper function to simplify adding `Fn` symbols
+  #[allow(clippy::too_many_arguments)]
   #[inline]
-  pub fn add_fn(
+  pub fn insert_fn(
     &mut self,
     name: Ident<'a>,
     tparams: Vec<symbol::TParam<'a>>,
@@ -157,7 +158,7 @@ impl<'a> Symbols<'a> {
 
   // Helper function to simplify adding `Class` symbols
   #[inline]
-  pub fn add_class(
+  pub fn insert_class(
     &mut self,
     name: Ident<'a>,
     tparams: Vec<symbol::TParam<'a>>,
@@ -179,7 +180,7 @@ impl<'a> Symbols<'a> {
 
   // Helper function to simplify adding `Trait` symbols
   #[inline]
-  pub fn add_trait(
+  pub fn insert_trait(
     &mut self,
     name: Ident<'a>,
     tparams: Vec<symbol::TParam<'a>>,
@@ -199,7 +200,7 @@ impl<'a> Symbols<'a> {
 
   // Helper function to simplify adding `Alias` symbols
   #[inline]
-  pub fn add_alias(
+  pub fn insert_alias(
     &mut self,
     name: Ident<'a>,
     tparams: Vec<symbol::TParam<'a>>,
@@ -357,7 +358,7 @@ pub mod symbol {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum StmtKind<'a> {
-  Var(Box<stmt::Var<'a>>),
+  Let(Box<stmt::Let<'a>>),
   Loop(Box<stmt::Loop<'a>>),
   Expr(Box<Expr<'a>>),
 }
@@ -370,15 +371,15 @@ pub mod stmt {
   use super::{Block, Expr, Ident, StmtKind, Type};
 
   #[derive(Clone, Debug, Serialize, Deserialize)]
-  pub struct Var<'a> {
+  pub struct Let<'a> {
     pub name: Ident<'a>,
     pub ty: Option<Type<'a>>,
     pub value: Expr<'a>,
   }
 
   #[inline]
-  pub fn var<'a>(name: Ident<'a>, ty: Option<Type<'a>>, value: Expr<'a>) -> StmtKind<'a> {
-    StmtKind::Var(Box::new(Var { name, ty, value }))
+  pub fn let_<'a>(name: Ident<'a>, ty: Option<Type<'a>>, value: Expr<'a>) -> StmtKind<'a> {
+    StmtKind::Let(Box::new(Let { name, ty, value }))
   }
 
   #[derive(Clone, Debug, Serialize, Deserialize)]
