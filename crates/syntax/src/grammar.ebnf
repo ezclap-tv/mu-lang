@@ -39,10 +39,10 @@ ignored, unless explicitly notated as `NEWLINE` for `\n` or `WHITESPACE` for `\s
 module = body:top_level_stmt* ;
 
 top_level_stmt =
-  | stmt_fn
-  | stmt_class
-  | stmt_trait
-  | stmt_type ";"
+  | "pub"? stmt_fn
+  | "pub"? stmt_type ";"
+  | "pub"? stmt_class
+  | "pub"? stmt_trait
   | stmt_use ";"
   | stmt
   ;
@@ -70,7 +70,6 @@ stmt =
     ;
 
   stmt_fn =
-    "pub"?
     "fn" name:identifier
     type_params:type_params_list?
     params:params_list
@@ -80,7 +79,6 @@ stmt =
     ;
 
   stmt_type =
-    "pub"?
     "type" name:identifier
     type_params:type_params_list?
     ("where" bounds:list{bound})?
@@ -88,7 +86,6 @@ stmt =
     ;
 
   stmt_class =
-    "pub"?
     "class" name:identifier
     type_params:type_params_list?
     ("where" bounds:list{bound})?
@@ -105,7 +102,6 @@ stmt =
     class_field = name:identifier ":" type:type ;
 
   stmt_trait =
-    "pub"?
     "trait" name:identifier
     type_params:type_params_list?
     "{" body:trait_member* "}"
@@ -157,11 +153,12 @@ expr = expr_assign ;
     expr_pow = expr_unary (("**") expr_unary)* ;
   expr_unary = expr_prefix | expr_postfix ;
     expr_prefix = ("-" | "!") expr_unary ;
-    expr_postfix = expr_primary (expr_call | expr_field | expr_index)* ;
+    expr_postfix = expr_primary (expr_call | expr_field | expr_index | expr_cast)* ;
       (* "?" means optional call, field access, or index *)
       expr_call = "?"? "(" args:list{expr}? ")" ;
       expr_field = "?"? "." name:identifier ;
       expr_index = "?"? "[" key:expr "]" ;
+      expr_cast = "." "(" ty:type ")" ;
   expr_primary =
     | expr_bool
     | expr_null
