@@ -36,40 +36,41 @@ ignored, unless explicitly notated as `NEWLINE` for `\n` or `WHITESPACE` for `\s
 
 *)
 
-module = body:top_level_stmt* ;
+module = body:top_level* ;
 
-top_level_stmt =
-  | "pub"? stmt_fn
-  | "pub"? stmt_type ";"
-  | "pub"? stmt_class
-  | "pub"? stmt_trait
-  | stmt_use ";"
+top_level =
+  | "pub"? decl_fn
+  | "pub"? decl_type ";"
+  | "pub"? decl_class
+  | "pub"? decl_trait
+  | import ";"
   | stmt
   ;
 
 block = "{" body:stmt* "}" ;
 
 stmt =
-  | stmt_var ";"
   | stmt_loop
   (* semicolon after expr is only required if previous token != `}` *)
+  | stmt_let ";"
   | stmt_expr ";"
   ;
 
-  stmt_use = "use" use_path ;
+  import = "use" import_path ;
 
-    use_path =
+    import_path =
       | identifier ("as" identifier)?
-      | identifier ("." use_path)? 
-      | "{" list{use_path} "}"
+      | identifier ("." import_path)? 
+      | "{" list{import_path} "}"
       ;
 
-  stmt_var =
-    | name:identifier ":=" value:expr
-    | name:identifier ":" type:type "=" value:expr
-    ;
+  stmt_let =
+    "let"
+    name:identifier
+    (":" type:type)?
+    "=" value:expr ;
 
-  stmt_fn =
+  decl_fn =
     "fn" name:identifier
     type_params:type_params_list?
     params:params_list
@@ -78,14 +79,14 @@ stmt =
     (block | ";")
     ;
 
-  stmt_type =
+  decl_type =
     "type" name:identifier
     type_params:type_params_list?
     ("where" bounds:list{bound})?
     "=" type
     ;
 
-  stmt_class =
+  decl_class =
     "class" name:identifier
     type_params:type_params_list?
     ("where" bounds:list{bound})?
@@ -94,28 +95,28 @@ stmt =
 
     class_member =
       | class_field ";"
-      | stmt_fn
-      | stmt_type ";"
-      | stmt_impl
+      | decl_fn
+      | decl_type ";"
+      | decl_impl
       ;
 
     class_field = name:identifier ":" type:type ;
 
-  stmt_trait =
+  decl_trait =
     "trait" name:identifier
     type_params:type_params_list?
     "{" body:trait_member* "}"
     ;
 
-  stmt_impl =
+  decl_impl =
     | "impl" type_params:type_params_list? trait:type "for" type
     | "impl" type_params:type_params_list? type:type 
     $ ("{" body:trait_member* "}")?
     ;
 
     trait_member =
-      | stmt_fn
-      | stmt_type ";"
+      | decl_fn
+      | decl_type ";"
       ;
 
   stmt_loop =
