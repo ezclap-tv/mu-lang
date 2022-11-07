@@ -8,6 +8,7 @@
 //! - [`Token`]
 
 use std::borrow::Cow;
+use std::mem::discriminant;
 
 use logos::{FilterResult, Logos};
 use serde::{Deserialize, Serialize};
@@ -45,6 +46,19 @@ pub struct Token<'a> {
   pub kind: TokenKind,
 }
 
+impl<'a> Token<'a> {
+  #[inline]
+  pub fn is(&self, other: TokenKind) -> bool {
+    discriminant(&self.kind) == discriminant(&other)
+  }
+
+  #[inline]
+  pub fn is_any(&self, other: &[TokenKind]) -> bool {
+    let d = discriminant(&self.kind);
+    other.iter().any(|v| d == discriminant(v))
+  }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, Logos)]
 pub enum TokenKind {
   // keywords
@@ -52,6 +66,8 @@ pub enum TokenKind {
   Use,
   #[token("as")]
   As,
+  #[token("let")]
+  Let,
   #[token("pub")]
   Pub,
   #[token("fn")]
@@ -114,8 +130,6 @@ pub enum TokenKind {
   RightBracket,
   #[token(":")]
   Colon,
-  #[token(":=")]
-  ColonEqual,
   #[token("=")]
   Equal,
   #[token("->")]
@@ -327,6 +341,89 @@ fn lex_string(lex: &mut logos::Lexer<'_, TokenKind>) -> Option<StringKind> {
   lex.bump(count);
 
   result
+}
+
+impl std::fmt::Display for TokenKind {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    let str = match self {
+      TokenKind::Use => "use",
+      TokenKind::As => "as",
+      TokenKind::Let => "let",
+      TokenKind::Pub => "pub",
+      TokenKind::Fn => "fn",
+      TokenKind::Where => "where",
+      TokenKind::Type => "type",
+      TokenKind::Class => "class",
+      TokenKind::Trait => "trait",
+      TokenKind::Impl => "impl",
+      TokenKind::For => "for",
+      TokenKind::In => "in",
+      TokenKind::While => "while",
+      TokenKind::Loop => "loop",
+      TokenKind::Return => "return",
+      TokenKind::Break => "break",
+      TokenKind::Continue => "continue",
+      TokenKind::Throw => "throw",
+      TokenKind::If => "if",
+      TokenKind::Else => "else",
+      TokenKind::Try => "try",
+      TokenKind::Catch => "catch",
+      TokenKind::Throws => "throws",
+      TokenKind::Spawn => "spawn",
+      TokenKind::Semicolon => ";",
+      TokenKind::Dot => ".",
+      TokenKind::LeftBrace => "{",
+      TokenKind::RightBrace => "}",
+      TokenKind::LeftParen => "(",
+      TokenKind::RightParen => ")",
+      TokenKind::LeftBracket => "[",
+      TokenKind::RightBracket => "]",
+      TokenKind::Colon => ":",
+      TokenKind::Equal => "=",
+      TokenKind::ThinArrow => "->",
+      TokenKind::FatArrow => "=>",
+      TokenKind::RangeEx => "..",
+      TokenKind::RangeInc => "..=",
+      TokenKind::Or2 => "||",
+      TokenKind::And2 => "&&",
+      TokenKind::Equal2 => "==",
+      TokenKind::More => ">",
+      TokenKind::MoreEqual => ">=",
+      TokenKind::Less => "<",
+      TokenKind::LessEqual => "<=",
+      TokenKind::Plus => "+",
+      TokenKind::PlusEqual => "+=",
+      TokenKind::Minus => "-",
+      TokenKind::MinusEqual => "-=",
+      TokenKind::Slash => "/",
+      TokenKind::SlashEqual => "/=",
+      TokenKind::Percent => "%",
+      TokenKind::PercentEqual => "%=",
+      TokenKind::Star => "*",
+      TokenKind::StarEqual => "*=",
+      TokenKind::Star2 => "**",
+      TokenKind::Star2Equal => "**=",
+      TokenKind::Exclamation => "!",
+      TokenKind::BangEqual => "!=",
+      TokenKind::Question => "?",
+      TokenKind::Question2 => "??",
+      TokenKind::Question2Equal => "??=",
+      TokenKind::Backslash => "\\",
+      TokenKind::Ident => "identifier",
+      TokenKind::Bool(_)
+      | TokenKind::Null
+      | TokenKind::Int
+      | TokenKind::Float
+      | TokenKind::String(_) => "literal",
+      // deliberately `unknown` because they're probably never used with `parser.expect`
+      TokenKind::Whitespace
+      | TokenKind::Comment
+      | TokenKind::MultiLineComment
+      | TokenKind::Error
+      | TokenKind::Eof => "unknown",
+    };
+    write!(f, "{str}")
+  }
 }
 
 #[cfg(test)]
