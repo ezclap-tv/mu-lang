@@ -115,6 +115,10 @@ impl<'a> Token<'a> {
   }
 }
 
+pub const PARENS: (TokenKind, TokenKind) = (TokenKind::ParenL, TokenKind::ParenR);
+pub const BRACKETS: (TokenKind, TokenKind) = (TokenKind::BracketL, TokenKind::BracketR);
+pub const BRACES: (TokenKind, TokenKind) = (TokenKind::BraceL, TokenKind::BraceR);
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, Logos)]
 pub enum TokenKind {
   // keywords
@@ -172,26 +176,28 @@ pub enum TokenKind {
   Semicolon,
   #[token(".")]
   Dot,
+  #[token(",")]
+  Comma,
   #[token("{")]
-  LeftBrace,
+  BraceL,
   #[token("}")]
-  RightBrace,
+  BraceR,
   #[token("(")]
-  LeftParen,
+  ParenL,
   #[token(")")]
-  RightParen,
+  ParenR,
   #[token("[")]
-  LeftBracket,
+  BracketL,
   #[token("]")]
-  RightBracket,
+  BracketR,
   #[token(":")]
   Colon,
   #[token("=")]
   Equal,
   #[token("->")]
-  ThinArrow,
+  ArrowThin,
   #[token("=>")]
-  FatArrow,
+  ArrowFat,
   #[token("..")]
   RangeEx,
   #[token("..=")]
@@ -428,16 +434,17 @@ impl std::fmt::Display for TokenKind {
       TokenKind::Spawn => "spawn",
       TokenKind::Semicolon => ";",
       TokenKind::Dot => ".",
-      TokenKind::LeftBrace => "{",
-      TokenKind::RightBrace => "}",
-      TokenKind::LeftParen => "(",
-      TokenKind::RightParen => ")",
-      TokenKind::LeftBracket => "[",
-      TokenKind::RightBracket => "]",
+      TokenKind::Comma => ",",
+      TokenKind::BraceL => "{",
+      TokenKind::BraceR => "}",
+      TokenKind::ParenL => "(",
+      TokenKind::ParenR => ")",
+      TokenKind::BracketL => "[",
+      TokenKind::BracketR => "]",
       TokenKind::Colon => ":",
       TokenKind::Equal => "=",
-      TokenKind::ThinArrow => "->",
-      TokenKind::FatArrow => "=>",
+      TokenKind::ArrowThin => "->",
+      TokenKind::ArrowFat => "=>",
       TokenKind::RangeEx => "..",
       TokenKind::RangeInc => "..=",
       TokenKind::Or2 => "||",
