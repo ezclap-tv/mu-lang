@@ -17,25 +17,81 @@ use crate::span::Span;
 
 pub struct Lexer<'a> {
   inner: logos::Lexer<'a, TokenKind>,
+  previous: Token<'a>,
+  current: Token<'a>,
+  eof: Token<'a>,
 }
 
 impl<'a> Lexer<'a> {
   pub fn new(source: &'a str) -> Self {
+    let end = source.len().saturating_sub(1);
+    let eof = Token {
+      lexeme: "".into(),
+      span: (end..end).into(),
+      kind: TokenKind::Eof,
+    };
+
     Self {
       inner: TokenKind::lexer(source),
+      previous: eof.clone(),
+      current: eof.clone(),
+      eof,
+    }
+  }
+
+  #[inline]
+  pub fn previous(&self) -> &Token<'a> {
+    &self.previous
+  }
+
+  #[inline]
+  pub fn current(&self) -> &Token<'a> {
+    &self.current
+  }
+
+  #[inline]
+  pub fn eof(&self) -> &Token<'a> {
+    &self.eof
+  }
+
+  #[inline]
+  pub fn bump(&mut self) -> &Token<'a> {
+    std::mem::swap(&mut self.previous, &mut self.current);
+    self.current = match self.inner.next() {
+      Some(kind) => Token {
+        lexeme: self.inner.slice().into(),
+        span: self.inner.span().into(),
+        kind,
+      },
+      None => self.eof.clone(),
+    };
+    &self.previous
+  }
+}
+
+pub struct Tokens<'a>(Lexer<'a>);
+
+impl<'a> Iterator for Tokens<'a> {
+  type Item = Token<'a>;
+
+  fn next(&mut self) -> Option<Self::Item> {
+    self.0.bump();
+    let token = self.0.current().clone();
+    if !token.is(TokenKind::Eof) {
+      Some(token)
+    } else {
+      None
     }
   }
 }
 
-impl<'a> Iterator for Lexer<'a> {
+impl<'a> IntoIterator for Lexer<'a> {
   type Item = Token<'a>;
 
-  fn next(&mut self) -> Option<Self::Item> {
-    self.inner.next().map(|kind| Token {
-      lexeme: self.inner.slice().into(),
-      span: self.inner.span().into(),
-      kind,
-    })
+  type IntoIter = Tokens<'a>;
+
+  fn into_iter(self) -> Self::IntoIter {
+    Tokens(self)
   }
 }
 
@@ -432,7 +488,7 @@ mod tests {
 
   fn compare(src: &str, tokens: &[(TokenKind, &str)]) {
     let mut diff = vec![];
-    let actual = Lexer::new(src).collect::<Vec<_>>();
+    let actual = Lexer::new(src).into_iter().collect::<Vec<_>>();
     assert_eq!(tokens.len(), actual.len());
 
     for (actual, expected) in actual.iter().zip(tokens.iter()) {

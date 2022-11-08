@@ -8,51 +8,37 @@
 //! kept in sync with eachother.
 #![deny(unused_must_use)]
 
-use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::ast::symbol::Vis;
-use crate::ast::{stmt, ExprKind, Ident, Module, Stmt, StmtKind, TypeKind};
+use crate::ast::{stmt, ExprKind, Ident, Module, StmtKind, TypeKind};
 use crate::lexer::{Lexer, Token, TokenKind};
 use crate::span::{Span, Spanned};
 
 // https://github.com/ves-lang/ves/blob/master/ves-parser/src/parser.rs
 
 pub fn parse(source: &str) -> Result<Module<'_>, Vec<Error>> {
-  let end = source.len().saturating_sub(1);
-  let eof = Token {
-    lexeme: "".into(),
-    span: (end..end).into(),
-    kind: TokenKind::Eof,
-  };
-
-  State {
-    lexer: Lexer::new(source),
-    previous: eof.clone(),
-    current: eof.clone(),
-    eof,
+  let lexer = Lexer::new(source);
+  Parser {
+    lexer,
     module: Module::default(),
     errors: vec![],
   }
   .parse()
 }
 
-struct State<'a> {
+struct Parser<'a> {
   lexer: Lexer<'a>,
-  previous: Token<'a>,
-  current: Token<'a>,
-  eof: Token<'a>,
   module: Module<'a>,
   errors: Vec<Error>,
 }
 
-impl<'a> State<'a> {
+impl<'a> Parser<'a> {
   fn parse(mut self) -> Result<Module<'a>, Vec<Error>> {
     use TokenKind::Eof;
 
     self.bump();
 
-    while !self.current.is(Eof) {
+    while !self.current().is(Eof) {
       if let Err(e) = self.parse_top_level() {
         self.errors.push(e);
         self.sync();
@@ -74,16 +60,16 @@ impl<'a> State<'a> {
     self.bump_if(Pub);
 
     if self.bump_if(Fn) {
-      self.parse_decl_fn(self.previous.is(Pub))
+      self.parse_decl_fn(self.previous().is(Pub))
     } else if self.bump_if(Type) {
-      self.parse_decl_type(self.previous.is(Pub))
+      self.parse_decl_type(self.previous().is(Pub))
     } else if self.bump_if(Class) {
-      self.parse_decl_class(self.previous.is(Pub))
+      self.parse_decl_class(self.previous().is(Pub))
     } else if self.bump_if(Trait) {
-      self.parse_decl_trait(self.previous.is(Pub))
+      self.parse_decl_trait(self.previous().is(Pub))
     } else if self.bump_if(Use) {
       self.parse_import()
-    } else if !self.previous.is(Pub) {
+    } else if !self.previous().is(Pub) {
       let stmt = self.span(|p| {
         if p.bump_if(For) {
           p.parse_stmt_loop_for()
@@ -99,7 +85,7 @@ impl<'a> State<'a> {
           let stmt = p.parse_stmt_expr();
           // semicolon after expr stmt is only required if the expr does not end with `}`,
           // for example: if true { "a" } else { "b" }
-          if !p.previous.is(RightBrace) {
+          if !p.previous().is(RightBrace) {
             p.expect(Semicolon)?;
           }
           stmt
@@ -108,7 +94,7 @@ impl<'a> State<'a> {
       self.module.top_level.push(stmt);
       Ok(())
     } else {
-      Err(Error::unexpected_vis(self.previous.span))
+      Err(Error::unexpected_vis(self.previous().span))
     }
   }
 
@@ -171,12 +157,15 @@ impl<'a> State<'a> {
     use TokenKind::Ident;
     self
       .expect(Ident)
-      .map(|tok| Spanned::new(tok.lexeme, tok.span))
+      .map(|token| Spanned::new(token.lexeme.clone(), token.span))
   }
+}
 
+// Helper functions
+impl<'a> Parser<'a> {
   #[inline]
-  fn maybe(&mut self, which: TokenKind) -> Option<Token<'a>> {
-    if self.current.is(which) {
+  fn maybe(&mut self, which: TokenKind) -> Option<&Token<'a>> {
+    if self.current().is(which) {
       Some(self.bump())
     } else {
       None
@@ -186,11 +175,11 @@ impl<'a> State<'a> {
   /// If the current token matches `which`, returns it and calls `bump`,
   /// otherwise returns an error.
   #[inline]
-  fn expect(&mut self, which: TokenKind) -> Result<Token<'a>, Error> {
-    if self.current.is(which) {
+  fn expect(&mut self, which: TokenKind) -> Result<&Token<'a>, Error> {
+    if self.current().is(which) {
       Ok(self.bump())
     } else {
-      Err(Error::expected(which, self.current.span))
+      Err(Error::expected(which, self.current().span))
     }
   }
 
@@ -203,7 +192,8 @@ impl<'a> State<'a> {
     which: TokenKind,
     cons: impl FnOnce(&mut Self) -> Result<T, Error>,
   ) -> Result<Option<T>, Error> {
-    if self.bump_if(which) {
+    if self.current().is(which) {
+      self.bump();
       cons(self).map(Some)
     } else {
       Ok(None)
@@ -214,7 +204,7 @@ impl<'a> State<'a> {
   /// also calls `bump`.
   #[inline]
   fn bump_if(&mut self, which: TokenKind) -> bool {
-    if self.current.is(which) {
+    if self.current().is(which) {
       self.bump();
       true
     } else {
@@ -222,31 +212,19 @@ impl<'a> State<'a> {
     }
   }
 
-  /// Move forward by one token, returning the previous one.
-  #[inline]
-  fn bump(&mut self) -> Token<'a> {
-    std::mem::swap(&mut self.previous, &mut self.current);
-    self.current = self.lexer.next().unwrap_or_else(|| self.eof.clone());
-    if self.previous.kind == TokenKind::Error {
-      self.errors.push(Error::lexer(self.previous.clone()));
-      self.bump();
-    }
-    self.previous.clone()
-  }
-
   /// Skip tokens until we find one that may begin a new statement.
   fn sync(&mut self) {
     self.bump();
-    while self.previous.kind != TokenKind::Eof {
+    while self.previous().kind != TokenKind::Eof {
       // semicolons terminate statement, so it's safe to start parsing again after
       // we encounter one.
-      if self.previous.kind == TokenKind::Semicolon {
+      if self.previous().kind == TokenKind::Semicolon {
         break;
       }
 
       // all of these tokens begin a statement that cannot also appear as an
       // expression, so they are good candidates for synchronization.
-      match self.current.kind {
+      match self.current().kind {
         TokenKind::Pub
         | TokenKind::Use
         | TokenKind::Fn
@@ -271,11 +249,27 @@ impl<'a> State<'a> {
     &mut self,
     cons: impl FnOnce(&mut Self) -> Result<T, Error>,
   ) -> Result<Spanned<T>, Error> {
-    let start = self.current.span.start;
+    let start = self.current().span.start;
     cons(self).map(|value| {
-      let end = self.previous.span.end;
+      let end = self.previous().span.end;
       Spanned::new(value, start..end)
     })
+  }
+
+  #[inline]
+  fn previous(&self) -> &Token<'a> {
+    self.lexer.previous()
+  }
+
+  #[inline]
+  fn current(&self) -> &Token<'a> {
+    self.lexer.current()
+  }
+
+  /// Move forward by one token, returning the previous one.
+  #[inline]
+  fn bump(&mut self) -> &Token<'a> {
+    self.lexer.bump()
   }
 }
 
