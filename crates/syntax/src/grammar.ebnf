@@ -24,7 +24,7 @@ Extensions:
   - repeat{`item} = `item*
 
 The grammar may also contain regex terminals, written in the form `regex{"<regex>"}`.
-For example: `regex{"[a-bA-B_][a-bA-B_0-9]*"}` describes an identifier which consists
+For example: `regex{"[a-bA-B_][a-bA-B_0-9]*"}` describes an ident which consists
 of alphanumeric characters or underscores, except at the start, where digits may
 not appear.
 
@@ -59,19 +59,19 @@ stmt =
   import = "use" import_path ;
 
     import_path =
-      | identifier ("as" identifier)?
-      | identifier ("." import_path)? 
+      | ident ("as" ident)?
+      | ident ("." import_path)? 
       | "{" list{import_path} "}"
       ;
 
   stmt_let =
     "let"
-    name:identifier
+    name:ident
     (":" type:type)?
     "=" value:expr ;
 
   decl_fn =
-    "fn" name:identifier
+    "fn" name:ident
     type_params:type_params_list?
     params:params_list
     ("->" return:type)?
@@ -80,14 +80,14 @@ stmt =
     ;
 
   decl_type =
-    "type" name:identifier
+    "type" name:ident
     type_params:type_params_list?
     ("where" bounds:list{bound})?
     "=" type
     ;
 
   decl_class =
-    "class" name:identifier
+    "class" name:ident
     type_params:type_params_list?
     ("where" bounds:list{bound})?
     ("{" body:class_member* "}" | ";")?
@@ -100,10 +100,10 @@ stmt =
       | decl_impl
       ;
 
-    class_field = name:identifier ":" type:type ;
+    class_field = name:ident ":" type:type ;
 
   decl_trait =
-    "trait" name:identifier
+    "trait" name:ident
     type_params:type_params_list?
     "{" body:trait_member* "}"
     ;
@@ -125,7 +125,7 @@ stmt =
     | loop_inf
     ;
 
-    loop_for = "for" item:identifier "in" iter:expr block ;
+    loop_for = "for" item:ident "in" iter:expr block ;
     loop_while = "while" cond:expr block ;
     loop_inf = "loop" block ;
 
@@ -138,7 +138,7 @@ expr = expr_assign ;
     | expr_range
     ;
     assign_target =
-      | identifier
+      | ident
       | expr_postfix field
       | expr_postfix index
       ;
@@ -157,7 +157,7 @@ expr = expr_assign ;
     expr_postfix = expr_primary (expr_call | expr_field | expr_index | expr_cast)* ;
       (* "?" means optional call, field access, or index *)
       expr_call = "?"? "(" args:list{expr}? ")" ;
-      expr_field = "?"? "." name:identifier ;
+      expr_field = "?"? "." name:ident ;
       expr_index = "?"? "[" key:expr "]" ;
       expr_cast = "." "(" ty:type ")" ;
   expr_primary =
@@ -194,8 +194,8 @@ expr = expr_assign ;
     text = UTF8* ;
   expr_array = "[" (list{expr} | expr ";" expr) "]" ;
   expr_tuple = "(" ((expr ",")? | (expr ",")+ expr?) ")" ;
-  expr_init = path "{" fields:list{identifier ":" expr} "}" ;
-  expr_var = path ;
+  expr_init = type "{" fields:list{ident ":" expr} "}" ;
+  expr_var = ident ;
   expr_ctrl =
     | "return" value:expr?
     | "break"
@@ -225,8 +225,8 @@ expr = expr_assign ;
     ;
   expr_lambda =
     "\\" $
-    | param:identifier
-    | "(" params:list{identifier} ")"
+    | param:ident
+    | "(" params:list{ident} ")"
     $ block
     ;
   expr_group = "(" expr ")" ;
@@ -235,16 +235,17 @@ expr = expr_assign ;
 (* TODO *)
 type = type_optional ;
   type_optional = type_postfix "?" ;
-  type_postfix = type_primary (type_path | type_inst)* ;
-    type_path = "." identifier
+  type_postfix = type_primary (type_field | type_inst)* ;
+    type_field = "." ident
     type_inst = "[" list{type} "]" ;
   type_primary =
+    | type_var
     | type_fn
     | type_array
     | type_tuple
-    | type_var
     | type_group
     ;
+  type_var = ident ;
   type_fn =
     "fn"
     "(" list{type} ")"
@@ -252,7 +253,6 @@ type = type_optional ;
     ;
   type_array = "[" type "]" ;
   type_tuple = "(" ((type ",")? | (type ",")+ type?) ")" ;
-  type_var = path ;
   type_group = "(" type ")" ;
 
 
@@ -260,13 +260,13 @@ bound = ty:type ":" constraint:constraint ;
   constraint = type ("+" type)* ;
 
 type_params_list = "[" list{type_param} "]" ;
-  type_param = name:identifier ("=" default:type)? ;
+  type_param = name:ident ("=" default:type)? ;
 
 params_list = "(" list{param} ")" ;
-  param = name:identifier (":" type)? ("=" expr)? ;
+  param = name:ident (":" type)? ("=" expr)? ;
 
-identifier = regex{"[a-bA-B_][a-bA-B_0-9]*"} ;
+ident = regex{"[a-bA-B_][a-bA-B_0-9]*"} ;
 
-path = identifier ("." identifier)* ;
+path = ident ("." ident)* ;
 
 list{`item, `sep = ","} = (`item (`sep `item `sep?)*)? ;
