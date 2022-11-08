@@ -1,0 +1,22 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    Tuple(
+        Tuple {
+            items: [
+                Var(
+                    Var {
+                        name: "A",
+                    },
+                ),
+                Var(
+                    Var {
+                        name: "B",
+                    },
+                ),
+            ],
+        },
+    ),
+)

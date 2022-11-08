@@ -1,0 +1,27 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    Inst(
+        Inst {
+            cons: Field(
+                Field {
+                    ty: Var(
+                        Var {
+                            name: "T",
+                        },
+                    ),
+                    name: "A",
+                },
+            ),
+            args: [
+                Var(
+                    Var {
+                        name: "B",
+                    },
+                ),
+            ],
+        },
+    ),
+)

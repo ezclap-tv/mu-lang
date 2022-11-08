@@ -1,0 +1,29 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    Fn(
+        Fn {
+            params: [
+                Var(
+                    Var {
+                        name: "A",
+                    },
+                ),
+                Var(
+                    Var {
+                        name: "B",
+                    },
+                ),
+            ],
+            ret: Some(
+                Var(
+                    Var {
+                        name: "R",
+                    },
+                ),
+            ),
+        },
+    ),
+)

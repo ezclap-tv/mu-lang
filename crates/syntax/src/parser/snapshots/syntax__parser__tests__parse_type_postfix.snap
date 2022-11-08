@@ -1,0 +1,16 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    Field(
+        Field {
+            ty: Var(
+                Var {
+                    name: "T",
+                },
+            ),
+            name: "A",
+        },
+    ),
+)

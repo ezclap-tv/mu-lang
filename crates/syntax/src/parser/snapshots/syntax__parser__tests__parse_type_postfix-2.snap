@@ -1,0 +1,22 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    Inst(
+        Inst {
+            cons: Var(
+                Var {
+                    name: "T",
+                },
+            ),
+            args: [
+                Var(
+                    Var {
+                        name: "A",
+                    },
+                ),
+            ],
+        },
+    ),
+)
