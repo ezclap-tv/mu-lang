@@ -17,7 +17,7 @@
 //!   create a type alias for the original name which wraps the enum in
 //!   [Spanned][`crate::span::Spanned`]. For example:
 //!
-//! ```no_run
+//! ```text
 //! enum Stmt<'a> { ... }
 //! // the above becomes
 //! enum StmtKind<'a> { ... }
@@ -31,6 +31,7 @@ use std::ops::Deref;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 
+use crate::lexer::Token;
 use crate::span::{Span, Spanned};
 
 // TODO: spans
@@ -43,6 +44,12 @@ use crate::span::{Span, Spanned};
 /// with a digit, but internally, they may be made up of arbitrary UTF8 text.
 pub type Ident<'a> = Spanned<Cow<'a, str>>;
 
+/// Converts a `Token` to an identifier. Only use this if `token.kind ==
+/// TokenKind::Ident`.
+pub fn ident<'a>(token: &Token<'a>) -> Ident<'a> {
+  Spanned::new(token.lexeme.clone(), token.span)
+}
+
 /// Order-preserving hash map
 pub type Map<'a, T> = IndexMap<Cow<'a, str>, T>;
 
@@ -51,7 +58,7 @@ pub type Map<'a, T> = IndexMap<Cow<'a, str>, T>;
 /// Used to specify where a symbol comes from if it isn't directly imported,
 /// e.g.:
 ///
-/// ```no_run
+/// ```text
 /// use module;
 /// type Bar = module.Foo;
 /// ```
@@ -61,7 +68,7 @@ pub type Path<'a> = Spanned<Vec<Ident<'a>>>;
 ///
 /// e.g.:
 ///
-/// ```no_run
+/// ```text
 /// {
 ///   a := 0;
 ///   b := 1;
@@ -83,7 +90,7 @@ pub struct Module<'a> {
 ///
 /// e.g.:
 ///
-/// ```no_run
+/// ```text
 /// use {
 ///   a.{b, c as d},
 ///   e as f
@@ -92,7 +99,7 @@ pub struct Module<'a> {
 ///
 /// Will normalize to the following imports:
 ///
-/// ```no_run
+/// ```text
 /// use a.b;
 /// use a.c as d;
 /// use e as f;
@@ -105,7 +112,7 @@ pub struct Import<'a> {
   pub alias: Option<Ident<'a>>,
   /// Span of the last identifier in the import path pre-normalization.
   ///
-  /// ```no_run
+  /// ```text
   /// use a.b.thing as other;
   ///      // ^^^^^
   ///      // span
@@ -137,7 +144,7 @@ impl<'a> Symbols<'a> {
     name: Ident<'a>,
     tparams: Vec<symbol::TParam<'a>>,
     params: Vec<symbol::Param<'a>>,
-    ret: Type<'a>,
+    ret: Option<Type<'a>>,
     bounds: Vec<symbol::Bound<'a>>,
     body: Option<expr::Do<'a>>,
     span: Span,
@@ -237,7 +244,7 @@ pub mod symbol {
 
   /// Functions are bundles of code.
   ///
-  /// ```no_run
+  /// ```text
   /// fn name[T, A, B, C](a: A, b: B, c: C) -> T
   /// where
   ///   A: Foo,
@@ -252,7 +259,7 @@ pub mod symbol {
     pub name: Ident<'a>,
     pub tparams: Vec<TParam<'a>>,
     pub params: Vec<Param<'a>>,
-    pub ret: Type<'a>,
+    pub ret: Option<Type<'a>>,
     pub bounds: Vec<Bound<'a>>,
     pub body: Option<expr::Do<'a>>,
     pub span: Span,
@@ -260,7 +267,7 @@ pub mod symbol {
 
   /// Classes encapsulate data, and operations on that data.
   ///
-  /// ```no_run
+  /// ```text
   /// class Foo[T] {
   ///   type Bar = T;
   ///   fn new() -> Self { /* ... */ }
@@ -279,7 +286,7 @@ pub mod symbol {
   /// Traits encapsulate behavior.
   /// Anything that is generic can be bound to traits.
   ///
-  /// ```no_run
+  /// ```text
   /// trait Foo[T] {
   ///   type Bar = T;
   ///   fn bar() -> Bar;
@@ -300,7 +307,7 @@ pub mod symbol {
   /// A type alias allows renaming types and partially instantiating generic
   /// types.
   ///
-  /// ```no_run
+  /// ```text
   /// class Foo[T];
   ///
   /// type Bar = Foo[Baz];
@@ -439,7 +446,7 @@ pub type Type<'a> = Spanned<TypeKind<'a>>;
 pub mod ty {
   use serde::{Deserialize, Serialize};
 
-  use super::{Ident, Span, Type, TypeKind};
+  use super::{Ident, Type, TypeKind};
 
   #[derive(Clone, Debug, Serialize, Deserialize)]
   pub struct Opt<'a> {
@@ -454,11 +461,11 @@ pub mod ty {
   #[derive(Clone, Debug, Serialize, Deserialize)]
   pub struct Fn<'a> {
     pub params: Vec<Type<'a>>,
-    pub ret: Type<'a>,
+    pub ret: Option<Type<'a>>,
   }
 
   #[inline]
-  pub fn fn_<'a>(params: Vec<Type<'a>>, ret: Type<'a>) -> TypeKind<'a> {
+  pub fn fn_<'a>(params: Vec<Type<'a>>, ret: Option<Type<'a>>) -> TypeKind<'a> {
     TypeKind::Fn(Box::new(Fn { params, ret }))
   }
 
@@ -486,20 +493,11 @@ pub mod ty {
   pub struct Inst<'a> {
     pub cons: Type<'a>,
     pub args: Vec<Type<'a>>,
-    /// Span of the full type instantiation.
-    ///
-    /// e.g.
-    /// ```no_run
-    /// type T = Generic[A, B];
-    ///       // ^^^^^^^^^^^^^
-    ///       // span
-    /// ```
-    pub span: Span,
   }
 
   #[inline]
-  pub fn inst<'a>(cons: Type<'a>, args: Vec<Type<'a>>, span: Span) -> TypeKind<'a> {
-    TypeKind::Inst(Box::new(Inst { cons, args, span }))
+  pub fn inst<'a>(cons: Type<'a>, args: Vec<Type<'a>>) -> TypeKind<'a> {
+    TypeKind::Inst(Box::new(Inst { cons, args }))
   }
 
   #[derive(Clone, Debug, Serialize, Deserialize)]
