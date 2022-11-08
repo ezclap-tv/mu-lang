@@ -10,8 +10,9 @@
 
 use thiserror::Error;
 
-use crate::ast::{stmt, ExprKind, Ident, Module, StmtKind, TypeKind};
-use crate::lexer::{Lexer, Token, TokenKind};
+use crate::ast;
+use crate::ast::{stmt, ExprKind, Ident, Module, StmtKind, Type, TypeKind};
+use crate::lexer::{Lexer, Token, TokenKind, BRACKETS, PARENS};
 use crate::span::{Span, Spanned};
 
 // https://github.com/ves-lang/ves/blob/master/ves-parser/src/parser.rs
@@ -53,9 +54,7 @@ impl<'a> Parser<'a> {
   }
 
   fn parse_top_level(&mut self) -> Result<(), Error> {
-    use TokenKind::{
-      Class, Fn, For, Let, Loop, Pub, RightBrace, Semicolon, Trait, Type, Use, While,
-    };
+    use TokenKind::{BraceR, Class, Fn, For, Let, Loop, Pub, Semicolon, Trait, Type, Use, While};
 
     self.bump_if(Pub);
 
@@ -85,7 +84,7 @@ impl<'a> Parser<'a> {
           let stmt = p.parse_stmt_expr();
           // semicolon after expr stmt is only required if the expr does not end with `}`,
           // for example: if true { "a" } else { "b" }
-          if !p.previous().is(RightBrace) {
+          if !p.previous().is(BraceR) {
             p.expect(Semicolon)?;
           }
           stmt
@@ -134,7 +133,7 @@ impl<'a> Parser<'a> {
     use TokenKind::{Colon, Equal};
 
     let name = self.parse_ident()?;
-    let ty = self.bump_then(Colon, |p| p.span(Self::parse_type))?;
+    let ty = self.maybe(Colon, |p, _| p.span(Self::parse_type))?;
     self.expect(Equal)?;
     let value = self.span(Self::parse_expr)?;
 
@@ -150,7 +149,97 @@ impl<'a> Parser<'a> {
   }
 
   fn parse_type(&mut self) -> Result<TypeKind<'a>, Error> {
-    todo!()
+    self.parse_type_option()
+  }
+
+  fn parse_type_option(&mut self) -> Result<TypeKind<'a>, Error> {
+    use TokenKind::Question;
+
+    let ty = self.span(Self::parse_type_postfix)?;
+    let ty = if self.bump_if(Question) {
+      // type_optional
+      ast::ty::option(ty)
+    } else {
+      ty.into_inner()
+    };
+
+    Ok(ty)
+  }
+
+  fn parse_type_postfix(&mut self) -> Result<TypeKind<'a>, Error> {
+    use TokenKind::{BracketL, Comma, Dot};
+
+    let mut ty = self.span(Self::parse_type_primary)?;
+    loop {
+      if self.current().is(Dot) {
+        // type_field
+        ty = self.span(|p| {
+          p.bump(); // bump Dot
+          p.parse_ident().map(|ident| ast::ty::field(ty, ident))
+        })?;
+        continue;
+      }
+
+      if self.current().is(BracketL) {
+        // type_inst
+        ty = self.span(|p| {
+          p.wrap_list(BRACKETS, Comma, |p| p.span(Self::parse_type))
+            .map(|args| ast::ty::inst(ty, args))
+        })?;
+        continue;
+      }
+
+      break;
+    }
+
+    Ok(ty.into_inner())
+  }
+
+  fn parse_type_primary(&mut self) -> Result<TypeKind<'a>, Error> {
+    use TokenKind::{ArrowThin, BracketL, Comma, Fn, Ident, ParenL, ParenR};
+
+    // type_var
+    if self.bump_if(Ident) {
+      let ty = ast::ty::var(ast::ident(self.previous()));
+      return Ok(ty);
+    }
+
+    // type_fn
+    if self.bump_if(Fn) {
+      let args = self.wrap_list(PARENS, Comma, |p| p.span(Self::parse_type))?;
+      let ret = self.maybe(ArrowThin, |p, _| p.span(Self::parse_type))?;
+      let ty = ast::ty::fn_(args, ret);
+      return Ok(ty);
+    }
+
+    // type_array
+    if self.current().is(BracketL) {
+      let item = self.wrap(BRACKETS, |p| p.span(Self::parse_type))?;
+      let ty = ast::ty::array(item);
+      return Ok(ty);
+    }
+
+    // type_tuple or type_group
+    if self.current().is(ParenL) {
+      let ty = self.wrap(PARENS, |p| {
+        let first = p.span(Self::parse_type)?;
+
+        if p.current().is(Comma) {
+          // type_tuple
+          let mut items = vec![first];
+          while p.bump_if(Comma) && !p.current().is(ParenR) {
+            items.push(p.span(Self::parse_type)?);
+          }
+          return Ok(ast::ty::tuple(items));
+        }
+
+        // type_group
+        Ok(first.into_inner())
+      })?;
+      return Ok(ty);
+    }
+
+    Err(Error::unexpected(self.current()))
   }
 
   fn parse_ident(&mut self) -> Result<Ident<'a>, Error> {
@@ -163,12 +252,79 @@ impl<'a> Parser<'a> {
 
 // Helper functions
 impl<'a> Parser<'a> {
+  /// Parse a wrapped token sequence, e.g.:
+  ///
+  /// ```text
+  /// parser.wrap((LeftParen, RightParen), Parser::parse_expr)
+  /// ```
+  /// would parse:
+  ///
+  /// ```text
+  /// ( 1 + 1 )
+  /// ```
+  ///
+  /// Note: Do not bump the opening token!
+  ///
+  /// For wrapped and separated lists (e.g. arrays), use `wrap_list` instead, as
+  /// that also handles trailing commas.
   #[inline]
-  fn maybe(&mut self, which: TokenKind) -> Option<&Token<'a>> {
+  fn wrap<T>(
+    &mut self,
+    (l, r): (TokenKind, TokenKind),
+    cons: impl FnOnce(&mut Self) -> Result<T, Error>,
+  ) -> Result<T, Error> {
+    self.expect(l)?;
+    let inner = cons(self)?;
+    self.expect(r)?;
+    Ok(inner)
+  }
+
+  /* #[inline]
+  fn list<T>(
+    &mut self,
+    separator: TokenKind,
+    mut cons: impl FnMut(&mut Self) -> Result<T, Error>,
+  ) -> Result<Vec<T>, Error> {
+    let mut items = vec![cons(self)?];
+    while self.bump_if(separator) {
+      items.push(cons(self)?);
+    }
+    Ok(items)
+  } */
+
+  /// Helper function for parsing bracketed lists, e.g. `[a, b, c,]`,
+  /// with support for trailing separators.
+  #[inline]
+  fn wrap_list<T>(
+    &mut self,
+    (l, r): (TokenKind, TokenKind),
+    sep: TokenKind,
+    mut cons: impl FnMut(&mut Self) -> Result<T, Error>,
+  ) -> Result<Vec<T>, Error> {
+    self.expect(l)?;
+    let mut items = vec![];
+    if !self.current().is(r) {
+      items.push(cons(self)?);
+      while self.bump_if(sep) && !self.current().is(r) {
+        items.push(cons(self)?);
+      }
+    }
+    self.expect(r)?;
+
+    Ok(items)
+  }
+
+  #[inline]
+  fn maybe<T>(
+    &mut self,
+    which: TokenKind,
+    cons: impl FnOnce(&mut Self, &Token<'a>) -> Result<T, Error>,
+  ) -> Result<Option<T>, Error> {
     if self.current().is(which) {
-      Some(self.bump())
+      let token = self.bump().clone();
+      cons(self, &token).map(Some)
     } else {
-      None
+      Ok(None)
     }
   }
 
@@ -180,23 +336,6 @@ impl<'a> Parser<'a> {
       Ok(self.bump())
     } else {
       Err(Error::expected(which, self.current().span))
-    }
-  }
-
-  /// If the current token matches `which`, then it will return the result of
-  /// `cons` wrapped in `Some`, and `None` otherwise. `cons` may fail so this
-  /// also returns a `Result` with any potential errors.
-  #[inline]
-  fn bump_then<T>(
-    &mut self,
-    which: TokenKind,
-    cons: impl FnOnce(&mut Self) -> Result<T, Error>,
-  ) -> Result<Option<T>, Error> {
-    if self.current().is(which) {
-      self.bump();
-      cons(self).map(Some)
-    } else {
-      Ok(None)
     }
   }
 
@@ -269,7 +408,12 @@ impl<'a> Parser<'a> {
   /// Move forward by one token, returning the previous one.
   #[inline]
   fn bump(&mut self) -> &Token<'a> {
-    self.lexer.bump()
+    self.lexer.bump();
+    while self.current().is(TokenKind::Error) {
+      self.errors.push(Error::lexer(self.current()));
+      self.lexer.bump();
+    }
+    self.previous()
   }
 }
 
@@ -281,15 +425,21 @@ pub enum Error {
   UnexpectedVis(Span),
   #[error("expected {0} at {1}")]
   Expected(TokenKind, Span),
+  #[error("unexpected {0} at {1}")]
+  Unexpected(TokenKind, Span),
 }
 
 impl Error {
-  fn lexer(token: Token<'_>) -> Self {
+  fn lexer(token: &Token<'_>) -> Self {
     Error::Lexer(token.lexeme.to_string(), token.span)
   }
 
   fn unexpected_vis(span: Span) -> Self {
     Error::UnexpectedVis(span)
+  }
+
+  fn unexpected(token: &Token<'_>) -> Self {
+    Error::Unexpected(token.kind, token.span)
   }
 
   fn expected(which: TokenKind, span: Span) -> Self {
