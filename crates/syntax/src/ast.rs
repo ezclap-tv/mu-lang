@@ -29,7 +29,6 @@ use std::borrow::Cow;
 use std::ops::Deref;
 
 use indexmap::IndexMap;
-use serde::{Deserialize, Serialize};
 
 use crate::lexer::Token;
 use crate::span::{Span, Spanned};
@@ -79,7 +78,7 @@ pub type Block<'a> = Spanned<Vec<StmtKind<'a>>>;
 /// A module is the basic building block of Mu programs.
 ///
 /// Each module contains a list of imports and exported symbols.
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct Module<'a> {
   pub imports: Vec<Import<'a>>,
   pub symbols: Symbols<'a>,
@@ -104,7 +103,7 @@ pub struct Module<'a> {
 /// use a.c as d;
 /// use e as f;
 /// ```
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
 pub struct Import<'a> {
   /// Normalized path to the symbol or module.
   pub path: Vec<Cow<'a, str>>,
@@ -127,7 +126,7 @@ pub struct Import<'a> {
   pub span: Span,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct Symbols<'a> {
   pub fns: Map<'a, symbol::Fn<'a>>,
   pub classes: Map<'a, symbol::Class<'a>>,
@@ -229,12 +228,10 @@ impl<'a> Symbols<'a> {
 }
 
 pub mod symbol {
-  use serde::{Deserialize, Serialize};
-
   use super::{expr, Expr, Ident, Span, Type};
 
   /// A visibility modifier.
-  #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Copy, Debug)]
   pub enum Vis {
     /// `pub`
     Public,
@@ -254,7 +251,7 @@ pub mod symbol {
   ///   // ...
   /// }
   /// ```
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct Fn<'a> {
     pub name: Ident<'a>,
     pub tparams: Vec<TParam<'a>>,
@@ -274,7 +271,7 @@ pub mod symbol {
   ///   impl Trait { /* ... */ }
   /// }
   /// ```
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct Class<'a> {
     pub name: Ident<'a>,
     pub tparams: Vec<TParam<'a>>,
@@ -296,7 +293,7 @@ pub mod symbol {
   ///   v.bar()
   /// }
   /// ```
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct Trait<'a> {
     pub name: Ident<'a>,
     pub tparams: Vec<TParam<'a>>,
@@ -312,7 +309,7 @@ pub mod symbol {
   ///
   /// type Bar = Foo[Baz];
   /// ```
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct Alias<'a> {
     pub name: Ident<'a>,
     pub tparams: Vec<TParam<'a>>,
@@ -321,7 +318,7 @@ pub mod symbol {
     pub span: Span,
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct Impl<'a> {
     pub tparams: Vec<TParam<'a>>,
     pub trait_: Type<'a>,
@@ -329,26 +326,26 @@ pub mod symbol {
     pub span: Span,
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct TParam<'a> {
     pub name: Ident<'a>,
     pub default: Option<Type<'a>>,
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct Param<'a> {
     pub name: Ident<'a>,
     pub ty: Type<'a>,
     pub default: Option<Expr<'a>>,
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct Bound<'a> {
     pub ty: Type<'a>,
     pub constraint: Vec<Type<'a>>,
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub enum ClassMember<'a> {
     Field(Ident<'a>, Type<'a>),
     Fn(Fn<'a>),
@@ -356,14 +353,14 @@ pub mod symbol {
     Impl(Impl<'a>),
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub enum TraitMember<'a> {
     Fn(Fn<'a>),
     Alias(Alias<'a>),
   }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
 pub enum StmtKind<'a> {
   Let(Box<stmt::Let<'a>>),
   Loop(Box<stmt::Loop<'a>>),
@@ -373,11 +370,9 @@ pub enum StmtKind<'a> {
 pub type Stmt<'a> = Spanned<StmtKind<'a>>;
 
 pub mod stmt {
-  use serde::{Deserialize, Serialize};
-
   use super::{Block, Expr, Ident, StmtKind, Type};
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct Let<'a> {
     pub name: Ident<'a>,
     pub ty: Option<Type<'a>>,
@@ -389,14 +384,14 @@ pub mod stmt {
     StmtKind::Let(Box::new(Let { name, ty, value }))
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub enum Loop<'a> {
     For(For<'a>),
     While(While<'a>),
     Inf(Inf<'a>),
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct For<'a> {
     pub item: Ident<'a>,
     pub iter: Expr<'a>,
@@ -408,7 +403,7 @@ pub mod stmt {
     StmtKind::Loop(Box::new(Loop::For(For { item, iter, body })))
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct While<'a> {
     pub cond: Expr<'a>,
     pub body: Block<'a>,
@@ -419,7 +414,7 @@ pub mod stmt {
     StmtKind::Loop(Box::new(Loop::While(While { cond, body })))
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct Inf<'a> {
     pub body: Block<'a>,
   }
@@ -430,7 +425,7 @@ pub mod stmt {
   }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
 pub enum TypeKind<'a> {
   Opt(Box<ty::Opt<'a>>),
   Fn(Box<ty::Fn<'a>>),
@@ -444,11 +439,9 @@ pub enum TypeKind<'a> {
 pub type Type<'a> = Spanned<TypeKind<'a>>;
 
 pub mod ty {
-  use serde::{Deserialize, Serialize};
-
   use super::{Ident, Type, TypeKind};
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct Opt<'a> {
     pub inner: Type<'a>,
   }
@@ -458,7 +451,7 @@ pub mod ty {
     TypeKind::Opt(Box::new(Opt { inner }))
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct Fn<'a> {
     pub params: Vec<Type<'a>>,
     pub ret: Option<Type<'a>>,
@@ -469,7 +462,7 @@ pub mod ty {
     TypeKind::Fn(Box::new(Fn { params, ret }))
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct Array<'a> {
     pub item: Type<'a>,
   }
@@ -479,7 +472,7 @@ pub mod ty {
     TypeKind::Array(Box::new(Array { item }))
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct Tuple<'a> {
     pub items: Vec<Type<'a>>,
   }
@@ -489,7 +482,7 @@ pub mod ty {
     TypeKind::Tuple(Box::new(Tuple { items }))
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct Inst<'a> {
     pub cons: Type<'a>,
     pub args: Vec<Type<'a>>,
@@ -500,7 +493,7 @@ pub mod ty {
     TypeKind::Inst(Box::new(Inst { cons, args }))
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct Field<'a> {
     pub ty: Type<'a>,
     pub name: Ident<'a>,
@@ -511,7 +504,7 @@ pub mod ty {
     TypeKind::Field(Box::new(Field { ty, name }))
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct Var<'a> {
     pub name: Ident<'a>,
   }
@@ -522,7 +515,7 @@ pub mod ty {
   }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
 pub enum ExprKind<'a> {
   Ctrl(Box<expr::Ctrl<'a>>),
   Do(Box<expr::Do<'a>>),
@@ -530,25 +523,25 @@ pub enum ExprKind<'a> {
   Try(Box<expr::Try<'a>>),
   Spawn(Box<expr::Spawn<'a>>),
   Lambda(Box<expr::Lambda<'a>>),
-  Assign(Box<expr::Assign<'a>>),
   Range(Box<expr::Range<'a>>),
   Binary(Box<expr::Binary<'a>>),
   Unary(Box<expr::Unary<'a>>),
   Call(Box<expr::Call<'a>>),
-  Field(Box<expr::Field<'a>>),
-  Index(Box<expr::Index<'a>>),
-  Var(Box<expr::Var<'a>>),
+  GetVar(Box<expr::GetVar<'a>>),
+  GetField(Box<expr::GetField<'a>>),
+  GetIndex(Box<expr::GetIndex<'a>>),
+  SetVar(Box<expr::SetVar<'a>>),
+  SetField(Box<expr::SetField<'a>>),
+  SetIndex(Box<expr::SetIndex<'a>>),
   Literal(Box<expr::Literal<'a>>),
 }
 
 pub type Expr<'a> = Spanned<ExprKind<'a>>;
 
 pub mod expr {
-  use serde::{Deserialize, Serialize};
-
   use super::{Block, Expr, ExprKind, Ident, Type};
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub enum Ctrl<'a> {
     Return(Expr<'a>),
     Throw(Expr<'a>),
@@ -576,7 +569,7 @@ pub mod expr {
     ExprKind::Ctrl(Box::new(Ctrl::Continue))
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct Do<'a> {
     pub body: Block<'a>,
     pub value: Option<Expr<'a>>,
@@ -587,7 +580,7 @@ pub mod expr {
     ExprKind::Do(Box::new(Do { body, value }))
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct If<'a> {
     pub branches: Vec<(Expr<'a>, Do<'a>)>,
     pub else_: Option<Do<'a>>,
@@ -598,13 +591,13 @@ pub mod expr {
     ExprKind::If(Box::new(If { branches, else_ }))
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct Try<'a> {
     pub body: TryKind<'a>,
     pub branches: Vec<(Type<'a>, Do<'a>)>,
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub enum TryKind<'a> {
     Expr(Expr<'a>),
     Block(Do<'a>),
@@ -626,7 +619,7 @@ pub mod expr {
     }))
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub enum Spawn<'a> {
     Call(Call<'a>),
     Block(Do<'a>),
@@ -642,7 +635,7 @@ pub mod expr {
     ExprKind::Spawn(Box::new(Spawn::Block(body)))
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct Lambda<'a> {
     pub params: Vec<(Ident<'a>, Type<'a>)>,
     pub body: Do<'a>,
@@ -653,18 +646,7 @@ pub mod expr {
     ExprKind::Lambda(Box::new(Lambda { params, body }))
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
-  pub struct Assign<'a> {
-    pub target: Expr<'a>,
-    pub value: Expr<'a>,
-  }
-
-  #[inline]
-  pub fn assign<'a>(target: Expr<'a>, value: Expr<'a>) -> ExprKind<'a> {
-    ExprKind::Assign(Box::new(Assign { target, value }))
-  }
-
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct Range<'a> {
     pub start: Expr<'a>,
     pub end: Expr<'a>,
@@ -675,14 +657,14 @@ pub mod expr {
     ExprKind::Range(Box::new(Range { start, end }))
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct Binary<'a> {
     pub op: BinaryOp,
     pub left: Expr<'a>,
     pub right: Expr<'a>,
   }
 
-  #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Copy, Debug)]
   pub enum BinaryOp {
     Opt,
     Or,
@@ -695,7 +677,7 @@ pub mod expr {
     LessEq,
     Add,
     Sub,
-    Mult,
+    Mul,
     Div,
     Rem,
     Pow,
@@ -706,13 +688,13 @@ pub mod expr {
     ExprKind::Binary(Box::new(Binary { op, left, right }))
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct Unary<'a> {
     pub op: UnaryOp,
     pub inner: Expr<'a>,
   }
 
-  #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Copy, Debug)]
   pub enum UnaryOp {
     Neg,
     Not,
@@ -723,7 +705,7 @@ pub mod expr {
     ExprKind::Unary(Box::new(Unary { op, inner }))
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct Call<'a> {
     pub opt: bool,
     pub target: Expr<'a>,
@@ -735,36 +717,110 @@ pub mod expr {
     ExprKind::Call(Box::new(Call { opt, target, args }))
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
-  pub struct Field<'a> {
+  #[derive(Clone, Debug)]
+  pub struct GetVar<'a> {
+    pub name: Ident<'a>,
+  }
+
+  #[inline]
+  pub fn get_var<'a>(name: Ident<'a>) -> ExprKind<'a> {
+    ExprKind::GetVar(Box::new(GetVar { name }))
+  }
+
+  #[derive(Clone, Debug)]
+  pub struct GetField<'a> {
     pub opt: bool,
     pub target: Expr<'a>,
     pub name: Ident<'a>,
   }
 
   #[inline]
-  pub fn field<'a>(opt: bool, target: Expr<'a>, name: Ident<'a>) -> ExprKind<'a> {
-    ExprKind::Field(Box::new(Field { opt, target, name }))
+  pub fn get_field<'a>(opt: bool, target: Expr<'a>, name: Ident<'a>) -> ExprKind<'a> {
+    ExprKind::GetField(Box::new(GetField { opt, target, name }))
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
-  pub struct Index<'a> {
+  #[derive(Clone, Debug)]
+  pub struct GetIndex<'a> {
     pub opt: bool,
     pub target: Expr<'a>,
     pub key: Expr<'a>,
   }
 
   #[inline]
-  pub fn index<'a>(opt: bool, target: Expr<'a>, key: Expr<'a>) -> ExprKind<'a> {
-    ExprKind::Index(Box::new(Index { opt, target, key }))
+  pub fn get_index<'a>(opt: bool, target: Expr<'a>, key: Expr<'a>) -> ExprKind<'a> {
+    ExprKind::GetIndex(Box::new(GetIndex { opt, target, key }))
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
-  pub struct Var<'a> {
+  #[derive(Clone, Debug)]
+  pub struct SetVar<'a> {
     pub name: Ident<'a>,
+    pub value: Expr<'a>,
+    pub op: Option<AssignOp>,
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[inline]
+  pub fn set_var<'a>(name: Ident<'a>, value: Expr<'a>, op: Option<AssignOp>) -> ExprKind<'a> {
+    ExprKind::SetVar(Box::new(SetVar { name, value, op }))
+  }
+
+  #[derive(Clone, Debug)]
+  pub struct SetField<'a> {
+    pub target: Expr<'a>,
+    pub name: Ident<'a>,
+    pub value: Expr<'a>,
+    pub op: Option<AssignOp>,
+  }
+
+  #[inline]
+  pub fn set_field<'a>(
+    target: Expr<'a>,
+    name: Ident<'a>,
+    value: Expr<'a>,
+    op: Option<AssignOp>,
+  ) -> ExprKind<'a> {
+    ExprKind::SetField(Box::new(SetField {
+      target,
+      name,
+      value,
+      op,
+    }))
+  }
+
+  #[derive(Clone, Debug)]
+  pub struct SetIndex<'a> {
+    pub target: Expr<'a>,
+    pub key: Expr<'a>,
+    pub value: Expr<'a>,
+    pub op: Option<AssignOp>,
+  }
+
+  #[inline]
+  pub fn set_index<'a>(
+    target: Expr<'a>,
+    key: Expr<'a>,
+    value: Expr<'a>,
+    op: Option<AssignOp>,
+  ) -> ExprKind<'a> {
+    ExprKind::SetIndex(Box::new(SetIndex {
+      target,
+      key,
+      value,
+      op,
+    }))
+  }
+
+  #[derive(Clone, Copy, Debug)]
+  pub enum AssignOp {
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Rem,
+    Pow,
+    Opt,
+  }
+
+  #[derive(Clone, Debug)]
   pub enum Literal<'a> {
     Null,
     Bool(Bool),
@@ -775,39 +831,39 @@ pub mod expr {
     Tuple(Tuple<'a>),
   }
 
-  #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Copy, Debug)]
   pub struct Bool {
     pub value: bool,
   }
 
-  #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Copy, Debug)]
   pub struct Int {
     pub value: i32,
   }
 
-  #[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Copy, Debug)]
   pub struct Float {
     pub value: f32,
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct String<'a> {
     pub fragments: Vec<Frag<'a>>,
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub enum Frag<'a> {
     Str(Ident<'a>),
     Expr(Expr<'a>),
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub enum Array<'a> {
     List(Vec<Expr<'a>>),
     Copy(Expr<'a>, usize),
   }
 
-  #[derive(Clone, Debug, Serialize, Deserialize)]
+  #[derive(Clone, Debug)]
   pub struct Tuple<'a> {
     pub fields: Vec<Expr<'a>>,
   }

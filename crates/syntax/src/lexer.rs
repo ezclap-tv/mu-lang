@@ -11,7 +11,6 @@ use std::borrow::Cow;
 use std::mem::discriminant;
 
 use logos::{FilterResult, Logos};
-use serde::{Deserialize, Serialize};
 
 use crate::span::Span;
 
@@ -95,7 +94,7 @@ impl<'a> IntoIterator for Lexer<'a> {
   }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Token<'a> {
   pub lexeme: Cow<'a, str>,
   pub span: Span,
@@ -119,7 +118,7 @@ pub const PARENS: (TokenKind, TokenKind) = (TokenKind::ParenL, TokenKind::ParenR
 pub const BRACKETS: (TokenKind, TokenKind) = (TokenKind::BracketL, TokenKind::BracketR);
 pub const BRACES: (TokenKind, TokenKind) = (TokenKind::BraceL, TokenKind::BraceR);
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize, Logos)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Logos)]
 pub enum TokenKind {
   // keywords
   #[token("use")]
@@ -200,8 +199,8 @@ pub enum TokenKind {
   ArrowFat,
   #[token("..")]
   RangeEx,
-  #[token("..=")]
-  RangeInc,
+  /* #[token("..=")]
+  RangeInc, */
   #[token("||")]
   Or2,
   #[token("&&")]
@@ -332,7 +331,7 @@ fn lex_multi_line_comment(lex: &mut logos::Lexer<'_, TokenKind>) -> FilterResult
   }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum StringKind {
   // This string does not contain any interpolations
   Plain,

@@ -11,9 +11,12 @@
 use thiserror::Error;
 
 use crate::ast;
-use crate::ast::{stmt, ExprKind, Ident, Module, StmtKind, Type, TypeKind};
+use crate::ast::{ExprKind, Ident, Module, StmtKind, TypeKind};
 use crate::lexer::{Lexer, Token, TokenKind, BRACKETS, PARENS};
 use crate::span::{Span, Spanned};
+
+#[macro_use]
+mod macros;
 
 // https://github.com/ves-lang/ves/blob/master/ves-parser/src/parser.rs
 
@@ -137,7 +140,7 @@ impl<'a> Parser<'a> {
     self.expect(Equal)?;
     let value = self.span(Self::parse_expr)?;
 
-    Ok(stmt::let_(name, ty, value))
+    Ok(ast::stmt::let_(name, ty, value))
   }
 
   fn parse_stmt_expr(&mut self) -> Result<StmtKind<'a>, Error> {
@@ -145,6 +148,107 @@ impl<'a> Parser<'a> {
   }
 
   fn parse_expr(&mut self) -> Result<ExprKind<'a>, Error> {
+    self.parse_expr_assign()
+  }
+
+  fn parse_expr_assign(&mut self) -> Result<ExprKind<'a>, Error> {
+    use ast::expr::AssignOp;
+    use ast::ExprKind::{GetField, GetIndex, GetVar};
+    use TokenKind::{
+      Equal, MinusEqual, PercentEqual, PlusEqual, SlashEqual, Star2Equal, StarEqual,
+    };
+
+    let mut expr = self.span(Self::parse_expr_range)?;
+    loop {
+      let op = match self.current().kind {
+        Equal => None,
+        PlusEqual => Some(AssignOp::Add),
+        MinusEqual => Some(AssignOp::Sub),
+        StarEqual => Some(AssignOp::Mul),
+        SlashEqual => Some(AssignOp::Div),
+        PercentEqual => Some(AssignOp::Rem),
+        Star2Equal => Some(AssignOp::Pow),
+        _ => break,
+      };
+      self.bump(); // bump assignment operator
+      let value = self.span(Self::parse_expr_range)?;
+      let target_span = expr.span;
+      let span = expr.span.start..value.span.end;
+      expr = Spanned::new(
+        match expr.into_inner() {
+          GetVar(v) => ast::expr::set_var(v.name, value, op),
+          GetField(v) => ast::expr::set_field(v.target, v.name, value, op),
+          GetIndex(v) => ast::expr::set_index(v.target, v.key, value, op),
+          _ => return Err(Error::invalid_assign(target_span)),
+        },
+        span,
+      );
+    }
+
+    Ok(expr.into_inner())
+  }
+
+  fn parse_expr_range(&mut self) -> Result<ExprKind<'a>, Error> {
+    use TokenKind::RangeEx;
+
+    let left = self.span(Self::parse_expr_binary)?;
+    if self.bump_if(RangeEx) {
+      let right = self.span(Self::parse_expr_binary)?;
+      return Ok(ast::expr::range(left, right));
+    }
+
+    Ok(left.into_inner())
+  }
+
+  fn parse_expr_binary(&mut self) -> Result<ExprKind<'a>, Error> {
+    todo!()
+  }
+
+  fn parse_expr_opt(&mut self) -> Result<ExprKind<'a>, Error> {
+    todo!()
+  }
+
+  fn parse_expr_or(&mut self) -> Result<ExprKind<'a>, Error> {
+    todo!()
+  }
+
+  fn parse_expr_and(&mut self) -> Result<ExprKind<'a>, Error> {
+    todo!()
+  }
+
+  fn parse_expr_eq(&mut self) -> Result<ExprKind<'a>, Error> {
+    todo!()
+  }
+
+  fn parse_expr_comp(&mut self) -> Result<ExprKind<'a>, Error> {
+    todo!()
+  }
+
+  fn parse_expr_add(&mut self) -> Result<ExprKind<'a>, Error> {
+    todo!()
+  }
+
+  fn parse_expr_mul(&mut self) -> Result<ExprKind<'a>, Error> {
+    todo!()
+  }
+
+  fn parse_expr_pow(&mut self) -> Result<ExprKind<'a>, Error> {
+    todo!()
+  }
+
+  fn parse_expr_unary(&mut self) -> Result<ExprKind<'a>, Error> {
+    todo!()
+  }
+
+  fn parse_expr_prefix(&mut self) -> Result<ExprKind<'a>, Error> {
+    todo!()
+  }
+
+  fn parse_expr_primary(&mut self) -> Result<ExprKind<'a>, Error> {
+    todo!()
+  }
+
+  fn parse_expr_postfix(&mut self) -> Result<ExprKind<'a>, Error> {
     todo!()
   }
 
@@ -427,6 +531,8 @@ pub enum Error {
   Expected(TokenKind, Span),
   #[error("unexpected {0} at {1}")]
   Unexpected(TokenKind, Span),
+  #[error("invalid assignment target at {0}")]
+  InvalidAssign(Span),
 }
 
 impl Error {
@@ -444,6 +550,10 @@ impl Error {
 
   fn expected(which: TokenKind, span: Span) -> Self {
     Error::Expected(which, span)
+  }
+
+  fn invalid_assign(span: Span) -> Self {
+    Error::invalid_assign(span)
   }
 }
 

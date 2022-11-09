@@ -1,10 +1,6 @@
 use std::ops::{Deref, DerefMut, Range};
 
-use serde::{Deserialize, Serialize};
-
-#[derive(
-  Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
-)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Span {
   pub start: usize,
   pub end: usize,
@@ -25,7 +21,7 @@ impl std::fmt::Display for Span {
   }
 }
 
-#[derive(Clone, Copy, Default, Serialize, Deserialize)]
+#[derive(Clone, Copy, Default)]
 pub struct Spanned<T> {
   value: T,
   pub span: Span,
