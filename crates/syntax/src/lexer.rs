@@ -445,7 +445,7 @@ impl std::fmt::Display for TokenKind {
       TokenKind::ArrowThin => "->",
       TokenKind::ArrowFat => "=>",
       TokenKind::RangeEx => "..",
-      TokenKind::RangeInc => "..=",
+      /* TokenKind::RangeInc => "..=", */
       TokenKind::Or2 => "||",
       TokenKind::And2 => "&&",
       TokenKind::Equal2 => "==",
