@@ -161,9 +161,9 @@ expr = expr_assign ;
       expr_index = "?"? "[" key:expr "]" ;
       expr_cast = "." "(" ty:type ")" ;
   expr_primary =
-    | expr_bool
     | expr_null
     | expr_number
+    | expr_bool
     | expr_string
     | expr_array
     | expr_tuple
@@ -177,21 +177,15 @@ expr = expr_assign ;
     | expr_lambda
     | expr_group
     ;
-  expr_bool = "true" | "false" ;
   expr_null = "null" ;
+  expr_bool = "true" | "false" ;
   expr_number = (int | float) ;
     int = (int_bin | int_dec | int_hex) ;
     int_bin = regex{"0b[01]([01_]*[01])?"} ;
     int_dec = regex{"[0-9]([0-9_]*[0-9])?"} ;
     int_hex = regex{"0x[0-9a-fA-F]([0-9a-fA-F_]*[0-9a-fA-F])?"} ;
     float = "inf" | regex{"[0-9]+(\.[0-9]*)?([Ee][+-]?[0-9]+)?"} ;
-  expr_string = '"' string_fragment* '"' ;
-    string_fragment =
-      | "{" expr "}"
-      | "\{" text "}"
-      | text
-      ;
-    text = UTF8* ;
+  expr_string = '"' UTF8* '"' ;
   expr_array = "[" (list{expr} | expr ";" expr) "]" ;
   expr_tuple = "(" ((expr ",")? | (expr ",")+ expr?) ")" ;
   expr_init = type "{" fields:list{ident ":" expr} "}" ;
