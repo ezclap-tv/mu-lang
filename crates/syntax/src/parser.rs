@@ -153,6 +153,7 @@ impl<'a> Parser<'a> {
   }
 
   fn parse_expr_assign(&mut self) -> Result<ExprKind<'a>, Error> {
+    // TODO: assignment should be right-associative, not left-associative
     use ast::ExprKind::{GetField, GetIndex, GetVar};
     use expr::AssignOp;
     use TokenKind::{
