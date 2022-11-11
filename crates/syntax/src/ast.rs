@@ -46,7 +46,7 @@ pub type Ident<'a> = Spanned<Cow<'a, str>>;
 /// Converts a `Token` to an identifier. Only use this if `token.kind ==
 /// TokenKind::Ident`.
 pub fn ident<'a>(token: &Token<'a>) -> Ident<'a> {
-  Spanned::new(token.lexeme.clone(), token.span)
+  Spanned::new(token.span, token.lexeme.clone())
 }
 
 /// Order-preserving hash map
@@ -527,6 +527,7 @@ pub enum ExprKind<'a> {
   Binary(Box<expr::Binary<'a>>),
   Unary(Box<expr::Unary<'a>>),
   Call(Box<expr::Call<'a>>),
+  Cast(Box<expr::Cast<'a>>),
   GetVar(Box<expr::GetVar<'a>>),
   GetField(Box<expr::GetField<'a>>),
   GetIndex(Box<expr::GetIndex<'a>>),
@@ -539,7 +540,7 @@ pub enum ExprKind<'a> {
 pub type Expr<'a> = Spanned<ExprKind<'a>>;
 
 pub mod expr {
-  use super::{Block, Expr, ExprKind, Ident, Type};
+  use super::{Block, Cow, Expr, ExprKind, Ident, Type};
 
   #[derive(Clone, Debug)]
   pub enum Ctrl<'a> {
@@ -666,21 +667,21 @@ pub mod expr {
 
   #[derive(Clone, Copy, Debug)]
   pub enum BinaryOp {
-    Opt,
-    Or,
-    And,
-    Eq,
-    Neq,
-    More,
-    Less,
-    MoreEq,
-    LessEq,
+    NullOr,
+    BoolOr,
+    BoolAnd,
+    Equals,
+    NotEquals,
+    CompareLess,
+    CompareLessEq,
+    CompareMore,
+    CompareMoreEq,
     Add,
-    Sub,
-    Mul,
-    Div,
-    Rem,
-    Pow,
+    Subtract,
+    Multiply,
+    Divide,
+    Remainder,
+    Power,
   }
 
   #[inline]
@@ -696,8 +697,8 @@ pub mod expr {
 
   #[derive(Clone, Copy, Debug)]
   pub enum UnaryOp {
-    Neg,
-    Not,
+    Invert,
+    Negate,
   }
 
   #[inline]
@@ -718,6 +719,18 @@ pub mod expr {
   }
 
   #[derive(Clone, Debug)]
+  pub struct Cast<'a> {
+    pub opt: bool,
+    pub target: Expr<'a>,
+    pub ty: Type<'a>,
+  }
+
+  #[inline]
+  pub fn cast<'a>(opt: bool, target: Expr<'a>, ty: Type<'a>) -> ExprKind<'a> {
+    ExprKind::Cast(Box::new(Cast { opt, target, ty }))
+  }
+
+  #[derive(Clone, Debug)]
   pub struct GetVar<'a> {
     pub name: Ident<'a>,
   }
@@ -731,12 +744,12 @@ pub mod expr {
   pub struct GetField<'a> {
     pub opt: bool,
     pub target: Expr<'a>,
-    pub name: Ident<'a>,
+    pub key: Ident<'a>,
   }
 
   #[inline]
-  pub fn get_field<'a>(opt: bool, target: Expr<'a>, name: Ident<'a>) -> ExprKind<'a> {
-    ExprKind::GetField(Box::new(GetField { opt, target, name }))
+  pub fn get_field<'a>(opt: bool, target: Expr<'a>, key: Ident<'a>) -> ExprKind<'a> {
+    ExprKind::GetField(Box::new(GetField { opt, target, key }))
   }
 
   #[derive(Clone, Debug)]
@@ -826,7 +839,7 @@ pub mod expr {
     Bool(Bool),
     Int(Int),
     Float(Float),
-    String(String<'a>),
+    Str(Str),
     Array(Array<'a>),
     Tuple(Tuple<'a>),
   }
@@ -847,14 +860,8 @@ pub mod expr {
   }
 
   #[derive(Clone, Debug)]
-  pub struct String<'a> {
-    pub fragments: Vec<Frag<'a>>,
-  }
-
-  #[derive(Clone, Debug)]
-  pub enum Frag<'a> {
-    Str(Ident<'a>),
-    Expr(Expr<'a>),
+  pub struct Str {
+    pub value: String,
   }
 
   #[derive(Clone, Debug)]
@@ -884,8 +891,10 @@ pub mod expr {
     ExprKind::Literal(Box::new(Literal::Float(Float { value })))
   }
 
-  pub fn string<'a>(fragments: Vec<Frag<'a>>) -> ExprKind<'a> {
-    ExprKind::Literal(Box::new(Literal::String(String { fragments })))
+  pub fn string<'a>(value: impl Into<String>) -> ExprKind<'a> {
+    ExprKind::Literal(Box::new(Literal::Str(Str {
+      value: value.into(),
+    })))
   }
 
   pub fn array_list<'a>(items: Vec<Expr<'a>>) -> ExprKind<'a> {
