@@ -7,13 +7,17 @@
 //! It is implemented according to the [grammar][`crate::grammar`]. Both must be
 //! kept in sync with eachother.
 #![deny(unused_must_use)]
+#![allow(clippy::needless_lifetimes)]
+
+use std::ops::Deref;
 
 use thiserror::Error;
 
-use crate::ast;
-use crate::ast::expr::{BinaryOp, UnaryOp};
-use crate::ast::{expr, ExprKind, Ident, Module, StmtKind, TypeKind};
-use crate::lexer::{Lexer, Token, TokenKind, BRACKETS, PARENS};
+use crate::ast::expr::{AssignOp, BinaryOp, Block, UnaryOp};
+use crate::ast::{
+  expr, stmt, ty, Expr, ExprKind, Ident, Module, Path, Segment, StmtKind, TypeKind,
+};
+use crate::lexer::{Lexer, Token, TokenKind, ANGLES, BRACES, BRACKETS, PARENS};
 use crate::span::{Span, Spanned};
 
 #[macro_use]
@@ -58,47 +62,28 @@ impl<'a> Parser<'a> {
   }
 
   fn parse_top_level(&mut self) -> Result<(), Error> {
-    use TokenKind::{BraceR, Class, Fn, For, Let, Loop, Pub, Semicolon, Trait, Type, Use, While};
+    use TokenKind::{Class, Fn, Pub, Trait, Type, Use};
 
     self.bump_if(Pub);
 
     if self.bump_if(Fn) {
-      self.parse_decl_fn(self.previous().is(Pub))
+      self.parse_decl_fn(self.previous().is(Pub))?;
     } else if self.bump_if(Type) {
-      self.parse_decl_type(self.previous().is(Pub))
+      self.parse_decl_type(self.previous().is(Pub))?;
     } else if self.bump_if(Class) {
-      self.parse_decl_class(self.previous().is(Pub))
+      self.parse_decl_class(self.previous().is(Pub))?;
     } else if self.bump_if(Trait) {
-      self.parse_decl_trait(self.previous().is(Pub))
+      self.parse_decl_trait(self.previous().is(Pub))?;
     } else if self.bump_if(Use) {
-      self.parse_import()
+      self.parse_import()?;
     } else if !self.previous().is(Pub) {
-      let stmt = self.span(|p| {
-        if p.bump_if(For) {
-          p.parse_stmt_loop_for()
-        } else if p.bump_if(While) {
-          p.parse_stmt_loop_while()
-        } else if p.bump_if(Loop) {
-          p.parse_stmt_loop_inf()
-        } else if p.bump_if(Let) {
-          let stmt = p.parse_stmt_let();
-          p.expect(Semicolon)?;
-          stmt
-        } else {
-          let stmt = p.parse_stmt_expr();
-          // semicolon after expr stmt is only required if the expr does not end with `}`,
-          // for example: if true { "a" } else { "b" }
-          if !p.previous().is(BraceR) {
-            p.expect(Semicolon)?;
-          }
-          stmt
-        }
-      })?;
+      let stmt = self.span(Self::parse_top_level_stmt)?;
       self.module.top_level.push(stmt);
-      Ok(())
     } else {
-      Err(Error::unexpected_vis(self.previous().span))
+      return Err(Error::unexpected_vis(self.previous().span))?;
     }
+
+    Ok(())
   }
 
   fn parse_decl_fn(&mut self, is_pub: bool) -> Result<(), Error> {
@@ -121,6 +106,34 @@ impl<'a> Parser<'a> {
     todo!()
   }
 
+  fn parse_top_level_stmt(&mut self) -> Result<StmtKind<'a>, Error> {
+    use TokenKind::{BraceR, For, Let, Loop, Semicolon, While};
+
+    if self.bump_if(For) {
+      self.parse_stmt_loop_for()
+    } else if self.bump_if(While) {
+      self.parse_stmt_loop_while()
+    } else if self.bump_if(Loop) {
+      self.parse_stmt_loop_inf()
+    } else if self.bump_if(Let) {
+      let stmt = self.parse_stmt_let();
+      self.expect(Semicolon)?;
+      stmt
+    } else {
+      let stmt = self.parse_stmt_expr();
+      // semicolon after expr stmt is only required if the expr does not end with `}`,
+      // for example:
+      // if true { "a" } else { "b" } // not required
+      // "b" // required
+      if !self.previous().is(BraceR) {
+        self.expect(Semicolon)?;
+      } else {
+        self.bump_if(Semicolon);
+      }
+      stmt
+    }
+  }
+
   fn parse_stmt_loop_for(&mut self) -> Result<StmtKind<'a>, Error> {
     todo!()
   }
@@ -141,11 +154,12 @@ impl<'a> Parser<'a> {
     self.expect(Equal)?;
     let value = self.span(Self::parse_expr)?;
 
-    Ok(ast::stmt::let_(name, ty, value))
+    Ok(stmt::let_(name, ty, value))
   }
 
   fn parse_stmt_expr(&mut self) -> Result<StmtKind<'a>, Error> {
-    todo!()
+    let expr = self.span(Self::parse_expr)?;
+    Ok(stmt::expr(expr))
   }
 
   fn parse_expr(&mut self) -> Result<ExprKind<'a>, Error> {
@@ -153,40 +167,33 @@ impl<'a> Parser<'a> {
   }
 
   fn parse_expr_assign(&mut self) -> Result<ExprKind<'a>, Error> {
-    // TODO: assignment should be right-associative, not left-associative
-    use ast::ExprKind::{GetField, GetIndex, GetVar};
-    use expr::AssignOp;
+    use ExprKind::{GetField, GetIndex, GetVar};
     use TokenKind::{
       Equal, MinusEqual, PercentEqual, PlusEqual, SlashEqual, StarEqual, StarStarEqual,
     };
 
-    let mut expr = self.span(Self::parse_expr_range)?;
-    loop {
-      let op = match self.current().kind {
-        Equal => None,
-        PlusEqual => Some(AssignOp::Add),
-        MinusEqual => Some(AssignOp::Sub),
-        StarEqual => Some(AssignOp::Mul),
-        SlashEqual => Some(AssignOp::Div),
-        PercentEqual => Some(AssignOp::Rem),
-        StarStarEqual => Some(AssignOp::Pow),
-        _ => break,
-      };
-      self.bump(); // bump assignment operator
-      let value = self.span(Self::parse_expr_range)?;
-      let target_span = expr.span;
-      expr = Spanned::new(
-        expr.span.join(value.span),
-        match expr.into_inner() {
-          GetVar(v) => expr::set_var(v.name, value, op),
-          GetField(v) => expr::set_field(v.target, v.key, value, op),
-          GetIndex(v) => expr::set_index(v.target, v.key, value, op),
-          _ => return Err(Error::invalid_assign(target_span)),
-        },
-      );
-    }
-
-    Ok(expr.into_inner())
+    let left = self.span(Self::parse_expr_range)?;
+    let op = match self.current().kind {
+      Equal => None,
+      PlusEqual => Some(AssignOp::Add),
+      MinusEqual => Some(AssignOp::Sub),
+      StarEqual => Some(AssignOp::Mul),
+      SlashEqual => Some(AssignOp::Div),
+      PercentEqual => Some(AssignOp::Rem),
+      StarStarEqual => Some(AssignOp::Pow),
+      _ => return Ok(left.into_inner()),
+    };
+    self.bump(); // bump assignment operator
+    check_assign_target(&left)?;
+    let value = self.span(Self::parse_expr)?;
+    let target_span = left.span;
+    let expr = match left.into_inner() {
+      GetVar(v) => expr::set_var(v.name, value, op),
+      GetField(v) => expr::set_field(v.target, v.key, value, op),
+      GetIndex(v) => expr::set_index(v.target, v.key, value, op),
+      _ => return Err(Error::invalid_assign(target_span)),
+    };
+    Ok(expr)
   }
 
   fn parse_expr_range(&mut self) -> Result<ExprKind<'a>, Error> {
@@ -350,13 +357,13 @@ impl<'a> Parser<'a> {
   }
 
   fn parse_expr_postfix(&mut self) -> Result<ExprKind<'a>, Error> {
-    use TokenKind::{BracketL, Comma, Dot, Optional, ParenL};
+    use TokenKind::{BraceL, BracketL, Comma, Dot, Less, Optional, ParenL};
 
     let mut expr = self.span(Self::parse_expr_primary)?;
     loop {
       let opt = self.bump_if(Optional);
       match self.current().kind {
-        // call
+        // expr_call
         ParenL => {
           let args = self.span(|p| p.wrap_list(PARENS, Comma, |p| p.span(Self::parse_expr)))?;
           expr = Spanned::new(
@@ -364,7 +371,7 @@ impl<'a> Parser<'a> {
             expr::call(opt, expr, args.into_inner()),
           );
         }
-        // index
+        // expr_index
         BracketL => {
           let key = self.span(|p| p.wrap(BRACKETS, |p| p.span(Self::parse_expr)))?;
           expr = Spanned::new(
@@ -372,21 +379,48 @@ impl<'a> Parser<'a> {
             expr::get_index(opt, expr, key.into_inner()),
           );
         }
-        // get field or cast
+        // expr_field, expr_cast, expr_inst
         Dot => {
           self.bump();
-          if !self.current().is(ParenL) {
-            // get field
-            let key = self.parse_ident()?;
-            expr = Spanned::new(expr.span.join(key.span), expr::get_field(opt, expr, key));
-          } else {
-            // cast
+          if self.current().is(ParenL) {
+            // expr_cast
             let ty = self.span(|p| p.wrap(PARENS, |p| p.span(Self::parse_type)))?;
             expr = Spanned::new(
               expr.span.join(ty.span),
               expr::cast(opt, expr, ty.into_inner()),
             );
+          } else if self.current().is(Less) {
+            // expr_inst
+            let args = self.span(|p| p.wrap_list(ANGLES, Comma, |p| p.span(Self::parse_type)))?;
+            expr = Spanned::new(
+              expr.span.join(args.span),
+              expr::inst(expr, args.into_inner()),
+            );
+          } else {
+            // expr_field
+            let key = self.parse_ident()?;
+            expr = Spanned::new(expr.span.join(key.span), expr::get_field(opt, expr, key));
           }
+        }
+        // expr_class
+        BraceL => {
+          // TODO: this is broken:
+          // any kind of `<expr> <block>` will parse as class instantiation
+          // if the `<expr>` can appear here.
+          let Some(target) = expr_class_target_to_path(&expr) else {
+            break;
+          };
+          let fields = self.span(|p| {
+            p.wrap_list(BRACES, Comma, |p| {
+              let key = p.parse_ident()?;
+              let value = p.span(Self::parse_expr)?;
+              Ok((key, value))
+            })
+          })?;
+          expr = Spanned::new(
+            expr.span.join(fields.span),
+            expr::class(target, fields.into_inner()),
+          );
         }
         _ => break,
       }
@@ -395,7 +429,11 @@ impl<'a> Parser<'a> {
   }
 
   fn parse_expr_primary(&mut self) -> Result<ExprKind<'a>, Error> {
-    use TokenKind::{Bool, Float, Ident, Int, Null, String};
+    use TokenKind::{
+      Bool, BraceL, BraceR, BracketL, BracketR, Break, Catch, Comma, Continue, Do, Else, Eof,
+      Float, Ident, If, Int, Lambda, Null, ParenL, ParenR, Return, Semicolon, Spawn, String, Throw,
+      Try,
+    };
 
     // expr_null
     if self.bump_if(Null) {
@@ -444,25 +482,209 @@ impl<'a> Parser<'a> {
     }
 
     // expr_array
-    // expr_tuple
+    if self.bump_if(BracketL) {
+      if self.bump_if(BracketR) {
+        // empty array
+        return Ok(expr::array_list(vec![]));
+      }
 
-    // expr_var
+      let item = self.span(Self::parse_expr)?;
+      if self.bump_if(Semicolon) {
+        // array_copy
+        let n = self.span(Self::parse_expr)?;
+        return Ok(expr::array_copy(item, n));
+      }
+
+      // array_list
+      let mut items = vec![item];
+      while self.bump_if(Comma) && !self.current().is(BracketR) {
+        items.push(self.span(Self::parse_expr)?);
+      }
+      self.expect(BracketR)?;
+      return Ok(expr::array_list(items));
+    }
+
+    // expr_var or expr_class
     if self.bump_if(Ident) {
-      let ident = Spanned::new(self.previous().span, self.previous().lexeme.clone());
+      let ident = to_ident(self.previous());
       return Ok(expr::get_var(ident));
     }
 
     // expr_ctrl
-    // expr_block TODO: rename to `expr_do`
+    if self.bump_if(Return) {
+      let value = if !self
+        .current()
+        .is_any(&[ParenR, BracketR, BraceR, Comma, Semicolon, Eof])
+      {
+        Some(self.span(Self::parse_expr)?)
+      } else {
+        None
+      };
+      return Ok(expr::return_(value));
+    }
+
+    if self.bump_if(Throw) {
+      let value = if !self
+        .current()
+        .is_any(&[ParenR, BracketR, BraceR, Comma, Semicolon, Eof])
+      {
+        Some(self.span(Self::parse_expr)?)
+      } else {
+        None
+      };
+      return Ok(expr::throw_(value));
+    }
+
+    if self.bump_if(Continue) {
+      return Ok(expr::continue_());
+    }
+
+    if self.bump_if(Break) {
+      return Ok(expr::break_());
+    }
+
+    // expr_do
+    if self.bump_if(Do) {
+      let block = self.parse_block()?;
+      return Ok(expr::do_(block));
+    }
+
     // expr_if
+    if self.bump_if(If) {
+      let mut branches = vec![];
+      let mut else_ = None;
+
+      // if <expr> <block>
+      branches.push((self.span(Self::parse_expr)?, self.parse_block()?));
+      while self.bump_if(Else) {
+        if self.bump_if(If) {
+          // else if <expr> <block>
+          branches.push((self.span(Self::parse_expr)?, self.parse_block()?));
+        } else {
+          // else <block>
+          else_ = Some(self.parse_block()?);
+          break;
+        }
+      }
+
+      return Ok(expr::if_(branches, else_));
+    }
+
     // expr_try
+    if self.bump_if(Try) {
+      let body = if self.current().is(BraceL) {
+        self.parse_block()?
+      } else {
+        let expr = self.span(Self::parse_expr)?;
+        Block {
+          items: vec![],
+          last: Some(expr),
+        }
+      };
+
+      self.expect(Catch)?;
+      let catch_var = if self.bump_if(ParenL) {
+        let ident = self.parse_ident()?;
+        self.expect(ParenR)?;
+        ident
+      } else {
+        self.parse_ident()?
+      };
+
+      let catch_body = self.parse_block()?;
+
+      return Ok(expr::try_(body, (catch_var, catch_body)));
+    }
+
     // expr_spawn
-    // expr_lamda
-    // expr_group
+    if self.bump_if(Spawn) {
+      if self.current().is(BraceL) {
+        // spawn_block
+        let body = self.parse_block()?;
+        return Ok(expr::spawn_block(body));
+      } else {
+        // spawn_call
+        let expr = self.span(Self::parse_expr)?;
+        let span = expr.span;
+        let ExprKind::Call(c) = expr.into_inner() else {
+          return Err(Error::invalid_spawn(span))
+        };
+        return Ok(expr::spawn_call(*c));
+      }
+    }
+
+    // expr_lambda
+    if self.bump_if(Lambda) {
+      let params = if self.current().is(ParenL) {
+        self.wrap_list(PARENS, Comma, Self::parse_ident)?
+      } else {
+        vec![self.parse_ident()?]
+      };
+      let body = self.parse_block()?;
+      return Ok(expr::lambda(params, body));
+    }
+
+    // expr_group or expr_tuple
+    if self.current().is(ParenL) {
+      let expr = self.wrap(PARENS, |p| {
+        let first = p.span(Self::parse_expr)?;
+
+        if p.current().is(Comma) {
+          // expr_tuple
+          let mut items = vec![first];
+          while p.bump_if(Comma) && !p.current().is(ParenR) {
+            items.push(p.span(Self::parse_expr)?);
+          }
+          return Ok(expr::tuple(items));
+        }
+
+        // expr_group
+        Ok(first.into_inner())
+      })?;
+      return Ok(expr);
+    }
 
     // + unexpected token
+    Err(Error::unexpected(self.current()))
+  }
 
-    todo!()
+  // `"{" (stmt ";")* expr? "}"
+  fn parse_block(&mut self) -> Result<Block<'a>, Error> {
+    use TokenKind::{BraceL, BraceR, For, Let, Loop, Semicolon, While};
+
+    let mut block = Block {
+      items: vec![],
+      last: None,
+    };
+
+    self.expect(BraceL)?;
+    while !self.current().is(BraceR) {
+      let stmt = if self.bump_if(For) {
+        self.span(Self::parse_stmt_loop_for)?
+      } else if self.bump_if(While) {
+        self.span(Self::parse_stmt_loop_while)?
+      } else if self.bump_if(Loop) {
+        self.span(Self::parse_stmt_loop_inf)?
+      } else if self.bump_if(Let) {
+        let stmt = self.span(Self::parse_stmt_let)?;
+        self.expect(Semicolon)?;
+        stmt
+      } else {
+        let expr = self.span(Self::parse_expr)?;
+
+        // final expression without semicolon = return value
+        if self.current().is(BraceR) {
+          block.last = Some(expr);
+          break;
+        }
+        self.expect(Semicolon)?;
+        Spanned::new(expr.span, stmt::expr(expr))
+      };
+      block.items.push(stmt);
+    }
+    self.expect(BraceR)?;
+
+    Ok(block)
   }
 
   fn parse_type(&mut self) -> Result<TypeKind<'a>, Error> {
@@ -472,42 +694,11 @@ impl<'a> Parser<'a> {
   fn parse_type_option(&mut self) -> Result<TypeKind<'a>, Error> {
     use TokenKind::Optional;
 
-    let ty = self.span(Self::parse_type_postfix)?;
-    let ty = if self.bump_if(Optional) {
+    let ty = self.span(Self::parse_type_primary)?;
+    if self.bump_if(Optional) {
       // type_optional
-      ast::ty::option(ty)
-    } else {
-      ty.into_inner()
+      return Ok(ty::option(ty));
     };
-
-    Ok(ty)
-  }
-
-  fn parse_type_postfix(&mut self) -> Result<TypeKind<'a>, Error> {
-    use TokenKind::{BracketL, Comma, Dot};
-
-    let mut ty = self.span(Self::parse_type_primary)?;
-    loop {
-      if self.current().is(Dot) {
-        // type_field
-        ty = self.span(|p| {
-          p.bump(); // bump Dot
-          p.parse_ident().map(|ident| ast::ty::field(ty, ident))
-        })?;
-        continue;
-      }
-
-      if self.current().is(BracketL) {
-        // type_inst
-        ty = self.span(|p| {
-          p.wrap_list(BRACKETS, Comma, |p| p.span(Self::parse_type))
-            .map(|args| ast::ty::inst(ty, args))
-        })?;
-        continue;
-      }
-
-      break;
-    }
 
     Ok(ty.into_inner())
   }
@@ -515,24 +706,24 @@ impl<'a> Parser<'a> {
   fn parse_type_primary(&mut self) -> Result<TypeKind<'a>, Error> {
     use TokenKind::{ArrowThin, BracketL, Comma, Fn, Ident, ParenL, ParenR};
 
-    // type_var
-    if self.bump_if(Ident) {
-      let ty = ast::ty::var(ast::ident(self.previous()));
-      return Ok(ty);
+    // type_path
+    if self.current().is(Ident) {
+      let path = self.parse_path()?;
+      return Ok(ty::path(path));
     }
 
     // type_fn
     if self.bump_if(Fn) {
       let args = self.wrap_list(PARENS, Comma, |p| p.span(Self::parse_type))?;
       let ret = self.maybe(ArrowThin, |p, _| p.span(Self::parse_type))?;
-      let ty = ast::ty::fn_(args, ret);
+      let ty = ty::fn_(args, ret);
       return Ok(ty);
     }
 
     // type_array
     if self.current().is(BracketL) {
       let item = self.wrap(BRACKETS, |p| p.span(Self::parse_type))?;
-      let ty = ast::ty::array(item);
+      let ty = ty::array(item);
       return Ok(ty);
     }
 
@@ -547,7 +738,7 @@ impl<'a> Parser<'a> {
           while p.bump_if(Comma) && !p.current().is(ParenR) {
             items.push(p.span(Self::parse_type)?);
           }
-          return Ok(ast::ty::tuple(items));
+          return Ok(ty::tuple(items));
         }
 
         // type_group
@@ -561,9 +752,36 @@ impl<'a> Parser<'a> {
 
   fn parse_ident(&mut self) -> Result<Ident<'a>, Error> {
     use TokenKind::Ident;
-    self
-      .expect(Ident)
-      .map(|token| Spanned::new(token.span, token.lexeme.clone()))
+    self.expect(Ident).map(to_ident)
+  }
+
+  fn parse_path(&mut self) -> Result<Path<'a>, Error> {
+    use TokenKind::Dot;
+
+    let mut segments = vec![];
+
+    segments.push(self.parse_segment()?);
+    while self.bump_if(Dot) {
+      segments.push(self.parse_segment()?);
+    }
+
+    Ok(Path { segments })
+  }
+
+  fn parse_segment(&mut self) -> Result<Segment<'a>, Error> {
+    use TokenKind::{BracketL, Comma};
+
+    let ident = self.parse_ident()?;
+    let generic_args = if self.current().is(BracketL) {
+      self.wrap_list(BRACKETS, Comma, |p| p.span(Self::parse_type))?
+    } else {
+      vec![]
+    };
+
+    Ok(Segment {
+      ident,
+      generic_args,
+    })
   }
 }
 
@@ -670,27 +888,22 @@ impl<'a> Parser<'a> {
 
   /// Skip tokens until we find one that may begin a new statement.
   fn sync(&mut self) {
+    use TokenKind::{
+      Class, Eof, Fn, For, Impl, Let, Loop, Pub, Semicolon, Trait, Type, Use, While,
+    };
+
     self.bump();
-    while self.previous().kind != TokenKind::Eof {
+    while !self.previous().is(Eof) {
       // semicolons terminate statement, so it's safe to start parsing again after
       // we encounter one.
-      if self.previous().kind == TokenKind::Semicolon {
+      if self.previous().is(Semicolon) {
         break;
       }
 
       // all of these tokens begin a statement that cannot also appear as an
       // expression, so they are good candidates for synchronization.
       match self.current().kind {
-        TokenKind::Pub
-        | TokenKind::Use
-        | TokenKind::Fn
-        | TokenKind::Type
-        | TokenKind::Class
-        | TokenKind::Trait
-        | TokenKind::Impl
-        | TokenKind::For
-        | TokenKind::While
-        | TokenKind::Loop => break,
+        Pub | Use | Fn | Type | Class | Trait | Impl | Let | For | While | Loop => break,
         _ => {}
       };
 
@@ -737,7 +950,7 @@ impl<'a> Parser<'a> {
 // Adapted from https://docs.rs/snailquote/0.3.0/x86_64-pc-windows-msvc/src/snailquote/lib.rs.html.
 /// Unescapes the given string in-place. Returns `None` if the string contains
 /// an invalid escape sequence.
-pub(crate) fn unescape_in_place(s: &mut String) -> Option<()> {
+fn unescape_in_place(s: &mut String) -> Option<()> {
   let mut out = String::with_capacity(s.len());
   let mut chars = s.chars();
   while let Some(ch) = chars.next() {
@@ -794,6 +1007,66 @@ where
     .and_then(char::from_u32)
 }
 
+fn to_ident<'a>(t: &Token<'a>) -> Ident<'a> {
+  Spanned::new(t.span, t.lexeme.clone())
+}
+
+fn check_assign_target<'a>(target: &Expr<'a>) -> Result<(), Error> {
+  match target.deref() {
+    ExprKind::GetVar(..) => Ok(()),
+    ExprKind::GetField(ref get) => {
+      if get.opt {
+        Err(Error::invalid_assign(target.span))
+      } else {
+        check_assign_target(&get.target)
+      }
+    }
+    ExprKind::GetIndex(ref get) => check_assign_target(&get.target),
+    _ => Err(Error::invalid_assign(target.span)),
+  }
+}
+
+fn expr_class_target_to_path<'a>(target: &Expr<'a>) -> Option<Path<'a>> {
+  let mut segments = vec![];
+
+  // walk the AST, looking for Inst/GetVar/GetField, and the segments onto a stack
+  let mut expr = target;
+  let mut next_generic_args = None;
+  loop {
+    match expr.deref() {
+      // A generic instantiation sets the `next_generic_args`, which will be applied to the next
+      // segment in the path
+      // T.<int>.<int> is invalid, so `next_generic_args` must be `None`
+      ExprKind::Inst(v) if next_generic_args.is_none() => {
+        next_generic_args = Some(&v.args);
+        expr = &v.target;
+      }
+      // A variable is the base case, as it has no sub-expressions
+      ExprKind::GetVar(v) => {
+        segments.push(Segment {
+          ident: v.name.clone(),
+          generic_args: next_generic_args.take().cloned().unwrap_or_default(),
+        });
+        break;
+      }
+      // For fields, we walk the subtree
+      ExprKind::GetField(v) => {
+        segments.push(Segment {
+          ident: v.key.clone(),
+          generic_args: next_generic_args.take().cloned().unwrap_or_default(),
+        });
+        expr = &v.target;
+      }
+      _ => return None,
+    }
+  }
+
+  // The expr tree is walked backwards, so we have to reverse the segments:
+  segments.reverse();
+
+  Some(Path { segments })
+}
+
 #[derive(Clone, Debug, Error)]
 pub enum Error {
   #[error("invalid character sequence `{0}` at {1}")]
@@ -808,6 +1081,10 @@ pub enum Error {
   InvalidAssign(Span),
   #[error("string at {0} contains an invalid escape sequence")]
   InvalidEscapeSequence(Span),
+  #[error("expr at {0} cannot be the instantiated")]
+  InvalidClassInst(Span),
+  #[error("only blocks or function calls may be spawned")]
+  InvalidSpawn(Span),
   #[error("failed to parse int at {0}: {1}")]
   ParseInt(Span, #[source] std::num::ParseIntError),
   #[error("failed to parse float at {0}: {1}")]
@@ -837,6 +1114,14 @@ impl Error {
 
   fn invalid_escape_sequence(span: Span) -> Self {
     Error::InvalidEscapeSequence(span)
+  }
+
+  fn invalid_class_inst(span: Span) -> Self {
+    Error::InvalidClassInst(span)
+  }
+
+  fn invalid_spawn(span: Span) -> Self {
+    Error::InvalidSpawn(span)
   }
 
   fn parse_int(span: Span, e: std::num::ParseIntError) -> Self {

@@ -7,9 +7,14 @@ Ok(
         Fn {
             params: [],
             ret: Some(
-                Var(
-                    Var {
-                        name: "R",
+                Path(
+                    Path {
+                        segments: [
+                            Segment {
+                                ident: "R",
+                                generic_args: [],
+                            },
+                        ],
                     },
                 ),
             ),

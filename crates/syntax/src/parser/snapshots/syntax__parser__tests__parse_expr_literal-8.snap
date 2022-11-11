@@ -1,0 +1,35 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    Literal(
+        Array(
+            List(
+                [
+                    Literal(
+                        Int(
+                            Int {
+                                value: 0,
+                            },
+                        ),
+                    ),
+                    Literal(
+                        Int(
+                            Int {
+                                value: 1,
+                            },
+                        ),
+                    ),
+                    Literal(
+                        Int(
+                            Int {
+                                value: 2,
+                            },
+                        ),
+                    ),
+                ],
+            ),
+        ),
+    ),
+)

@@ -1,0 +1,27 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    Path(
+        Path {
+            segments: [
+                Segment {
+                    ident: "T",
+                    generic_args: [
+                        Path(
+                            Path {
+                                segments: [
+                                    Segment {
+                                        ident: "A",
+                                        generic_args: [],
+                                    },
+                                ],
+                            },
+                        ),
+                    ],
+                },
+            ],
+        },
+    ),
+)

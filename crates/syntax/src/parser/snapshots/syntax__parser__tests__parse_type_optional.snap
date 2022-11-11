@@ -5,9 +5,14 @@ expression: result
 Ok(
     Opt(
         Opt {
-            inner: Var(
-                Var {
-                    name: "T",
+            inner: Path(
+                Path {
+                    segments: [
+                        Segment {
+                            ident: "T",
+                            generic_args: [],
+                        },
+                    ],
                 },
             ),
         },

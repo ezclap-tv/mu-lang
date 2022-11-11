@@ -154,27 +154,30 @@ expr = expr_assign ;
     expr_pow = expr_unary (("**") expr_unary)* ;
   expr_unary = expr_prefix | expr_postfix ;
     expr_prefix = ("-" | "!") expr_unary ;
-    expr_postfix = expr_primary (expr_call | expr_field | expr_index | expr_cast)* ;
+    expr_postfix = expr_primary (expr_call | expr_field | expr_index | expr_cast | expr_inst | expr_class)* ;
       (* "?" means optional call, field access, or index *)
       expr_call = "?"? "(" args:list{expr}? ")" ;
       expr_field = "?"? "." name:ident ;
       expr_index = "?"? "[" key:expr "]" ;
       expr_cast = "." "(" ty:type ")" ;
+
+      (** expr_class target must be `ident (expr_inst | expr_field)*` **)
+      expr_inst = "." "<" list{type} ">" ;
+      expr_class = "{" fields:list{ident ":" expr} "}" ;
   expr_primary =
     | expr_null
     | expr_number
     | expr_bool
     | expr_string
     | expr_array
-    | expr_tuple
-    | expr_init
     | expr_var
     | expr_ctrl
-    | expr_block
+    | expr_do
     | expr_if
     | expr_try
     | expr_spawn
     | expr_lambda
+    | expr_tuple
     | expr_group
     ;
   expr_null = "null" ;
@@ -187,16 +190,14 @@ expr = expr_assign ;
     float = "inf" | regex{"[0-9]+(\.[0-9]*)?([Ee][+-]?[0-9]+)?"} ;
   expr_string = '"' UTF8* '"' ;
   expr_array = "[" (list{expr} | expr ";" expr) "]" ;
-  expr_tuple = "(" ((expr ",")? | (expr ",")+ expr?) ")" ;
-  expr_init = type "{" fields:list{ident ":" expr} "}" ;
   expr_var = ident ;
   expr_ctrl =
     | "return" value:expr?
-    | "break"
-    | "continue"
     | "throw" value:expr?
+    | "continue"
+    | "break"
     ;
-  expr_block = "do" block ;
+  expr_do = "do" block ;
   expr_if =
     "if" cond:expr if_body
     ("else" "if" cond:expr if_body)*
@@ -207,12 +208,8 @@ expr = expr_assign ;
       | stmt_loop
       | block
       ;
-  expr_try =
-    | "try" body:expr branches:try_branch_list
-    | "try" body:block "catch" branches:try_branch_list
-    ;
-    try_branch_list = "{" list{try_branch, ";"} "}" ;
-      try_branch = type "=>" stmt ;
+  expr_try = "try" body:(expr | block) catch ;
+    catch = "catch" ("(" var:ident ")" | var:ident) block ;
   expr_spawn =
     | "spawn" body:block
     | "spawn" fn:expr args:call
@@ -223,23 +220,23 @@ expr = expr_assign ;
     | "(" params:list{ident} ")"
     $ block
     ;
+  expr_tuple = "(" ((expr ",")? | (expr ",")+ expr?) ")" ;
   expr_group = "(" expr ")" ;
 
 
 (* TODO *)
 type = type_optional ;
-  type_optional = type_postfix "?" ;
-  type_postfix = type_primary (type_field | type_inst)* ;
-    type_field = "." ident
-    type_inst = "[" list{type} "]" ;
+  type_optional = type_primary "?" ;
   type_primary =
-    | type_var
+    | type_path
     | type_fn
     | type_array
     | type_tuple
     | type_group
     ;
-  type_var = ident ;
+  type_path = segment ("." segment)* ;
+    segment = ident generic_args? ;
+    generic_args = "<" list{type} ">" ;
   type_fn =
     "fn"
     "(" list{type} ")"
@@ -253,14 +250,12 @@ type = type_optional ;
 bound = ty:type ":" constraint:constraint ;
   constraint = type ("+" type)* ;
 
-type_params_list = "[" list{type_param} "]" ;
+type_params_list = "<" list{type_param} ">" ;
   type_param = name:ident ("=" default:type)? ;
 
 params_list = "(" list{param} ")" ;
   param = name:ident (":" type)? ("=" expr)? ;
 
 ident = regex{"[a-bA-B_][a-bA-B_0-9]*"} ;
-
-path = ident ("." ident)* ;
 
 list{`item, `sep = ","} = (`item (`sep `item `sep?)*)? ;

@@ -5,9 +5,14 @@ expression: result
 Ok(
     Array(
         Array {
-            item: Var(
-                Var {
-                    name: "T",
+            item: Path(
+                Path {
+                    segments: [
+                        Segment {
+                            ident: "T",
+                            generic_args: [],
+                        },
+                    ],
                 },
             ),
         },

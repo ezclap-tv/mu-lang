@@ -1,0 +1,26 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    Literal(
+        Array(
+            Copy(
+                Literal(
+                    Int(
+                        Int {
+                            value: 0,
+                        },
+                    ),
+                ),
+                Literal(
+                    Int(
+                        Int {
+                            value: 100,
+                        },
+                    ),
+                ),
+            ),
+        ),
+    ),
+)

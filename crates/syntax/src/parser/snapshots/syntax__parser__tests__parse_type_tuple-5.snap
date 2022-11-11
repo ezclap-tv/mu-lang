@@ -6,19 +6,34 @@ Ok(
     Tuple(
         Tuple {
             items: [
-                Var(
-                    Var {
-                        name: "A",
+                Path(
+                    Path {
+                        segments: [
+                            Segment {
+                                ident: "A",
+                                generic_args: [],
+                            },
+                        ],
                     },
                 ),
-                Var(
-                    Var {
-                        name: "B",
+                Path(
+                    Path {
+                        segments: [
+                            Segment {
+                                ident: "B",
+                                generic_args: [],
+                            },
+                        ],
                     },
                 ),
-                Var(
-                    Var {
-                        name: "C",
+                Path(
+                    Path {
+                        segments: [
+                            Segment {
+                                ident: "C",
+                                generic_args: [],
+                            },
+                        ],
                     },
                 ),
             ],

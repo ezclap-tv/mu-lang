@@ -6,16 +6,26 @@ Ok(
     Fn(
         Fn {
             params: [
-                Var(
-                    Var {
-                        name: "A",
+                Path(
+                    Path {
+                        segments: [
+                            Segment {
+                                ident: "A",
+                                generic_args: [],
+                            },
+                        ],
                     },
                 ),
             ],
             ret: Some(
-                Var(
-                    Var {
-                        name: "R",
+                Path(
+                    Path {
+                        segments: [
+                            Segment {
+                                ident: "R",
+                                generic_args: [],
+                            },
+                        ],
                     },
                 ),
             ),

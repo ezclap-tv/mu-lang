@@ -117,6 +117,7 @@ impl<'a> Token<'a> {
 pub const PARENS: (TokenKind, TokenKind) = (TokenKind::ParenL, TokenKind::ParenR);
 pub const BRACKETS: (TokenKind, TokenKind) = (TokenKind::BracketL, TokenKind::BracketR);
 pub const BRACES: (TokenKind, TokenKind) = (TokenKind::BraceL, TokenKind::BraceR);
+pub const ANGLES: (TokenKind, TokenKind) = (TokenKind::Less, TokenKind::More);
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Logos)]
 pub enum TokenKind {
@@ -157,6 +158,8 @@ pub enum TokenKind {
   Continue,
   #[token("throw")]
   Throw,
+  #[token("do")]
+  Do,
   #[token("if")]
   If,
   #[token("else")]
@@ -352,6 +355,7 @@ impl std::fmt::Display for TokenKind {
       TokenKind::Break => "break",
       TokenKind::Continue => "continue",
       TokenKind::Throw => "throw",
+      TokenKind::Do => "do",
       TokenKind::If => "if",
       TokenKind::Else => "else",
       TokenKind::Try => "try",

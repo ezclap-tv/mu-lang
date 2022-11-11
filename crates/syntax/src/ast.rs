@@ -52,29 +52,6 @@ pub fn ident<'a>(token: &Token<'a>) -> Ident<'a> {
 /// Order-preserving hash map
 pub type Map<'a, T> = IndexMap<Cow<'a, str>, T>;
 
-/// A period-separated list of identifiers: `a.b.c`
-///
-/// Used to specify where a symbol comes from if it isn't directly imported,
-/// e.g.:
-///
-/// ```text
-/// use module;
-/// type Bar = module.Foo;
-/// ```
-pub type Path<'a> = Spanned<Vec<Ident<'a>>>;
-
-/// A list of statements.
-///
-/// e.g.:
-///
-/// ```text
-/// {
-///   a := 0;
-///   b := 1;
-/// }
-/// ```
-pub type Block<'a> = Spanned<Vec<StmtKind<'a>>>;
-
 /// A module is the basic building block of Mu programs.
 ///
 /// Each module contains a list of imports and exported symbols.
@@ -145,7 +122,7 @@ impl<'a> Symbols<'a> {
     params: Vec<symbol::Param<'a>>,
     ret: Option<Type<'a>>,
     bounds: Vec<symbol::Bound<'a>>,
-    body: Option<expr::Do<'a>>,
+    body: Option<expr::Block<'a>>,
     span: Span,
   ) {
     self.fns.insert(
@@ -258,7 +235,7 @@ pub mod symbol {
     pub params: Vec<Param<'a>>,
     pub ret: Option<Type<'a>>,
     pub bounds: Vec<Bound<'a>>,
-    pub body: Option<expr::Do<'a>>,
+    pub body: Option<expr::Block<'a>>,
     pub span: Span,
   }
 
@@ -370,7 +347,8 @@ pub enum StmtKind<'a> {
 pub type Stmt<'a> = Spanned<StmtKind<'a>>;
 
 pub mod stmt {
-  use super::{Block, Expr, Ident, StmtKind, Type};
+  use super::expr::Block;
+  use super::{Expr, Ident, StmtKind, Type};
 
   #[derive(Clone, Debug)]
   pub struct Let<'a> {
@@ -423,23 +401,27 @@ pub mod stmt {
   pub fn loop_<'a>(body: Block<'a>) -> StmtKind<'a> {
     StmtKind::Loop(Box::new(Loop::Inf(Inf { body })))
   }
+
+  pub fn expr<'a>(expr: Expr<'a>) -> StmtKind<'a> {
+    StmtKind::Expr(Box::new(expr))
+  }
 }
 
 #[derive(Clone, Debug)]
 pub enum TypeKind<'a> {
   Opt(Box<ty::Opt<'a>>),
+  Path(Box<Path<'a>>),
   Fn(Box<ty::Fn<'a>>),
   Array(Box<ty::Array<'a>>),
   Tuple(Box<ty::Tuple<'a>>),
   Inst(Box<ty::Inst<'a>>),
   Field(Box<ty::Field<'a>>),
-  Var(Box<ty::Var<'a>>),
 }
 
 pub type Type<'a> = Spanned<TypeKind<'a>>;
 
 pub mod ty {
-  use super::{Ident, Type, TypeKind};
+  use super::{Ident, Path, Type, TypeKind};
 
   #[derive(Clone, Debug)]
   pub struct Opt<'a> {
@@ -449,6 +431,11 @@ pub mod ty {
   #[inline]
   pub fn option<'a>(inner: Type<'a>) -> TypeKind<'a> {
     TypeKind::Opt(Box::new(Opt { inner }))
+  }
+
+  #[inline]
+  pub fn path<'a>(path: Path<'a>) -> TypeKind<'a> {
+    TypeKind::Path(Box::new(path))
   }
 
   #[derive(Clone, Debug)]
@@ -503,22 +490,23 @@ pub mod ty {
   pub fn field<'a>(ty: Type<'a>, name: Ident<'a>) -> TypeKind<'a> {
     TypeKind::Field(Box::new(Field { ty, name }))
   }
+}
 
-  #[derive(Clone, Debug)]
-  pub struct Var<'a> {
-    pub name: Ident<'a>,
-  }
+#[derive(Clone, Debug)]
+pub struct Path<'a> {
+  pub segments: Vec<Segment<'a>>,
+}
 
-  #[inline]
-  pub fn var<'a>(name: Ident<'a>) -> TypeKind<'a> {
-    TypeKind::Var(Box::new(Var { name }))
-  }
+#[derive(Clone, Debug)]
+pub struct Segment<'a> {
+  pub ident: Ident<'a>,
+  pub generic_args: Vec<Type<'a>>,
 }
 
 #[derive(Clone, Debug)]
 pub enum ExprKind<'a> {
   Ctrl(Box<expr::Ctrl<'a>>),
-  Do(Box<expr::Do<'a>>),
+  Do(Box<expr::Block<'a>>),
   If(Box<expr::If<'a>>),
   Try(Box<expr::Try<'a>>),
   Spawn(Box<expr::Spawn<'a>>),
@@ -528,6 +516,8 @@ pub enum ExprKind<'a> {
   Unary(Box<expr::Unary<'a>>),
   Call(Box<expr::Call<'a>>),
   Cast(Box<expr::Cast<'a>>),
+  Inst(Box<expr::Inst<'a>>),
+  Class(Box<expr::Class<'a>>),
   GetVar(Box<expr::GetVar<'a>>),
   GetField(Box<expr::GetField<'a>>),
   GetIndex(Box<expr::GetIndex<'a>>),
@@ -540,24 +530,40 @@ pub enum ExprKind<'a> {
 pub type Expr<'a> = Spanned<ExprKind<'a>>;
 
 pub mod expr {
-  use super::{Block, Expr, ExprKind, Ident, Type};
+  use super::{Expr, ExprKind, Ident, Path, Stmt, Type};
+
+  /// A list of statements.
+  ///
+  /// e.g.:
+  ///
+  /// ```text
+  /// {
+  ///   a := 0;
+  ///   b := 1;
+  /// }
+  /// ```
+  #[derive(Clone, Debug, Default)]
+  pub struct Block<'a> {
+    pub items: Vec<Stmt<'a>>,
+    pub last: Option<Expr<'a>>,
+  }
 
   #[derive(Clone, Debug)]
   pub enum Ctrl<'a> {
-    Return(Expr<'a>),
-    Throw(Expr<'a>),
+    Return(Option<Expr<'a>>),
+    Throw(Option<Expr<'a>>),
     Break,
     Continue,
   }
 
   #[inline]
-  pub fn return_<'a>(inner: Expr<'a>) -> ExprKind<'a> {
-    ExprKind::Ctrl(Box::new(Ctrl::Return(inner)))
+  pub fn return_<'a>(value: Option<Expr<'a>>) -> ExprKind<'a> {
+    ExprKind::Ctrl(Box::new(Ctrl::Return(value)))
   }
 
   #[inline]
-  pub fn throw_<'a>(inner: Expr<'a>) -> ExprKind<'a> {
-    ExprKind::Ctrl(Box::new(Ctrl::Throw(inner)))
+  pub fn throw_<'a>(value: Option<Expr<'a>>) -> ExprKind<'a> {
+    ExprKind::Ctrl(Box::new(Ctrl::Throw(value)))
   }
 
   #[inline]
@@ -570,60 +576,37 @@ pub mod expr {
     ExprKind::Ctrl(Box::new(Ctrl::Continue))
   }
 
-  #[derive(Clone, Debug)]
-  pub struct Do<'a> {
-    pub body: Block<'a>,
-    pub value: Option<Expr<'a>>,
-  }
-
   #[inline]
-  pub fn do_<'a>(body: Block<'a>, value: Option<Expr<'a>>) -> ExprKind<'a> {
-    ExprKind::Do(Box::new(Do { body, value }))
+  pub fn do_<'a>(block: Block<'a>) -> ExprKind<'a> {
+    ExprKind::Do(Box::new(block))
   }
 
   #[derive(Clone, Debug)]
   pub struct If<'a> {
-    pub branches: Vec<(Expr<'a>, Do<'a>)>,
-    pub else_: Option<Do<'a>>,
+    pub branches: Vec<(Expr<'a>, Block<'a>)>,
+    pub else_: Option<Block<'a>>,
   }
 
   #[inline]
-  pub fn if_<'a>(branches: Vec<(Expr<'a>, Do<'a>)>, else_: Option<Do<'a>>) -> ExprKind<'a> {
+  pub fn if_<'a>(branches: Vec<(Expr<'a>, Block<'a>)>, else_: Option<Block<'a>>) -> ExprKind<'a> {
     ExprKind::If(Box::new(If { branches, else_ }))
   }
 
   #[derive(Clone, Debug)]
   pub struct Try<'a> {
-    pub body: TryKind<'a>,
-    pub branches: Vec<(Type<'a>, Do<'a>)>,
-  }
-
-  #[derive(Clone, Debug)]
-  pub enum TryKind<'a> {
-    Expr(Expr<'a>),
-    Block(Do<'a>),
+    pub body: Block<'a>,
+    pub catch: (Ident<'a>, Block<'a>),
   }
 
   #[inline]
-  pub fn try_expr<'a>(body: Expr<'a>, branches: Vec<(Type<'a>, Do<'a>)>) -> ExprKind<'a> {
-    ExprKind::Try(Box::new(Try {
-      body: TryKind::Expr(body),
-      branches,
-    }))
-  }
-
-  #[inline]
-  pub fn try_block<'a>(body: Do<'a>, branches: Vec<(Type<'a>, Do<'a>)>) -> ExprKind<'a> {
-    ExprKind::Try(Box::new(Try {
-      body: TryKind::Block(body),
-      branches,
-    }))
+  pub fn try_<'a>(body: Block<'a>, catch: (Ident<'a>, Block<'a>)) -> ExprKind<'a> {
+    ExprKind::Try(Box::new(Try { body, catch }))
   }
 
   #[derive(Clone, Debug)]
   pub enum Spawn<'a> {
     Call(Call<'a>),
-    Block(Do<'a>),
+    Block(Block<'a>),
   }
 
   #[inline]
@@ -632,18 +615,18 @@ pub mod expr {
   }
 
   #[inline]
-  pub fn spawn_block<'a>(body: Do<'a>) -> ExprKind<'a> {
+  pub fn spawn_block<'a>(body: Block<'a>) -> ExprKind<'a> {
     ExprKind::Spawn(Box::new(Spawn::Block(body)))
   }
 
   #[derive(Clone, Debug)]
   pub struct Lambda<'a> {
-    pub params: Vec<(Ident<'a>, Type<'a>)>,
-    pub body: Do<'a>,
+    pub params: Vec<Ident<'a>>,
+    pub body: Block<'a>,
   }
 
   #[inline]
-  pub fn lambda<'a>(params: Vec<(Ident<'a>, Type<'a>)>, body: Do<'a>) -> ExprKind<'a> {
+  pub fn lambda<'a>(params: Vec<Ident<'a>>, body: Block<'a>) -> ExprKind<'a> {
     ExprKind::Lambda(Box::new(Lambda { params, body }))
   }
 
@@ -834,6 +817,26 @@ pub mod expr {
   }
 
   #[derive(Clone, Debug)]
+  pub struct Inst<'a> {
+    pub target: Expr<'a>,
+    pub args: Vec<Type<'a>>,
+  }
+
+  pub fn inst<'a>(target: Expr<'a>, args: Vec<Type<'a>>) -> ExprKind<'a> {
+    ExprKind::Inst(Box::new(Inst { target, args }))
+  }
+
+  #[derive(Clone, Debug)]
+  pub struct Class<'a> {
+    pub target: Path<'a>,
+    pub fields: Vec<(Ident<'a>, Expr<'a>)>,
+  }
+
+  pub fn class<'a>(target: Path<'a>, fields: Vec<(Ident<'a>, Expr<'a>)>) -> ExprKind<'a> {
+    ExprKind::Class(Box::new(Class { target, fields }))
+  }
+
+  #[derive(Clone, Debug)]
   pub enum Literal<'a> {
     Null,
     Bool(Bool),
@@ -867,7 +870,7 @@ pub mod expr {
   #[derive(Clone, Debug)]
   pub enum Array<'a> {
     List(Vec<Expr<'a>>),
-    Copy(Expr<'a>, usize),
+    Copy(Expr<'a>, Expr<'a>),
   }
 
   #[derive(Clone, Debug)]
@@ -901,7 +904,7 @@ pub mod expr {
     ExprKind::Literal(Box::new(Literal::Array(Array::List(items))))
   }
 
-  pub fn array_copy<'a>(value: Expr<'a>, n: usize) -> ExprKind<'a> {
+  pub fn array_copy<'a>(value: Expr<'a>, n: Expr<'a>) -> ExprKind<'a> {
     ExprKind::Literal(Box::new(Literal::Array(Array::Copy(value, n))))
   }
 
