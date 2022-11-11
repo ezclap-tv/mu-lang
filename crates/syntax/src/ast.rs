@@ -540,7 +540,7 @@ pub enum ExprKind<'a> {
 pub type Expr<'a> = Spanned<ExprKind<'a>>;
 
 pub mod expr {
-  use super::{Block, Cow, Expr, ExprKind, Ident, Type};
+  use super::{Block, Expr, ExprKind, Ident, Type};
 
   #[derive(Clone, Debug)]
   pub enum Ctrl<'a> {

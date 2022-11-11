@@ -27,7 +27,6 @@ pub fn parse(source: &str) -> Result<Module<'_>, Vec<Error>> {
     lexer,
     module: Module::default(),
     errors: vec![],
-    span_offset: 0,
   }
   .parse()
 }
@@ -36,8 +35,6 @@ struct Parser<'a> {
   lexer: Lexer<'a>,
   module: Module<'a>,
   errors: Vec<Error>,
-  // If we're in a sub-lexer, all spans must be offset by this amount
-  span_offset: usize,
 }
 
 impl<'a> Parser<'a> {
@@ -437,7 +434,12 @@ impl<'a> Parser<'a> {
 
     // expr_string
     if self.bump_if(String) {
-      return Ok(expr::string(self.previous().lexeme.trim_matches('"')));
+      let token = self.previous();
+      let mut value = token.lexeme.trim_matches('"').to_string();
+      if unescape_in_place(&mut value).is_none() {
+        return Err(Error::invalid_escape_sequence(token.span));
+      }
+      return Ok(expr::string(value));
     }
 
     // expr_array
