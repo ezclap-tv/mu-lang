@@ -171,12 +171,14 @@ pub enum TokenKind {
   Spawn,
 
   // Symbols
-  #[token(";")]
-  Semicolon,
   #[token(".")]
   Dot,
   #[token(",")]
   Comma,
+  #[token(";")]
+  Semicolon,
+  #[token(":")]
+  Colon,
   #[token("{")]
   BraceL,
   #[token("}")]
@@ -189,8 +191,6 @@ pub enum TokenKind {
   BracketL,
   #[token("]")]
   BracketR,
-  #[token(":")]
-  Colon,
   #[token("=")]
   Equal,
   #[token("->")]
@@ -198,15 +198,15 @@ pub enum TokenKind {
   #[token("=>")]
   ArrowFat,
   #[token("..")]
-  RangeEx,
+  Range,
   /* #[token("..=")]
   RangeInc, */
   #[token("||")]
-  Or2,
+  PipePipe,
   #[token("&&")]
-  And2,
+  AndAnd,
   #[token("==")]
-  Equal2,
+  EqualEqual,
   #[token(">")]
   More,
   #[token(">=")]
@@ -236,21 +236,21 @@ pub enum TokenKind {
   #[token("*=")]
   StarEqual,
   #[token("**")]
-  Star2,
+  StarStar,
   #[token("**=")]
-  Star2Equal,
+  StarStarEqual,
   #[token("!")]
-  Exclamation,
+  Bang,
   #[token("!=")]
   BangEqual,
   #[token("?")]
-  Question,
+  Optional,
   #[token("??")]
-  Question2,
+  Nullish,
   #[token("??=")]
-  Question2Equal,
+  NullishEqual,
   #[token("\\")]
-  Backslash,
+  Lambda,
 
   // Literals
   #[token("true", |_| true)]
@@ -265,8 +265,8 @@ pub enum TokenKind {
   #[token("inf")]
   #[regex(r"[0-9]+(\.[0-9]*)?([Ee][+-]?[0-9]+)?")]
   Float,
-  #[token("\"", lex_string)]
-  String(StringKind),
+  #[regex(r#""([^"\\]|\\.)*""#)]
+  String,
 
   #[regex("[a-zA-Z_][a-zA-Z0-9_]*")]
   Ident,
@@ -331,79 +331,6 @@ fn lex_multi_line_comment(lex: &mut logos::Lexer<'_, TokenKind>) -> FilterResult
   }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum StringKind {
-  // This string does not contain any interpolations
-  Plain,
-  // This string has to be further processed by the parser
-  Fmt,
-}
-
-fn lex_string(lex: &mut logos::Lexer<'_, TokenKind>) -> Option<StringKind> {
-  #[derive(Clone, Copy, PartialEq, Eq)]
-  enum State {
-    // Lexer is in a string fragment
-    String(usize),
-    // Lexer is in an expr fragment
-    Expr(usize),
-  }
-
-  let mut state = State::String(0);
-  let mut kind = StringKind::Plain;
-
-  let mut count = 0;
-  let mut previous = b'"';
-  let mut result = None;
-  for current in lex.remainder().bytes() {
-    count += 1;
-
-    if previous != b'\\' {
-      match (state, current) {
-        // Close string (root)
-        (State::String(0), b'"') => {
-          result = Some(kind);
-          break;
-        }
-        // Close string
-        (State::String(n), b'"') => state = State::Expr(n - 1),
-        // Open expr
-        (State::String(n), b'{') => {
-          kind = StringKind::Fmt;
-          state = State::Expr(n + 1);
-        }
-
-        // Open string
-        (State::Expr(n), b'"') => state = State::String(n + 1),
-        // Close expr
-        (State::Expr(n), b'}') => state = State::String(n - 1),
-        // Error: Opening expr within another expr
-        (State::Expr(_), b'{') => {
-          // Consume bytes until we find an unescaped quote
-          let mut previous = b'{';
-          for current in lex.remainder()[count..].bytes() {
-            count += 1;
-            if previous != b'\\' && current == b'"' {
-              break;
-            }
-            previous = current;
-          }
-
-          result = None;
-          break;
-        }
-
-        _ => {}
-      }
-    }
-
-    previous = current;
-  }
-
-  lex.bump(count);
-
-  result
-}
-
 impl std::fmt::Display for TokenKind {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     let str = match self {
@@ -444,11 +371,11 @@ impl std::fmt::Display for TokenKind {
       TokenKind::Equal => "=",
       TokenKind::ArrowThin => "->",
       TokenKind::ArrowFat => "=>",
-      TokenKind::RangeEx => "..",
+      TokenKind::Range => "..",
       /* TokenKind::RangeInc => "..=", */
-      TokenKind::Or2 => "||",
-      TokenKind::And2 => "&&",
-      TokenKind::Equal2 => "==",
+      TokenKind::PipePipe => "||",
+      TokenKind::AndAnd => "&&",
+      TokenKind::EqualEqual => "==",
       TokenKind::More => ">",
       TokenKind::MoreEqual => ">=",
       TokenKind::Less => "<",
@@ -463,20 +390,20 @@ impl std::fmt::Display for TokenKind {
       TokenKind::PercentEqual => "%=",
       TokenKind::Star => "*",
       TokenKind::StarEqual => "*=",
-      TokenKind::Star2 => "**",
-      TokenKind::Star2Equal => "**=",
-      TokenKind::Exclamation => "!",
+      TokenKind::StarStar => "**",
+      TokenKind::StarStarEqual => "**=",
+      TokenKind::Bang => "!",
       TokenKind::BangEqual => "!=",
-      TokenKind::Question => "?",
-      TokenKind::Question2 => "??",
-      TokenKind::Question2Equal => "??=",
-      TokenKind::Backslash => "\\",
+      TokenKind::Optional => "?",
+      TokenKind::Nullish => "??",
+      TokenKind::NullishEqual => "??=",
+      TokenKind::Lambda => "\\",
       TokenKind::Ident => "identifier",
       TokenKind::Bool(_)
       | TokenKind::Null
       | TokenKind::Int
       | TokenKind::Float
-      | TokenKind::String(_) => "literal",
+      | TokenKind::String => "literal",
       // deliberately `unknown` because they're probably never used with `parser.expect`
       TokenKind::Whitespace
       | TokenKind::Comment
@@ -585,35 +512,13 @@ mod tests {
 
   #[test]
   fn test_lex_strings() {
-    use StringKind::*;
     use TokenKind::*;
 
     let src = r#"
       "a"
-      "{a}"
-      "\{a}"
-      "{"a"}"
-      "\{"a"}"
-      "{{}"
-      "{{}\""
-      "{{"
-      "{{\""
-      "a"
+      "😂"
     "#;
-    let tokens = &[
-      (String(Plain), r#""a""#),
-      (String(Fmt), r#""{a}""#),
-      (String(Plain), r#""\{a}""#),
-      (String(Fmt), r#""{"a"}""#),
-      (String(Plain), r#""\{""#),
-      (Ident, r#"a"#),
-      (String(Plain), r#""}""#),
-      (Error, r#""{{}""#),
-      (Error, r#""{{}\"""#),
-      (Error, r#""{{""#),
-      (Error, r#""{{\"""#),
-      (String(Plain), r#""a""#),
-    ];
+    let tokens = &[(String, r#""a""#), (String, r#""😂""#)];
 
     compare(src, tokens);
   }
