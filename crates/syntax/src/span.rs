@@ -6,6 +6,15 @@ pub struct Span {
   pub end: usize,
 }
 
+impl Span {
+  pub fn join(&self, other: Span) -> Span {
+    Span {
+      start: self.start,
+      end: other.end,
+    }
+  }
+}
+
 impl From<Range<usize>> for Span {
   fn from(value: Range<usize>) -> Self {
     Self {
@@ -28,7 +37,7 @@ pub struct Spanned<T> {
 }
 
 impl<T> Spanned<T> {
-  pub fn new(value: T, span: impl Into<Span>) -> Spanned<T> {
+  pub fn new(span: impl Into<Span>, value: T) -> Spanned<T> {
     Spanned {
       value,
       span: span.into(),
@@ -85,7 +94,7 @@ mod tests {
       nested: Nested,
     }
 
-    let mut t = Spanned::new(Test::default(), 0..10);
+    let mut t = Spanned::new(0..10, Test::default());
 
     t.span.start;
     t.span.end;
