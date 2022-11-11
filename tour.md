@@ -95,6 +95,22 @@ name **= 1;
 name ??= 1;
 ```
 
+Postfix operators (call, field, index, cast)
+
+```rust
+f(); // call
+f?(); // optional call (won't call if `f` is null)
+f.key; // field
+f?.key; // optional field (won't access `key` if `f` is null)
+f["key"]; // index
+f?["key"]; // optional index (won't index if `f` is null)
+
+
+class Data { a: int; b: str; }
+
+let v = Json.parse("{\"a\":0, \"b\":\"test\"}").(Data);
+```
+
 Flow control, blocks, do
 
 ```rust
