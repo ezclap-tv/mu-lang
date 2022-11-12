@@ -80,27 +80,12 @@ pub struct Module<'a> {
 /// use a.c as d;
 /// use e as f;
 /// ```
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Import<'a> {
   /// Normalized path to the symbol or module.
-  pub path: Vec<Cow<'a, str>>,
+  pub path: Vec<Ident<'a>>,
   /// Imports may be renamed.
   pub alias: Option<Ident<'a>>,
-  /// Span of the last identifier in the import path pre-normalization.
-  ///
-  /// ```text
-  /// use a.b.thing as other;
-  ///      // ^^^^^
-  ///      // span
-  ///
-  /// use task.{
-  ///   join,
-  /// //^^^^ span
-  ///   race,
-  /// //^^^^ span
-  /// };
-  /// ```
-  pub span: Span,
 }
 
 #[derive(Clone, Debug, Default)]

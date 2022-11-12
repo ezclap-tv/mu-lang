@@ -15,7 +15,7 @@ use thiserror::Error;
 
 use crate::ast::expr::{AssignOp, BinaryOp, Block, UnaryOp};
 use crate::ast::{
-  expr, stmt, ty, Expr, ExprKind, Ident, Module, Path, Segment, StmtKind, TypeKind,
+  expr, stmt, ty, Expr, ExprKind, Ident, Import, Module, Path, Segment, StmtKind, TypeKind,
 };
 use crate::lexer::{Lexer, Token, TokenKind, ANGLES, BRACES, BRACKETS, PARENS};
 use crate::span::{Span, Spanned};
@@ -116,12 +116,49 @@ impl<'a> Parser<'a> {
   }
 
   fn parse_import(&mut self) -> Result<(), Error> {
-    todo!()
+    use TokenKind::{BraceL, Comma, Semicolon};
+
+    let path = vec![];
+    if self.current().is(BraceL) {
+      self.wrap_list(BRACES, Comma, |p| p.parse_import_inner(&path))?;
+    } else {
+      self.parse_import_inner(&path)?;
+    }
+
+    self.expect(Semicolon)?;
+
+    Ok(())
+  }
+
+  fn parse_import_inner(&mut self, path: &Vec<Ident<'a>>) -> Result<(), Error> {
+    use TokenKind::{As, BraceL, Comma, Dot};
+
+    let path = path.with_elem(self.parse_ident()?);
+    if self.bump_if(As) {
+      let alias = Some(self.parse_ident()?);
+      self.module.imports.push(Import { path, alias });
+      return Ok(());
+    }
+
+    if self.bump_if(Dot) {
+      if self.current().is(BraceL) {
+        self.wrap_list(BRACES, Comma, |p| p.parse_import_inner(&path))?;
+        return Ok(());
+      }
+
+      self.parse_import_inner(&path)?;
+      return Ok(());
+    }
+
+    self.module.imports.push(Import { path, alias: None });
+    Ok(())
   }
 
   fn parse_top_level_stmt(&mut self) -> Result<StmtKind<'a>, Error> {
     use TokenKind::{BraceR, For, Let, Loop, Semicolon, While};
 
+    // this code is duplicated in `parse_block`,
+    // because semicolons work differently there.
     if self.bump_if(For) {
       self.parse_stmt_loop_for()
     } else if self.bump_if(While) {
@@ -1125,6 +1162,21 @@ fn expr_class_target_to_path<'a>(target: &Expr<'a>) -> Option<Path<'a>> {
   segments.reverse();
 
   Some(Path { segments })
+}
+
+trait WithElem<T> {
+  /// Clone `Self` and append `elem` to it
+  fn with_elem(&self, elem: T) -> Self;
+}
+
+impl<T: Clone> WithElem<T> for Vec<T> {
+  #[inline]
+  fn with_elem(&self, elem: T) -> Self {
+    let mut out = Vec::<T>::with_capacity(self.len() + 1);
+    out.extend(self.iter().cloned());
+    out.extend([elem]);
+    out
+  }
 }
 
 #[derive(Clone, Debug, Error)]
