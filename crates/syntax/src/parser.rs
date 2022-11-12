@@ -26,11 +26,11 @@ mod macros;
 // https://github.com/ves-lang/ves/blob/master/ves-parser/src/parser.rs
 
 pub fn parse(source: &str) -> Result<Module<'_>, Vec<Error>> {
-  let lexer = Lexer::new(source);
   Parser {
-    lexer,
+    lexer: Lexer::new(source),
     module: Module::default(),
-    errors: vec![],
+    errors: Vec::default(),
+    ctx: Context::default(),
   }
   .parse()
 }
@@ -39,6 +39,19 @@ struct Parser<'a> {
   lexer: Lexer<'a>,
   module: Module<'a>,
   errors: Vec<Error>,
+  ctx: Context,
+}
+
+#[derive(Clone, Copy, Default)]
+struct Context {
+  /// This is used to determine if we should parse an `expr_class` or not, due
+  /// to the following ambiguity:
+  ///
+  /// ```ignore
+  /// // Parser sees this as `"if" <expr_class>` instead of `"if" <expr> <block>`
+  /// if x { 0 }
+  /// ```
+  expr_before_block: bool,
 }
 
 impl<'a> Parser<'a> {
@@ -162,14 +175,25 @@ impl<'a> Parser<'a> {
     Ok(stmt::expr(expr))
   }
 
+  #[inline]
+  fn parse_expr_before_block(&mut self) -> Result<ExprKind<'a>, Error> {
+    let ctx = Context {
+      expr_before_block: true,
+    };
+    self.with_ctx(ctx, Self::parse_expr_assign)
+  }
+
+  #[inline]
   fn parse_expr(&mut self) -> Result<ExprKind<'a>, Error> {
-    self.parse_expr_assign()
+    let ctx = Context::default();
+    self.with_ctx(ctx, Self::parse_expr_assign)
   }
 
   fn parse_expr_assign(&mut self) -> Result<ExprKind<'a>, Error> {
     use ExprKind::{GetField, GetIndex, GetVar};
     use TokenKind::{
-      Equal, MinusEqual, PercentEqual, PlusEqual, SlashEqual, StarEqual, StarStarEqual,
+      Equal, MinusEqual, NullishEqual, PercentEqual, PlusEqual, SlashEqual, StarEqual,
+      StarStarEqual,
     };
 
     let left = self.span(Self::parse_expr_range)?;
@@ -181,6 +205,7 @@ impl<'a> Parser<'a> {
       SlashEqual => Some(AssignOp::Div),
       PercentEqual => Some(AssignOp::Rem),
       StarStarEqual => Some(AssignOp::Pow),
+      NullishEqual => Some(AssignOp::Opt),
       _ => return Ok(left.into_inner()),
     };
     self.bump(); // bump assignment operator
@@ -357,7 +382,7 @@ impl<'a> Parser<'a> {
   }
 
   fn parse_expr_postfix(&mut self) -> Result<ExprKind<'a>, Error> {
-    use TokenKind::{BraceL, BracketL, Comma, Dot, Less, Optional, ParenL};
+    use TokenKind::{BraceL, BracketL, Colon, Comma, Dot, Less, Optional, ParenL};
 
     let mut expr = self.span(Self::parse_expr_primary)?;
     loop {
@@ -390,6 +415,12 @@ impl<'a> Parser<'a> {
               expr::cast(opt, expr, ty.into_inner()),
             );
           } else if self.current().is(Less) {
+            if opt {
+              return Err(Error::invalid_optional(
+                self.previous().span.join(self.current().span),
+              ));
+            }
+
             // expr_inst
             let args = self.span(|p| p.wrap_list(ANGLES, Comma, |p| p.span(Self::parse_type)))?;
             expr = Spanned::new(
@@ -403,16 +434,20 @@ impl<'a> Parser<'a> {
           }
         }
         // expr_class
-        BraceL => {
-          // TODO: this is broken:
-          // any kind of `<expr> <block>` will parse as class instantiation
-          // if the `<expr>` can appear here.
+        BraceL if !self.ctx.expr_before_block => {
+          if opt {
+            return Err(Error::invalid_optional(
+              self.previous().span.join(self.current().span),
+            ));
+          }
+
           let Some(target) = expr_class_target_to_path(&expr) else {
-            break;
+            return Err(Error::invalid_class_inst(expr.span))
           };
           let fields = self.span(|p| {
             p.wrap_list(BRACES, Comma, |p| {
               let key = p.parse_ident()?;
+              p.expect(Colon)?;
               let value = p.span(Self::parse_expr)?;
               Ok((key, value))
             })
@@ -554,14 +589,20 @@ impl<'a> Parser<'a> {
       let mut branches = vec![];
       let mut else_ = None;
 
-      // if <expr> <block>
-      branches.push((self.span(Self::parse_expr)?, self.parse_block()?));
+      // if
+      branches.push((
+        self.span(Self::parse_expr_before_block)?,
+        self.parse_block()?,
+      ));
       while self.bump_if(Else) {
         if self.bump_if(If) {
-          // else if <expr> <block>
-          branches.push((self.span(Self::parse_expr)?, self.parse_block()?));
+          // else if
+          branches.push((
+            self.span(Self::parse_expr_before_block)?,
+            self.parse_block()?,
+          ));
         } else {
-          // else <block>
+          // else
           else_ = Some(self.parse_block()?);
           break;
         }
@@ -617,8 +658,10 @@ impl<'a> Parser<'a> {
     if self.bump_if(Lambda) {
       let params = if self.current().is(ParenL) {
         self.wrap_list(PARENS, Comma, Self::parse_ident)?
-      } else {
+      } else if self.current().is(Ident) {
         vec![self.parse_ident()?]
+      } else {
+        vec![]
       };
       let body = self.parse_block()?;
       return Ok(expr::lambda(params, body));
@@ -945,6 +988,20 @@ impl<'a> Parser<'a> {
     }
     self.previous()
   }
+
+  /// Calls `cons` in the context `ctx`.
+  /// `ctx` is used only for the duration of the call to `cons`.
+  #[inline]
+  fn with_ctx<T>(
+    &mut self,
+    ctx: Context,
+    cons: impl FnOnce(&mut Self) -> Result<T, Error>,
+  ) -> Result<T, Error> {
+    let mut prev_ctx = std::mem::replace(&mut self.ctx, ctx);
+    let res = cons(self);
+    std::mem::swap(&mut self.ctx, &mut prev_ctx);
+    res
+  }
 }
 
 // Adapted from https://docs.rs/snailquote/0.3.0/x86_64-pc-windows-msvc/src/snailquote/lib.rs.html.
@@ -1085,6 +1142,8 @@ pub enum Error {
   InvalidClassInst(Span),
   #[error("only blocks or function calls may be spawned")]
   InvalidSpawn(Span),
+  #[error("invalid optional expr at {0}")]
+  InvalidOptional(Span),
   #[error("failed to parse int at {0}: {1}")]
   ParseInt(Span, #[source] std::num::ParseIntError),
   #[error("failed to parse float at {0}: {1}")]
@@ -1122,6 +1181,10 @@ impl Error {
 
   fn invalid_spawn(span: Span) -> Self {
     Error::InvalidSpawn(span)
+  }
+
+  fn invalid_optional(span: Span) -> Self {
+    Error::InvalidOptional(span)
   }
 
   fn parse_int(span: Span, e: std::num::ParseIntError) -> Self {
