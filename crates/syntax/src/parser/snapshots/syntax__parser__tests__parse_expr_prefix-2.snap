@@ -1,0 +1,21 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    Unary(
+        Unary {
+            op: Negate,
+            inner: Unary(
+                Unary {
+                    op: Invert,
+                    inner: GetVar(
+                        GetVar {
+                            name: "a",
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+)

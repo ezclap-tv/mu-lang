@@ -1,0 +1,54 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    Cast(
+        Cast {
+            opt: false,
+            target: Call(
+                Call {
+                    opt: false,
+                    target: GetIndex(
+                        GetIndex {
+                            opt: false,
+                            target: GetField(
+                                GetField {
+                                    opt: false,
+                                    target: GetVar(
+                                        GetVar {
+                                            name: "a",
+                                        },
+                                    ),
+                                    key: "b",
+                                },
+                            ),
+                            key: GetVar(
+                                GetVar {
+                                    name: "c",
+                                },
+                            ),
+                        },
+                    ),
+                    args: [
+                        GetVar(
+                            GetVar {
+                                name: "d",
+                            },
+                        ),
+                    ],
+                },
+            ),
+            ty: Path(
+                Path {
+                    segments: [
+                        Segment {
+                            ident: "E",
+                            generic_args: [],
+                        },
+                    ],
+                },
+            ),
+        },
+    ),
+)

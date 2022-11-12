@@ -1,0 +1,51 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    Binary(
+        Binary {
+            op: CompareLessEq,
+            left: Binary(
+                Binary {
+                    op: CompareLess,
+                    left: Binary(
+                        Binary {
+                            op: CompareMoreEq,
+                            left: Binary(
+                                Binary {
+                                    op: CompareMore,
+                                    left: GetVar(
+                                        GetVar {
+                                            name: "a",
+                                        },
+                                    ),
+                                    right: GetVar(
+                                        GetVar {
+                                            name: "b",
+                                        },
+                                    ),
+                                },
+                            ),
+                            right: GetVar(
+                                GetVar {
+                                    name: "c",
+                                },
+                            ),
+                        },
+                    ),
+                    right: GetVar(
+                        GetVar {
+                            name: "d",
+                        },
+                    ),
+                },
+            ),
+            right: GetVar(
+                GetVar {
+                    name: "e",
+                },
+            ),
+        },
+    ),
+)

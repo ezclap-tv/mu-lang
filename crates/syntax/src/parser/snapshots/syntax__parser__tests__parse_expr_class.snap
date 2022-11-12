@@ -1,0 +1,19 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    Class(
+        Class {
+            target: Path {
+                segments: [
+                    Segment {
+                        ident: "Foo",
+                        generic_args: [],
+                    },
+                ],
+            },
+            fields: [],
+        },
+    ),
+)

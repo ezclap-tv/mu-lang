@@ -6,7 +6,8 @@ macro_rules! parser {
     let mut parser = Parser {
       lexer,
       module: Module::default(),
-      errors: Vec::new(),
+      errors: Vec::default(),
+      ctx: Context::default(),
     };
     parser.bump();
     parser
@@ -29,6 +30,8 @@ macro_rules! snapshot {
     }
   }};
 }
+
+// TODO: test for errors
 
 #[test]
 fn parse_expr_literal() {
@@ -98,17 +101,169 @@ fn parse_expr_if() {
     "if true { a; b; } else if false { a; b; } else { a; b; }",
     parse_expr
   );
+
+  snapshot!(
+    "if (T { v: if (T {}) { 0 } else { 1 } }) { 0 } else { 1 }",
+    parse_expr
+  );
+
+  snapshot!("if a.b[c](d) { 0 } else { 1 }", parse_expr);
 }
 
-// TODO: once the above is fixed, continue with expr testing:
-// (if, try, spawn, lambda) + everything above expr_primary
+#[test]
+fn parse_expr_try() {
+  snapshot!("try {} catch (e) {}", parse_expr);
 
-/* #[test]
+  snapshot!("try a catch (e) { e }", parse_expr);
+  snapshot!("try { a } catch (e) { e }", parse_expr);
+  snapshot!("try { a; } catch (e) { e }", parse_expr);
+  snapshot!("try { a; b } catch (e) { e }", parse_expr);
+  snapshot!("try { a; b; } catch (e) { e }", parse_expr);
+  snapshot!("try a catch (e) { e; }", parse_expr);
+  snapshot!("try { a } catch (e) { e; }", parse_expr);
+  snapshot!("try { a; } catch (e) { e; }", parse_expr);
+  snapshot!("try { a; b } catch (e) { e; }", parse_expr);
+  snapshot!("try { a; b; } catch (e) { e; }", parse_expr);
+
+  snapshot!("try a catch e { e }", parse_expr);
+  snapshot!("try { a } catch e { e }", parse_expr);
+  snapshot!("try { a; } catch e { e }", parse_expr);
+  snapshot!("try { a; b } catch e { e }", parse_expr);
+  snapshot!("try { a; b; } catch e { e }", parse_expr);
+  snapshot!("try a catch e { e; }", parse_expr);
+  snapshot!("try { a } catch e { e; }", parse_expr);
+  snapshot!("try { a; } catch e { e; }", parse_expr);
+  snapshot!("try { a; b } catch e { e; }", parse_expr);
+  snapshot!("try { a; b; } catch e { e; }", parse_expr);
+
+  snapshot!(
+    "try T { v: try T {} catch (e) { e } } catch (e) { e }",
+    parse_expr
+  );
+
+  snapshot!("try a.b[c](d) catch (e) { e }", parse_expr);
+}
+
+#[test]
+fn parse_expr_spawn() {
+  snapshot!("spawn {}", parse_expr);
+  snapshot!("spawn { a; }", parse_expr);
+  snapshot!("spawn { a; b }", parse_expr);
+  snapshot!("spawn { a; b; }", parse_expr);
+
+  snapshot!("spawn f()", parse_expr);
+  snapshot!("spawn f(a, b, c)", parse_expr);
+  snapshot!("spawn f(a, b, c,)", parse_expr);
+}
+
+#[test]
+fn parse_expr_lambda() {
+  snapshot!("\\_ {}", parse_expr);
+  snapshot!("\\a {}", parse_expr);
+  snapshot!("\\a { a }", parse_expr);
+  snapshot!("\\a { a; }", parse_expr);
+  snapshot!("\\a { a; b }", parse_expr);
+  snapshot!("\\a { a; b; }", parse_expr);
+
+  snapshot!("\\(a, b) {}", parse_expr);
+  snapshot!("\\(a, b) { a }", parse_expr);
+  snapshot!("\\(a, b) { a; }", parse_expr);
+  snapshot!("\\(a, b) { a; b }", parse_expr);
+  snapshot!("\\(a, b) { a; b; }", parse_expr);
+
+  snapshot!("\\(a, b,) {}", parse_expr);
+  snapshot!("\\(a, b,) { a }", parse_expr);
+  snapshot!("\\(a, b,) { a; }", parse_expr);
+  snapshot!("\\(a, b,) { a; b }", parse_expr);
+  snapshot!("\\(a, b,) { a; b; }", parse_expr);
+
+  snapshot!("\\{}", parse_expr);
+  snapshot!("\\{ a }", parse_expr);
+  snapshot!("\\{ a; }", parse_expr);
+  snapshot!("\\{ a; b }", parse_expr);
+  snapshot!("\\{ a; b; }", parse_expr);
+}
+
+#[test]
+fn parse_expr_postfix() {
+  snapshot!("a.b", parse_expr);
+  snapshot!("a.b.c", parse_expr);
+  snapshot!("a[b]", parse_expr);
+  snapshot!("a[b][c]", parse_expr);
+  snapshot!("a(b)", parse_expr);
+  snapshot!("a(b)(c)", parse_expr);
+  snapshot!("a.(A)", parse_expr);
+  snapshot!("a.(A).(B)", parse_expr);
+  snapshot!("a.b[c](d).(E)", parse_expr);
+
+  snapshot!("a?.b", parse_expr);
+  snapshot!("a?.b?.c", parse_expr);
+  snapshot!("a?[b]", parse_expr);
+  snapshot!("a?[b]?[c]", parse_expr);
+  snapshot!("a?(b)", parse_expr);
+  snapshot!("a?(b)?(c)", parse_expr);
+  snapshot!("a?.(A)", parse_expr);
+  snapshot!("a?.(A)?.(B)", parse_expr);
+  snapshot!("a?.b?[c]?(d)?.(E)", parse_expr);
+}
+
+#[test]
+fn parse_expr_class() {
+  snapshot!("Foo {}", parse_expr);
+  snapshot!("Foo { a: 0 }", parse_expr);
+  snapshot!("Foo { a: 0, }", parse_expr);
+  snapshot!("Foo { a: 0, b: 1 }", parse_expr);
+  snapshot!("Foo { a: 0, b: 1, }", parse_expr);
+  snapshot!("Foo.Bar {}", parse_expr);
+  snapshot!("Foo.Bar { a: 0 }", parse_expr);
+  snapshot!("Foo.Bar { a: 0, }", parse_expr);
+  snapshot!("Foo.Bar { a: 0, b: 1 }", parse_expr);
+  snapshot!("Foo.Bar { a: 0, b: 1, }", parse_expr);
+  snapshot!("Foo.Bar.<int> {}", parse_expr);
+  snapshot!("Foo.Bar.<int> { a: 0 }", parse_expr);
+  snapshot!("Foo.Bar.<int> { a: 0, }", parse_expr);
+  snapshot!("Foo.Bar.<int> { a: 0, b: 1 }", parse_expr);
+  snapshot!("Foo.Bar.<int> { a: 0, b: 1, }", parse_expr);
+}
+
+#[test]
+fn parse_expr_prefix() {
+  snapshot!("-a", parse_expr);
+  snapshot!("!-a", parse_expr);
+  snapshot!("-!-a", parse_expr);
+}
+
+#[test]
+fn parse_expr_binary() {
+  snapshot!("a ?? b", parse_expr);
+  snapshot!("a || b", parse_expr);
+  snapshot!("a && b", parse_expr);
+  snapshot!("a == b != c", parse_expr);
+  snapshot!("a > b >= c < d <= e", parse_expr);
+  snapshot!("a - b + c", parse_expr);
+  snapshot!("a * b / c % d", parse_expr);
+  snapshot!("a ** b", parse_expr);
+}
+
+#[test]
+fn parse_expr_range() {
+  snapshot!("0..1", parse_expr);
+  snapshot!("a..b", parse_expr);
+  snapshot!("a+b..c+d", parse_expr);
+}
+
+#[test]
 fn parse_expr_assign() {
   snapshot!("a = b", parse_expr);
   snapshot!("a = b = c", parse_expr);
-  snapshot!("a = b = c", parse_expr);
-} */
+  snapshot!("a += b", parse_expr);
+  snapshot!("a -= b", parse_expr);
+  snapshot!("a /= b", parse_expr);
+  snapshot!("a *= b", parse_expr);
+  snapshot!("a %= b", parse_expr);
+  snapshot!("a **= b", parse_expr);
+  snapshot!("a ??= b", parse_expr);
+}
 
 #[test]
 fn parse_type_optional() {

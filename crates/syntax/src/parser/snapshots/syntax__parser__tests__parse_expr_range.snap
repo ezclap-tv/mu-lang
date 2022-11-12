@@ -1,0 +1,24 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    Range(
+        Range {
+            start: Literal(
+                Int(
+                    Int {
+                        value: 0,
+                    },
+                ),
+            ),
+            end: Literal(
+                Int(
+                    Int {
+                        value: 1,
+                    },
+                ),
+            ),
+        },
+    ),
+)

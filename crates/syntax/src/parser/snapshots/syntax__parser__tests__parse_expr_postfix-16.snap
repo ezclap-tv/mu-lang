@@ -1,0 +1,26 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    Cast(
+        Cast {
+            opt: true,
+            target: GetVar(
+                GetVar {
+                    name: "a",
+                },
+            ),
+            ty: Path(
+                Path {
+                    segments: [
+                        Segment {
+                            ident: "A",
+                            generic_args: [],
+                        },
+                    ],
+                },
+            ),
+        },
+    ),
+)

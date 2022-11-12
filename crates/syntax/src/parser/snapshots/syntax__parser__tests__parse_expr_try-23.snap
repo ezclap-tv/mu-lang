@@ -1,0 +1,61 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    Try(
+        Try {
+            body: Block {
+                items: [],
+                last: Some(
+                    Call(
+                        Call {
+                            opt: false,
+                            target: GetIndex(
+                                GetIndex {
+                                    opt: false,
+                                    target: GetField(
+                                        GetField {
+                                            opt: false,
+                                            target: GetVar(
+                                                GetVar {
+                                                    name: "a",
+                                                },
+                                            ),
+                                            key: "b",
+                                        },
+                                    ),
+                                    key: GetVar(
+                                        GetVar {
+                                            name: "c",
+                                        },
+                                    ),
+                                },
+                            ),
+                            args: [
+                                GetVar(
+                                    GetVar {
+                                        name: "d",
+                                    },
+                                ),
+                            ],
+                        },
+                    ),
+                ),
+            },
+            catch: (
+                "e",
+                Block {
+                    items: [],
+                    last: Some(
+                        GetVar(
+                            GetVar {
+                                name: "e",
+                            },
+                        ),
+                    ),
+                },
+            ),
+        },
+    ),
+)

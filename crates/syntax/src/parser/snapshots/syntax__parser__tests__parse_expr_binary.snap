@@ -1,0 +1,21 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    Binary(
+        Binary {
+            op: NullOr,
+            left: GetVar(
+                GetVar {
+                    name: "a",
+                },
+            ),
+            right: GetVar(
+                GetVar {
+                    name: "b",
+                },
+            ),
+        },
+    ),
+)

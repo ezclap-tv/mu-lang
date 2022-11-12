@@ -1,0 +1,23 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    SetVar(
+        SetVar {
+            name: "a",
+            value: SetVar(
+                SetVar {
+                    name: "b",
+                    value: GetVar(
+                        GetVar {
+                            name: "c",
+                        },
+                    ),
+                    op: None,
+                },
+            ),
+            op: None,
+        },
+    ),
+)

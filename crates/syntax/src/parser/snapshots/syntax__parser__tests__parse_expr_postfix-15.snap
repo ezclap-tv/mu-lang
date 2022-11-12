@@ -1,0 +1,35 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    Call(
+        Call {
+            opt: true,
+            target: Call(
+                Call {
+                    opt: true,
+                    target: GetVar(
+                        GetVar {
+                            name: "a",
+                        },
+                    ),
+                    args: [
+                        GetVar(
+                            GetVar {
+                                name: "b",
+                            },
+                        ),
+                    ],
+                },
+            ),
+            args: [
+                GetVar(
+                    GetVar {
+                        name: "c",
+                    },
+                ),
+            ],
+        },
+    ),
+)

@@ -1,0 +1,19 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    Spawn(
+        Call(
+            Call {
+                opt: false,
+                target: GetVar(
+                    GetVar {
+                        name: "f",
+                    },
+                ),
+                args: [],
+            },
+        ),
+    ),
+)

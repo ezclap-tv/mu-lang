@@ -1,0 +1,17 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    GetField(
+        GetField {
+            opt: true,
+            target: GetVar(
+                GetVar {
+                    name: "a",
+                },
+            ),
+            key: "b",
+        },
+    ),
+)

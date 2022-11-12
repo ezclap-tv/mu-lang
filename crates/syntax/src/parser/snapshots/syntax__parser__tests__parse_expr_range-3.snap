@@ -1,0 +1,40 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    Range(
+        Range {
+            start: Binary(
+                Binary {
+                    op: Add,
+                    left: GetVar(
+                        GetVar {
+                            name: "a",
+                        },
+                    ),
+                    right: GetVar(
+                        GetVar {
+                            name: "b",
+                        },
+                    ),
+                },
+            ),
+            end: Binary(
+                Binary {
+                    op: Add,
+                    left: GetVar(
+                        GetVar {
+                            name: "c",
+                        },
+                    ),
+                    right: GetVar(
+                        GetVar {
+                            name: "d",
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+)

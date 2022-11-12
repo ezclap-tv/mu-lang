@@ -1,0 +1,26 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    Lambda(
+        Lambda {
+            params: [
+                "a",
+                "b",
+            ],
+            body: Block {
+                items: [
+                    Expr(
+                        GetVar(
+                            GetVar {
+                                name: "a",
+                            },
+                        ),
+                    ),
+                ],
+                last: None,
+            },
+        },
+    ),
+)

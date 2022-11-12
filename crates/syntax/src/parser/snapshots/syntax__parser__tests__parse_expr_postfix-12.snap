@@ -1,0 +1,21 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    GetIndex(
+        GetIndex {
+            opt: true,
+            target: GetVar(
+                GetVar {
+                    name: "a",
+                },
+            ),
+            key: GetVar(
+                GetVar {
+                    name: "b",
+                },
+            ),
+        },
+    ),
+)

@@ -1,0 +1,104 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    If(
+        If {
+            branches: [
+                (
+                    Class(
+                        Class {
+                            target: Path {
+                                segments: [
+                                    Segment {
+                                        ident: "T",
+                                        generic_args: [],
+                                    },
+                                ],
+                            },
+                            fields: [
+                                (
+                                    "v",
+                                    If(
+                                        If {
+                                            branches: [
+                                                (
+                                                    Class(
+                                                        Class {
+                                                            target: Path {
+                                                                segments: [
+                                                                    Segment {
+                                                                        ident: "T",
+                                                                        generic_args: [],
+                                                                    },
+                                                                ],
+                                                            },
+                                                            fields: [],
+                                                        },
+                                                    ),
+                                                    Block {
+                                                        items: [],
+                                                        last: Some(
+                                                            Literal(
+                                                                Int(
+                                                                    Int {
+                                                                        value: 0,
+                                                                    },
+                                                                ),
+                                                            ),
+                                                        ),
+                                                    },
+                                                ),
+                                            ],
+                                            else_: Some(
+                                                Block {
+                                                    items: [],
+                                                    last: Some(
+                                                        Literal(
+                                                            Int(
+                                                                Int {
+                                                                    value: 1,
+                                                                },
+                                                            ),
+                                                        ),
+                                                    ),
+                                                },
+                                            ),
+                                        },
+                                    ),
+                                ),
+                            ],
+                        },
+                    ),
+                    Block {
+                        items: [],
+                        last: Some(
+                            Literal(
+                                Int(
+                                    Int {
+                                        value: 0,
+                                    },
+                                ),
+                            ),
+                        ),
+                    },
+                ),
+            ],
+            else_: Some(
+                Block {
+                    items: [],
+                    last: Some(
+                        Literal(
+                            Int(
+                                Int {
+                                    value: 1,
+                                },
+                            ),
+                        ),
+                    ),
+                },
+            ),
+        },
+    ),
+)

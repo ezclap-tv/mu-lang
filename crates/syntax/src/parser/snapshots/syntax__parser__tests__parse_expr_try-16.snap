@@ -1,0 +1,42 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    Try(
+        Try {
+            body: Block {
+                items: [
+                    Expr(
+                        GetVar(
+                            GetVar {
+                                name: "a",
+                            },
+                        ),
+                    ),
+                    Expr(
+                        GetVar(
+                            GetVar {
+                                name: "b",
+                            },
+                        ),
+                    ),
+                ],
+                last: None,
+            },
+            catch: (
+                "e",
+                Block {
+                    items: [],
+                    last: Some(
+                        GetVar(
+                            GetVar {
+                                name: "e",
+                            },
+                        ),
+                    ),
+                },
+            ),
+        },
+    ),
+)

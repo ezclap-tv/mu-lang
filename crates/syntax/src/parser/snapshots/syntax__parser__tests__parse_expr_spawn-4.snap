@@ -1,0 +1,29 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    Spawn(
+        Block(
+            Block {
+                items: [
+                    Expr(
+                        GetVar(
+                            GetVar {
+                                name: "a",
+                            },
+                        ),
+                    ),
+                    Expr(
+                        GetVar(
+                            GetVar {
+                                name: "b",
+                            },
+                        ),
+                    ),
+                ],
+                last: None,
+            },
+        ),
+    ),
+)
