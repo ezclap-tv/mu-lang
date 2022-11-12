@@ -125,13 +125,14 @@ stmt =
     | loop_inf
     ;
 
-    loop_for = "for" item:ident "in" iter:expr block ;
-    loop_while = "while" cond:expr block ;
+    loop_for = "for" item:ident "in" iter:expr_before_block block ;
+    loop_while = "while" cond:expr_before_block block ;
     loop_inf = "loop" block ;
 
   stmt_expr = expr ;
 
-
+(* this is used to disambiguate between `<expr> <block>` and `<expr_class>` *)
+expr_before_block = expr ;
 expr = expr_assign ;
   expr_assign =
     | assign_target ("=" | "+=" | "-=" | "/=" | "*=" | "%=" | "**=" | "??=") expr
@@ -154,15 +155,23 @@ expr = expr_assign ;
     expr_pow = expr_unary (("**") expr_unary)* ;
   expr_unary = expr_prefix | expr_postfix ;
     expr_prefix = ("-" | "!") expr_unary ;
-    expr_postfix = expr_primary (expr_call | expr_field | expr_index | expr_cast | expr_inst | expr_class)* ;
-      (* "?" means optional call, field access, or index *)
+    expr_postfix =
+      expr_primary (
+        | expr_call
+        | expr_field
+        | expr_index
+        | expr_cast
+        | expr_inst
+        | expr_class
+      )* ;
+      (* "?" means optional call, field access, index, or cast *)
       expr_call = "?"? "(" args:list{expr}? ")" ;
       expr_field = "?"? "." name:ident ;
       expr_index = "?"? "[" key:expr "]" ;
-      expr_cast = "." "(" ty:type ")" ;
+      expr_cast = "?"? "." "(" ty:type ")" ;
 
-      (** expr_class target must be `ident (expr_inst | expr_field)*` **)
       expr_inst = "." "<" list{type} ">" ;
+      (* expr_class is only valid in `expr_before_block` *)
       expr_class = "{" fields:list{ident ":" expr} "}" ;
   expr_primary =
     | expr_null
@@ -199,8 +208,8 @@ expr = expr_assign ;
     ;
   expr_do = "do" block ;
   expr_if =
-    "if" cond:expr if_body
-    ("else" "if" cond:expr if_body)*
+    "if" cond:expr_before_block if_body
+    ("else" "if" cond:expr_before_block if_body)*
     ("else" if_body)?
     ;
     if_body = 
@@ -215,10 +224,10 @@ expr = expr_assign ;
     | "spawn" fn:expr args:call
     ;
   expr_lambda =
-    "\\" $
+    "\\" (
     | param:ident
     | "(" params:list{ident} ")"
-    $ block
+    )? block
     ;
   expr_tuple = "(" ((expr ",")? | (expr ",")+ expr?) ")" ;
   expr_group = "(" expr ")" ;
