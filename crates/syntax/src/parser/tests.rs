@@ -32,6 +32,23 @@ macro_rules! snapshot {
 // TODO: test for errors
 
 #[test]
+fn parse_imports() {
+  snapshot!("use a;");
+  snapshot!("use a.b;");
+  snapshot!("use a.b.c;");
+  snapshot!("use a.{b, c};");
+  snapshot!("use a.{b.{c}, d.{e}};");
+  snapshot!("use {a.{b}, c.{d}};");
+
+  snapshot!("use a as x;");
+  snapshot!("use a.b as x;");
+  snapshot!("use a.b.c as x;");
+  snapshot!("use a.{b as x, c as y};");
+  snapshot!("use a.{b.{c as x}, d.{e as y}};");
+  snapshot!("use {a.{b as x}, c.{d as y}};");
+}
+
+#[test]
 fn parse_stmt_loop() {
   snapshot!("loop {}");
   snapshot!("loop { a(); b.d() }");

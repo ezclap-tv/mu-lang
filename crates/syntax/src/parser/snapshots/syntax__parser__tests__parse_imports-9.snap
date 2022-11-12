@@ -1,0 +1,27 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    Module {
+        imports: [
+            Import {
+                path: [
+                    "a",
+                    "b",
+                    "c",
+                ],
+                alias: Some(
+                    "x",
+                ),
+            },
+        ],
+        symbols: Symbols {
+            fns: {},
+            classes: {},
+            traits: {},
+            aliases: {},
+        },
+        top_level: [],
+    },
+)
