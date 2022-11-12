@@ -12,7 +12,6 @@ target/
 
 # Profiling and cargo-flamegraph output
 perf.data*
-*.svg
 *.zst
 
 # insta
