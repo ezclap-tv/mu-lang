@@ -414,13 +414,7 @@ impl<'a> Parser<'a> {
               expr.span.join(ty.span),
               expr::cast(opt, expr, ty.into_inner()),
             );
-          } else if self.current().is(Less) {
-            if opt {
-              return Err(Error::invalid_optional(
-                self.previous().span.join(self.current().span),
-              ));
-            }
-
+          } else if !opt && self.current().is(Less) {
             // expr_inst
             let args = self.span(|p| p.wrap_list(ANGLES, Comma, |p| p.span(Self::parse_type)))?;
             expr = Spanned::new(
@@ -434,13 +428,7 @@ impl<'a> Parser<'a> {
           }
         }
         // expr_class
-        BraceL if !self.ctx.expr_before_block => {
-          if opt {
-            return Err(Error::invalid_optional(
-              self.previous().span.join(self.current().span),
-            ));
-          }
-
+        BraceL if !opt && !self.ctx.expr_before_block => {
           let Some(target) = expr_class_target_to_path(&expr) else {
             return Err(Error::invalid_class_inst(expr.span))
           };
@@ -456,6 +444,11 @@ impl<'a> Parser<'a> {
             expr.span.join(fields.span),
             expr::class(target, fields.into_inner()),
           );
+        }
+        _ if opt => {
+          return Err(Error::invalid_optional(
+            self.previous().span.join(self.current().span),
+          ));
         }
         _ => break,
       }
