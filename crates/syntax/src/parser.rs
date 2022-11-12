@@ -148,15 +148,24 @@ impl<'a> Parser<'a> {
   }
 
   fn parse_stmt_loop_for(&mut self) -> Result<StmtKind<'a>, Error> {
-    todo!()
+    use TokenKind::In;
+
+    let item = self.parse_ident()?;
+    self.expect(In)?;
+    let iter = self.span(Self::parse_expr_before_block)?;
+    let body = self.parse_block()?;
+    Ok(stmt::for_(item, iter, body))
   }
 
   fn parse_stmt_loop_while(&mut self) -> Result<StmtKind<'a>, Error> {
-    todo!()
+    let cond = self.span(Self::parse_expr_before_block)?;
+    let body = self.parse_block()?;
+    Ok(stmt::while_(cond, body))
   }
 
   fn parse_stmt_loop_inf(&mut self) -> Result<StmtKind<'a>, Error> {
-    todo!()
+    let body = self.parse_block()?;
+    Ok(stmt::loop_(body))
   }
 
   fn parse_stmt_let(&mut self) -> Result<StmtKind<'a>, Error> {
@@ -520,6 +529,7 @@ impl<'a> Parser<'a> {
       if self.bump_if(Semicolon) {
         // array_copy
         let n = self.span(Self::parse_expr)?;
+        self.expect(BracketR)?;
         return Ok(expr::array_copy(item, n));
       }
 
