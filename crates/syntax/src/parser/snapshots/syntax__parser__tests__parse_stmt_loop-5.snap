@@ -1,0 +1,46 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    Module {
+        imports: [],
+        symbols: Symbols {
+            fns: {},
+            classes: {},
+            traits: {},
+            aliases: {},
+        },
+        top_level: [
+            Loop(
+                For(
+                    For {
+                        item: "_",
+                        iter: Range(
+                            Range {
+                                start: Literal(
+                                    Int(
+                                        Int {
+                                            value: 0,
+                                        },
+                                    ),
+                                ),
+                                end: Literal(
+                                    Int(
+                                        Int {
+                                            value: 10,
+                                        },
+                                    ),
+                                ),
+                            },
+                        ),
+                        body: Block {
+                            items: [],
+                            last: None,
+                        },
+                    },
+                ),
+            ),
+        ],
+    },
+)

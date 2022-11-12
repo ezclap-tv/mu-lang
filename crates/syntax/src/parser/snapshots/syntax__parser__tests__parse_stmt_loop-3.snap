@@ -1,0 +1,38 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    Module {
+        imports: [],
+        symbols: Symbols {
+            fns: {},
+            classes: {},
+            traits: {},
+            aliases: {},
+        },
+        top_level: [
+            Loop(
+                While(
+                    While {
+                        cond: GetField(
+                            GetField {
+                                opt: false,
+                                target: GetVar(
+                                    GetVar {
+                                        name: "a",
+                                    },
+                                ),
+                                key: "b",
+                            },
+                        ),
+                        body: Block {
+                            items: [],
+                            last: None,
+                        },
+                    },
+                ),
+            ),
+        ],
+    },
+)

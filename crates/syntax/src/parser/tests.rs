@@ -3,25 +3,23 @@ use super::*;
 macro_rules! parser {
   ($src:expr) => {{
     let lexer = Lexer::new($src);
-    let mut parser = Parser {
+    Parser {
       lexer,
       module: Module::default(),
       errors: Vec::default(),
       ctx: Context::default(),
-    };
-    parser.bump();
-    parser
+    }
   }};
 }
 
 macro_rules! snapshot {
   ($src:expr) => {
-    let mut parser = parser!($src);
-    let result = parser.parse();
+    let result = parser!($src).parse();
     insta::assert_debug_snapshot!(result);
   };
   ($src:expr, $entry:ident) => {{
     let mut parser = parser!($src);
+    parser.bump();
     let result = parser.$entry();
     if !parser.errors.is_empty() {
       insta::assert_debug_snapshot!(parser.errors);
@@ -32,6 +30,33 @@ macro_rules! snapshot {
 }
 
 // TODO: test for errors
+
+#[test]
+fn parse_stmt_loop() {
+  snapshot!("loop {}");
+  snapshot!("loop { a(); b.d() }");
+
+  snapshot!("while a.b {}");
+  snapshot!("while a.b { a(); b.d() }");
+
+  snapshot!("for _ in 0..10 {}");
+  snapshot!("for _ in 0..10 { a(); b.d() }");
+}
+
+#[test]
+fn parse_stmt_let() {
+  snapshot!("let v = null;");
+  snapshot!("let v = 0;");
+  snapshot!("let v = 0.0;");
+  snapshot!("let v = true;");
+  snapshot!("let v = \"test\";");
+  snapshot!("let v = (v,);");
+  snapshot!("let v = (v, v);");
+  snapshot!("let v = [];");
+  snapshot!("let v = [v, v, v, v];");
+  snapshot!("let v = [v; 1024];");
+  snapshot!("let v = v[0..512];");
+}
 
 #[test]
 fn parse_expr_literal() {
