@@ -266,7 +266,7 @@ pub enum TokenKind {
   #[regex("0x[0-9a-fA-F]([0-9a-fA-F_]*[0-9a-fA-F])?")]
   Int,
   #[token("inf")]
-  #[regex(r"[0-9]+(\.[0-9]*)?([Ee][+-]?[0-9]+)?")]
+  #[regex(r"[0-9]+(\.[0-9]+)?([Ee][+-]?[0-9]+)?")]
   Float,
   #[regex(r#""([^"\\]|\\.)*""#)]
   String,
