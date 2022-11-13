@@ -1,4 +1,4 @@
-se module;
+use module;
 use module.A;
 use module.{A, B};
 

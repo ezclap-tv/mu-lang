@@ -23,7 +23,7 @@ name ??= 1;
 2 >= 2;
 2 < 2;
 2 <= 2;
--2
+-2;
 !true;
 true && true;
 false || true;

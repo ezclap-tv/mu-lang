@@ -6,9 +6,6 @@ let v = 0.0;
 let v = true;
 
 let v = "test";
-let v = "formatted {v}"; // string formatting
-let v = "escaped curlies \{v}"; // exact value is `escaped curlies {v}`
-let v = "\x2800";
 
 let v = (v,);
 let v = (v, v);

@@ -10,20 +10,18 @@ fn name[T, E](a: A, b: B, c: C) -> T
 {
 }
 
-let square = \x {x*x}
+let square = \x {x*x};
 
 fn fib(n: int): int {
   if n < 2 { n }
-  else n * fib(n - 1)
+  else { n * fib(n - 1) }
 }
 
 fn test() {
   if something() { return }
-  print("yo")
+  print("yo");
 }
 
+fn apply(f, n) { f(n) }
 
-fn foo(n) {
-  n * 2
-}
-foo(10)
+foo(square, 10);

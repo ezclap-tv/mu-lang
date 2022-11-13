@@ -23,19 +23,19 @@ class List[T] {
   head: Node[T]?;
 
   fn new() -> Self {
-    List(head: null);
+    List { head: null };
   }
 
   fn prepend(self, value: T) {
     let next = self.head;
-    self.head = Node(value);
+    self.head = Node { value };
     self.head.next = next;
   }
 
   impl Iterate {
     type Iter = ListIter[T];
     fn iter(self) -> Iter {
-      ListIter(node: self.head)
+      ListIter { node: self.head }
     }
   }
 }
@@ -75,23 +75,23 @@ trait Sub[Rhs = Self] {
 
 class Complex {
   real: int;
-  iota: int;
+  imag: int;
 
   impl Add {
     fn add(self, rhs: Self) -> Output {
-      Complex(
+      Complex {
         real: self.real + rhs.real,
-        iota: self.iota + rhs.iota
-      )
+        imag: self.imag + rhs.imag
+      }
     }
   }
 
   impl Sub {
     fn sub(self, rhs: Self) -> Output {
-      Complex(
+      Complex {
         real: self.real - rhs.real,
-        iota: self.iota - rhs.iota
-      )
+        imag: self.imag - rhs.imag
+      }
     }
   }
 }
