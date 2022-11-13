@@ -23,10 +23,6 @@ let v = true;
 
 // v : string
 let v = "test";
-let v = "formatted {v}"; // string formatting
-let v = "escaped curlies \{v}"; // exact value is `escaped curlies {v}`
-// strings also support other escaped charaters such as `\n`, `\t`, `\x2800`, etc.
-let v = "\x2800";
 
 // v : (T,)
 let v = (v,);
@@ -71,7 +67,7 @@ Operators
 2 >= 2;
 2 < 2;
 2 <= 2;
--2
+-2;
 !true;
 true && true;
 false || true;
@@ -108,6 +104,7 @@ f?["key"]; // optional index (won't index if `f` is null)
 
 class Data { a: int; b: str; }
 
+// type cast
 let v = Json.parse("{\"a\":0, \"b\":\"test\"}").(Data);
 ```
 
@@ -118,52 +115,40 @@ if a() { /*...*/ }
 else if b() { /*...*/ }
 else { /*...*/ }
 
-// both of the above are expressions:
-// the last expression in the body is the result
-let v0 = if v { "a" } else { "c" }
-
-// you can use control statements without braces in `if` statements
-if true return
-if true throw
-if true break
-if true continue
-if true for ...
-if true while ...
-if true loop ...
-
 {
-  let x = 0
+  let x = 0;
 } // x is not accessible after this point
 
-// value of a `do` block is the last expression in the body
-let v = do {
-  let x = 0
-  x
-}
+// the last expression in the body is the result
+let v0 = if v { "a" } else { "c" };
+// same for `do`:
+let v = do { 0 };
+// and `try`, which is introduced later:
+let v = try { a() } catch (_) { b };
+// `b` is returned if an exception is thrown from the call to `a`
 ```
 
 Loops (for, while, loop), continue/break
 
 ```rust
 for item in iterator { /*...*/ }
-
 while condition() { /*...*/ }
 loop { /*...*/ }
 
 for i in 0..10 {
-  print(i)
+  print(i);
 }
 
-let v = 10
+let v = 10;
 while v >= 0 {
-  print(v)
-  v -= 1
+  print(v);
+  v -= 1;
 }
 
-let v = 0
+let v = 0;
 loop {
-  if v == 5 break
-  v += 1
+  if v == 5 { break }
+  v += 1;
 }
 ```
 
@@ -184,26 +169,25 @@ fn name[T, E](a: A, b: B, c: C) -> T
 }
 
 // anonymous function
-let square = \x {x*x}
+let square = \x {x*x};
 
 fn fib(n: int): int {
   if n < 2 { n }
-  else n * fib(n - 1)
+  else { n * fib(n - 1) }
 }
 
 // return may be used to return early
 fn test() {
   if something() { return }
-  print("yo")
+  print("yo");
 }
 
 // functions may also be written using dynamic typing
 // equivalent to:
-// fn foo(n: any) -> any { n * 2 }
-fn foo(n) {
-  n * 2
-}
-foo(10)
+// fn foo(f: any, n: any) -> any { f(n) }
+fn apply(f, n) { f(n) }
+
+foo(square, 10);
 ```
 
 Classes, traits
@@ -232,19 +216,19 @@ class List[T] {
   head: Node[T]?;
 
   fn new() -> Self {
-    List(head: null);
+    List { head: null };
   }
 
   fn prepend(self, value: T) {
     let next = self.head;
-    self.head = Node(value);
+    self.head = Node { value };
     self.head.next = next;
   }
 
   impl Iterate {
     type Iter = ListIter[T];
     fn iter(self) -> Iter {
-      ListIter(node: self.head)
+      ListIter { node: self.head }
     }
   }
 }
@@ -284,23 +268,23 @@ trait Sub[Rhs = Self] {
 
 class Complex {
   real: int;
-  iota: int;
+  imag: int;
 
   impl Add {
     fn add(self, rhs: Self) -> Output {
-      Complex(
+      Complex {
         real: self.real + rhs.real,
-        iota: self.iota + rhs.iota
-      )
+        imag: self.imag + rhs.imag
+      }
     }
   }
 
   impl Sub {
     fn sub(self, rhs: Self) -> Output {
-      Complex(
+      Complex {
         real: self.real - rhs.real,
-        iota: self.iota - rhs.iota
-      )
+        imag: self.imag - rhs.imag
+      }
     }
   }
 }
@@ -317,20 +301,16 @@ fn f() {
   throw A()
 }
 
-let v = try f() {
-  A => ...,
-  B => ...,
-  C => ...,
+let v = try f() catch (e) {
+  /* ... */
 }
 
 try {
   a();
   b();
   c();
-} catch {
-  A => ...
-  B => ...
-  C => ...
+} catch (e) {
+  /* ... */
 }
 ```
 
