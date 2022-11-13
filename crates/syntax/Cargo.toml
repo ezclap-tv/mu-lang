@@ -11,8 +11,3 @@ insta = "1.21.0"
 logos = "0.12.1"
 serde = { version = "1.0.147", features = ["derive"] }
 thiserror = "1.0.37"
-
-[profile.dev.package.insta]
-opt-level = 3
-[profile.dev.package.similar]
-opt-level = 3

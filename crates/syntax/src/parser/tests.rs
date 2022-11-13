@@ -17,10 +17,10 @@ macro_rules! snapshot {
     let result = parser!($src).parse();
     insta::assert_debug_snapshot!(result);
   };
-  ($src:expr, $entry:ident) => {{
+  ($src:expr, $method:ident) => {{
     let mut parser = parser!($src);
     parser.bump();
-    let result = parser.$entry();
+    let result = parser.$method();
     if !parser.errors.is_empty() {
       insta::assert_debug_snapshot!(parser.errors);
     } else {

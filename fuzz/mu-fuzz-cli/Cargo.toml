@@ -1,0 +1,23 @@
+[package]
+name = "mu-fuzz-cli"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+
+[dependencies]
+clap = { version = "4.0.23", features = ["derive"] }
+thiserror = "1.0.37"
+anyhow = "1.0.66"
+shell-escape = "0.1.5"
+num_cpus = "1.14.0"
+clearscreen = { version = "1.0.10", features = ["windows-console"]}
+
+[dependencies.syntax]
+path = "../../crates/syntax"
+
+[target.'cfg(not(windows))'.dependencies]
+libc = "0.2.137"
+
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["winuser"] }
