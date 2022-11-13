@@ -618,6 +618,7 @@ impl<'a> Parser<'a> {
       return Ok(expr::break_());
     }
 
+    // TODO: drop the `do` keyword and rename to `expr_block`
     // expr_do
     if self.bump_if(Do) {
       let block = self.parse_block()?;
@@ -629,6 +630,8 @@ impl<'a> Parser<'a> {
       let mut branches = vec![];
       let mut else_ = None;
 
+      // TODO: make block optional for keyword-prefixed nodes:
+      // return, throw, break, continue, for, while, loop, try, spawn
       // if
       branches.push((
         self.span(Self::parse_expr_before_block)?,
