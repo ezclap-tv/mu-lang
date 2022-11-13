@@ -16,3 +16,7 @@ perf.data*
 
 # insta
 *.snap.new
+
+fuzz/libfuzzer/corpus
+fuzz/libfuzzer/artifacts
+fuzz/afl/artifacts

@@ -1,0 +1,30 @@
+[package]
+name = "mu-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2021"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+
+[dependencies.syntax]
+path = "../../crates/syntax"
+
+# Prevent this from interfering with workspaces
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "lexer_from_bytes"
+path = "fuzz_targets/lexer_from_bytes.rs"
+test = false
+doc = false
+
+[[bin]]
+name = "parser_from_bytes"
+path = "fuzz_targets/parser_from_bytes.rs"
+test = false
+doc = false

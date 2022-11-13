@@ -99,20 +99,20 @@ impl<'a> Parser<'a> {
     Ok(())
   }
 
-  fn parse_decl_fn(&mut self, is_pub: bool) -> Result<(), Error> {
-    todo!()
+  fn parse_decl_fn(&mut self, _is_pub: bool) -> Result<(), Error> {
+    Err(Error::NotImplemented("function declarations"))
   }
 
-  fn parse_decl_type(&mut self, is_pub: bool) -> Result<(), Error> {
-    todo!()
+  fn parse_decl_type(&mut self, _is_pub: bool) -> Result<(), Error> {
+    Err(Error::NotImplemented("type declarations"))
   }
 
-  fn parse_decl_class(&mut self, is_pub: bool) -> Result<(), Error> {
-    todo!()
+  fn parse_decl_class(&mut self, _is_pub: bool) -> Result<(), Error> {
+    Err(Error::NotImplemented("class declarations"))
   }
 
-  fn parse_decl_trait(&mut self, is_pub: bool) -> Result<(), Error> {
-    todo!()
+  fn parse_decl_trait(&mut self, _is_pub: bool) -> Result<(), Error> {
+    Err(Error::NotImplemented("trait declarations"))
   }
 
   fn parse_import(&mut self) -> Result<(), Error> {
@@ -1203,6 +1203,9 @@ pub enum Error {
   ParseInt(Span, #[source] std::num::ParseIntError),
   #[error("failed to parse float at {0}: {1}")]
   ParseFloat(Span, #[source] std::num::ParseFloatError),
+  // NOTE: temporary error to avoid false-positives while fuzzing.
+  #[error("parsing {0} is not yet implemented")]
+  NotImplemented(&'static str),
 }
 
 impl Error {
