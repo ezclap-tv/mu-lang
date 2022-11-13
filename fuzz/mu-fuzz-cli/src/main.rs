@@ -96,15 +96,15 @@ enum Command {
 
 #[derive(Debug, Error)]
 pub enum Error {
-  #[error("Given input file does not exist: {0}")]
+  #[error("given input file does not exist: {0}")]
   InputNotFound(std::path::PathBuf),
-  #[error("Expected a file, but received a directory: {0}")]
+  #[error("expected a file, but received a directory: {0}")]
   DirectoryInput(std::path::PathBuf),
-  #[error("Failed to read the input file: {0}")]
+  #[error("failed to read the input file: {0}")]
   BadInput(#[from] std::io::Error),
-  #[error("The requested fuzzing backend {0:?} is not available")]
+  #[error("the requested fuzzing backend {0:?} is not available")]
   BackendUnavailable(Backend),
-  #[error("Failed to check the backend: {0}")]
+  #[error("failed to check the backend: {0}")]
   BackendCheckFailed(#[source] crate::process::ProcessError),
 }
 
@@ -151,35 +151,32 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn print_info(list_targets: bool, list_backends: bool) {
   if list_backends {
     println!("Fuzzing backends:");
-    Backend::value_variants()
+    for (i, v) in Backend::value_variants()
       .iter()
       // Temporary excluding, because AFL requires some manual tinkering on Linux
       .filter(|b| **b != Backend::Afl)
       .enumerate()
-      .for_each(|(i, v)| {
-        let (package, name) = match v {
-          Backend::Afl => ("afl", "AFL"),
-          Backend::Libfuzzer => ("cargo-fuzz", "libFuzzer"),
-        };
-        println!(
-          "{}. {} ({} via {})",
-          i + 1,
-          v.to_possible_value()
-            .expect("We're don't have any skipped variants, so this will never fail")
-            .get_name(),
-          name,
-          package
-        );
-      });
+    {
+      let (package, name) = match v {
+        Backend::Afl => ("afl", "AFL"),
+        Backend::Libfuzzer => ("cargo-fuzz", "libFuzzer"),
+      };
+      println!(
+        "{}. {} ({} via {})",
+        i + 1,
+        v.to_possible_value()
+          .expect("We're don't have any skipped variants, so this will never fail")
+          .get_name(),
+        name,
+        package
+      );
+    }
   }
   if list_targets {
     println!("Fuzzing targets:");
-    Target::value_variants()
-      .iter()
-      .enumerate()
-      .for_each(|(i, target)| {
-        println!("{}. {} ({})", i + 1, target.option(), target.description());
-      })
+    for (i, target) in Target::value_variants().iter().enumerate() {
+      println!("{}. {} ({})", i + 1, target.option(), target.description());
+    }
   }
 }
 

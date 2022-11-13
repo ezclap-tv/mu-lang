@@ -3,29 +3,27 @@ use std::time::SystemTime;
 
 use clap::ValueEnum;
 
-use crate::process::ProcessError;
+use crate::process::{ProcessBuilder, ProcessError};
 
 pub fn run(target: crate::Target, cpus: Option<usize>) -> Result<(), crate::Error> {
   let target_name = target.dir();
   let module = target.module();
+  let cpus = cpus.unwrap_or_else(num_cpus::get_physical);
 
-  let mut command = crate::process::ProcessBuilder::new("cargo");
-  command.cwd(get_cwd());
+  let mut command = ProcessBuilder::new("cargo");
   command
+    .cwd(get_libfuzzer_dir())
     .arg("fuzz")
     .arg("run")
-    .arg(&target_name)
+    .arg(target_name)
     .args(&["--fuzz-dir", "."])
-    .args(&[
-      "-j",
-      &cpus.unwrap_or_else(|| num_cpus::get_physical()).to_string(),
-    ]);
+    .args(&["-j", &cpus.to_string()]);
 
   // NOTE: Tracking the time like this can technically prevent us from finding the
   // most recent crash, because the system clock may arbitrarily change
   // while the fuzzer is running (for example, due to NTP or the user adjusting
   // their system time).
-  let start_time = std::time::SystemTime::now();
+  let start_time = SystemTime::now();
   match command.exec() {
     Ok(()) => {}
     Err(e) => {
@@ -54,41 +52,36 @@ pub fn run(target: crate::Target, cpus: Option<usize>) -> Result<(), crate::Erro
 }
 
 fn find_most_recent_crash(target_name: &str, start_time: Option<SystemTime>) -> Option<PathBuf> {
-  let target_artifacts = get_cwd().join("artifacts").join(target_name);
+  let target_artifacts = get_libfuzzer_dir().join("artifacts").join(target_name);
   if !target_artifacts.exists() || !target_artifacts.is_dir() {
     return None;
   }
 
+  let start_time = &start_time.unwrap_or(SystemTime::UNIX_EPOCH);
+
   let crashes = std::fs::read_dir(&target_artifacts)
     .ok()?
-    .filter_map(Result::ok)
     .filter_map(|entry| {
-      entry
-        .metadata()
-        .and_then(|m| m.modified())
-        .ok()
-        .map(|m| (entry, m))
+      let entry = entry.ok()?;
+      let metadata = entry.metadata().ok()?;
+      let modified = metadata.modified().ok()?;
+      Some((entry, modified))
     })
-    .filter(|(_, last_modified)| {
-      start_time
-        .as_ref()
-        .map(|t| last_modified >= t)
-        .unwrap_or(true)
-    })
-    .max_by_key(|(_, last_modified)| *last_modified);
+    .filter(|(_, last_modified)| last_modified >= start_time);
 
-  crashes.map(|(entry, _)| entry.path())
+  crashes
+    .max_by_key(|(_, last_modified)| *last_modified)
+    .map(|(entry, _)| entry.path())
 }
 
-fn get_cwd() -> PathBuf {
-  static PKG_DIR: &'static str = env!("CARGO_MANIFEST_DIR");
+fn get_libfuzzer_dir() -> PathBuf {
+  static MANIFEST_DIR: &str = env!("CARGO_MANIFEST_DIR");
 
-  let libfuzzer_dir = Path::new(PKG_DIR).parent().map(|p| p.join("libfuzzer"));
-  match libfuzzer_dir {
-    Some(d) => d,
-    None => panic!(
-      "Failed to detect the libfuzzer directory relatively to {}",
-      PKG_DIR
-    ),
-  }
+  let Some(project_root) = Path::new(MANIFEST_DIR).parent() else {
+    panic!(
+      "Failed to detect the libfuzzer directory relative to {}",
+      MANIFEST_DIR
+    )
+  };
+  project_root.join("libfuzzer")
 }
