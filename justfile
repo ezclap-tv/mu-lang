@@ -10,4 +10,4 @@ set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
 
 # Print the available fuzz targets and backends.
 @fuzz-targets:
-  RUST_BACKTRACE=1 cargo run --quiet --bin mu-fuzz-cli info --list-backends --list-targets
+  cargo run --quiet --bin mu-fuzz-cli info --list-backends --list-targets

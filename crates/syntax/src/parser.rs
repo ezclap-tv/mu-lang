@@ -170,7 +170,7 @@ impl<'a> Parser<'a> {
       self.expect(Semicolon)?;
       stmt
     } else {
-      let stmt = self.parse_stmt_expr();
+      let stmt = self.parse_stmt_expr()?;
       // semicolon after expr stmt is only required if the expr does not end with `}`,
       // for example:
       // if true { "a" } else { "b" } // not required
@@ -180,7 +180,7 @@ impl<'a> Parser<'a> {
       } else {
         self.bump_if(Semicolon);
       }
-      stmt
+      Ok(stmt)
     }
   }
 
@@ -508,6 +508,7 @@ impl<'a> Parser<'a> {
       Float, Ident, If, Int, Lambda, Null, ParenL, ParenR, Return, Semicolon, Spawn, String, Throw,
       Try,
     };
+    check_recursion_limit(self.current().span)?;
 
     // expr_null
     if self.bump_if(Null) {
@@ -737,6 +738,7 @@ impl<'a> Parser<'a> {
   // `"{" (stmt ";")* expr? "}"
   fn parse_block(&mut self) -> Result<Block<'a>, Error> {
     use TokenKind::{BraceL, BraceR, For, Let, Loop, Semicolon, While};
+    check_recursion_limit(self.current().span)?;
 
     let mut block = Block {
       items: vec![],
@@ -774,6 +776,7 @@ impl<'a> Parser<'a> {
   }
 
   fn parse_type(&mut self) -> Result<TypeKind<'a>, Error> {
+    check_recursion_limit(self.current().span)?;
     self.parse_type_option()
   }
 
@@ -1047,6 +1050,42 @@ impl<'a> Parser<'a> {
   }
 }
 
+// On average, a single parse_XXX() method consumes between 10 and 700 bytes of
+// stack space. Assuming ~50 recursive calls per dive and 700 bytes of stack
+// space per call, we'll require 50 * 700 = 35k bytes of stack space in order
+// to dive. For future proofing, we round this value up to 64k bytes.
+const MINIMUM_STACK_REQUIRED: usize = 64_000;
+
+// On WASM, remaining_stack() will always return None. Stack overflow panics
+// are converted to exceptions and handled by the host, which means a
+// `try { ... } catch { ... }` around a call to one of the Mu compiler functions
+// would be enough.
+#[cfg(target_family = "wasm")]
+fn check_recursion_limit(_span: Span) -> Result<(), Error> {
+  Ok(())
+}
+
+#[cfg(not(target_family = "wasm"))]
+fn check_recursion_limit(span: Span) -> Result<(), Error> {
+  // On the platforms we're targeting (linux, windows, osx), remaining_stack()
+  // should always return Some, so we'll able to bail out if an overflow is
+  // likely. On all other platforms, we'll continue parsing, but warn the user
+  // at compile time.
+  #[cfg(not(any(target_os = "linux", target_os = "windows", target_os = "macos")))]
+  {
+    const WARNING: &str = "The detected platform is neither Linux, Windows, MacOS, or WASM, which means that the parser may panic on stack overflow. Use with care.";
+  }
+
+  if stacker::remaining_stack()
+    .map(|available| available > MINIMUM_STACK_REQUIRED)
+    .unwrap_or(true)
+  {
+    Ok(())
+  } else {
+    Err(Error::NestingLimitReached(span))
+  }
+}
+
 // Adapted from https://docs.rs/snailquote/0.3.0/x86_64-pc-windows-msvc/src/snailquote/lib.rs.html.
 /// Unescapes the given string in-place. Returns `None` if the string contains
 /// an invalid escape sequence.
@@ -1209,6 +1248,8 @@ pub enum Error {
   // NOTE: temporary error to avoid false-positives while fuzzing.
   #[error("parsing {0} is not yet implemented")]
   NotImplemented(&'static str),
+  #[error("the maximum amount of nesting has been reached")]
+  NestingLimitReached(Span),
 }
 
 impl Error {
