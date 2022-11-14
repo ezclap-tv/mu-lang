@@ -12,48 +12,32 @@ Ok(
             aliases: {},
         },
         top_level: [
-            Loop(
-                Inf(
-                    Inf {
-                        body: Block {
-                            items: [
-                                Expr(
-                                    Call(
-                                        Call {
-                                            opt: false,
-                                            target: GetVar(
-                                                GetVar {
-                                                    name: "a",
-                                                },
-                                            ),
-                                            args: [],
-                                        },
-                                    ),
-                                ),
-                            ],
-                            last: Some(
-                                Call(
-                                    Call {
-                                        opt: false,
-                                        target: GetField(
-                                            GetField {
-                                                opt: false,
-                                                target: GetVar(
-                                                    GetVar {
-                                                        name: "b",
-                                                    },
-                                                ),
-                                                key: "d",
-                                            },
-                                        ),
-                                        args: [],
-                                    },
-                                ),
-                            ),
+            InfLoop {
+                body: Block {
+                    items: [
+                        Call {
+                            opt: false,
+                            target: GetVar {
+                                name: "a",
+                            },
+                            args: [],
                         },
-                    },
-                ),
-            ),
+                    ],
+                    last: Some(
+                        Call {
+                            opt: false,
+                            target: GetField {
+                                opt: false,
+                                target: GetVar {
+                                    name: "b",
+                                },
+                                key: "d",
+                            },
+                            args: [],
+                        },
+                    ),
+                },
+            },
         ],
     },
 )

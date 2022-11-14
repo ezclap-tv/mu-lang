@@ -3,39 +3,25 @@ source: crates/syntax/src/parser/tests.rs
 expression: result
 ---
 Ok(
-    Binary(
-        Binary {
-            op: Remainder,
-            left: Binary(
-                Binary {
-                    op: Divide,
-                    left: Binary(
-                        Binary {
-                            op: Multiply,
-                            left: GetVar(
-                                GetVar {
-                                    name: "a",
-                                },
-                            ),
-                            right: GetVar(
-                                GetVar {
-                                    name: "b",
-                                },
-                            ),
-                        },
-                    ),
-                    right: GetVar(
-                        GetVar {
-                            name: "c",
-                        },
-                    ),
+    Binary {
+        op: Remainder,
+        left: Binary {
+            op: Divide,
+            left: Binary {
+                op: Multiply,
+                left: GetVar {
+                    name: "a",
                 },
-            ),
-            right: GetVar(
-                GetVar {
-                    name: "d",
+                right: GetVar {
+                    name: "b",
                 },
-            ),
+            },
+            right: GetVar {
+                name: "c",
+            },
         },
-    ),
+        right: GetVar {
+            name: "d",
+        },
+    },
 )

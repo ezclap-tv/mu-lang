@@ -12,67 +12,41 @@ Ok(
             aliases: {},
         },
         top_level: [
-            Loop(
-                For(
-                    For {
-                        item: "_",
-                        iter: Range(
-                            Range {
-                                start: Literal(
-                                    Int(
-                                        Int {
-                                            value: 0,
-                                        },
-                                    ),
-                                ),
-                                end: Literal(
-                                    Int(
-                                        Int {
-                                            value: 10,
-                                        },
-                                    ),
-                                ),
-                            },
-                        ),
-                        body: Block {
-                            items: [
-                                Expr(
-                                    Call(
-                                        Call {
-                                            opt: false,
-                                            target: GetVar(
-                                                GetVar {
-                                                    name: "a",
-                                                },
-                                            ),
-                                            args: [],
-                                        },
-                                    ),
-                                ),
-                            ],
-                            last: Some(
-                                Call(
-                                    Call {
-                                        opt: false,
-                                        target: GetField(
-                                            GetField {
-                                                opt: false,
-                                                target: GetVar(
-                                                    GetVar {
-                                                        name: "b",
-                                                    },
-                                                ),
-                                                key: "d",
-                                            },
-                                        ),
-                                        args: [],
-                                    },
-                                ),
-                            ),
-                        },
+            For {
+                item: "_",
+                iter: Range {
+                    start: Int {
+                        value: 0,
                     },
-                ),
-            ),
+                    end: Int {
+                        value: 10,
+                    },
+                },
+                body: Block {
+                    items: [
+                        Call {
+                            opt: false,
+                            target: GetVar {
+                                name: "a",
+                            },
+                            args: [],
+                        },
+                    ],
+                    last: Some(
+                        Call {
+                            opt: false,
+                            target: GetField {
+                                opt: false,
+                                target: GetVar {
+                                    name: "b",
+                                },
+                                key: "d",
+                            },
+                            args: [],
+                        },
+                    ),
+                },
+            },
         ],
     },
 )

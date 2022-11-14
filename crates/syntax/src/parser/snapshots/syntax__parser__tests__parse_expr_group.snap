@@ -3,11 +3,7 @@ source: crates/syntax/src/parser/tests.rs
 expression: result
 ---
 Ok(
-    Literal(
-        Int(
-            Int {
-                value: 0,
-            },
-        ),
-    ),
+    Int {
+        value: 0,
+    },
 )

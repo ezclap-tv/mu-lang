@@ -3,24 +3,18 @@ source: crates/syntax/src/parser/tests.rs
 expression: result
 ---
 Ok(
-    Cast(
-        Cast {
-            opt: false,
-            target: GetVar(
-                GetVar {
-                    name: "a",
-                },
-            ),
-            ty: Path(
-                Path {
-                    segments: [
-                        Segment {
-                            ident: "A",
-                            generic_args: [],
-                        },
-                    ],
-                },
-            ),
+    Cast {
+        opt: false,
+        target: GetVar {
+            name: "a",
         },
-    ),
+        ty: Path {
+            segments: [
+                Segment {
+                    ident: "A",
+                    generic_args: [],
+                },
+            ],
+        },
+    },
 )

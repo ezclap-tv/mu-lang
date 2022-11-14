@@ -12,27 +12,19 @@ Ok(
             aliases: {},
         },
         top_level: [
-            Loop(
-                While(
-                    While {
-                        cond: GetField(
-                            GetField {
-                                opt: false,
-                                target: GetVar(
-                                    GetVar {
-                                        name: "a",
-                                    },
-                                ),
-                                key: "b",
-                            },
-                        ),
-                        body: Block {
-                            items: [],
-                            last: None,
-                        },
+            While {
+                cond: GetField {
+                    opt: false,
+                    target: GetVar {
+                        name: "a",
                     },
-                ),
-            ),
+                    key: "b",
+                },
+                body: Block {
+                    items: [],
+                    last: None,
+                },
+            },
         ],
     },
 )

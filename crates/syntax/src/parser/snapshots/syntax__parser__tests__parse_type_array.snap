@@ -3,18 +3,14 @@ source: crates/syntax/src/parser/tests.rs
 expression: result
 ---
 Ok(
-    Array(
-        Array {
-            item: Path(
-                Path {
-                    segments: [
-                        Segment {
-                            ident: "T",
-                            generic_args: [],
-                        },
-                    ],
+    Array {
+        item: Path {
+            segments: [
+                Segment {
+                    ident: "T",
+                    generic_args: [],
                 },
-            ),
+            ],
         },
-    ),
+    },
 )

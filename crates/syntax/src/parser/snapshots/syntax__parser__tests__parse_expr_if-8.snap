@@ -3,71 +3,49 @@ source: crates/syntax/src/parser/tests.rs
 expression: result
 ---
 Ok(
-    If(
-        If {
-            branches: [
-                (
-                    Call(
-                        Call {
+    If {
+        branches: [
+            (
+                Call {
+                    opt: false,
+                    target: GetIndex {
+                        opt: false,
+                        target: GetField {
                             opt: false,
-                            target: GetIndex(
-                                GetIndex {
-                                    opt: false,
-                                    target: GetField(
-                                        GetField {
-                                            opt: false,
-                                            target: GetVar(
-                                                GetVar {
-                                                    name: "a",
-                                                },
-                                            ),
-                                            key: "b",
-                                        },
-                                    ),
-                                    key: GetVar(
-                                        GetVar {
-                                            name: "c",
-                                        },
-                                    ),
-                                },
-                            ),
-                            args: [
-                                GetVar(
-                                    GetVar {
-                                        name: "d",
-                                    },
-                                ),
-                            ],
+                            target: GetVar {
+                                name: "a",
+                            },
+                            key: "b",
                         },
-                    ),
-                    Block {
-                        items: [],
-                        last: Some(
-                            Literal(
-                                Int(
-                                    Int {
-                                        value: 0,
-                                    },
-                                ),
-                            ),
-                        ),
+                        key: GetVar {
+                            name: "c",
+                        },
                     },
-                ),
-            ],
-            else_: Some(
+                    args: [
+                        GetVar {
+                            name: "d",
+                        },
+                    ],
+                },
                 Block {
                     items: [],
                     last: Some(
-                        Literal(
-                            Int(
-                                Int {
-                                    value: 1,
-                                },
-                            ),
-                        ),
+                        Int {
+                            value: 0,
+                        },
                     ),
                 },
             ),
-        },
-    ),
+        ],
+        else_: Some(
+            Block {
+                items: [],
+                last: Some(
+                    Int {
+                        value: 1,
+                    },
+                ),
+            },
+        ),
+    },
 )

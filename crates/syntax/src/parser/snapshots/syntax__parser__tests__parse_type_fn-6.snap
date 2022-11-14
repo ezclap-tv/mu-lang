@@ -3,21 +3,17 @@ source: crates/syntax/src/parser/tests.rs
 expression: result
 ---
 Ok(
-    Fn(
-        Fn {
-            params: [],
-            ret: Some(
-                Path(
-                    Path {
-                        segments: [
-                            Segment {
-                                ident: "R",
-                                generic_args: [],
-                            },
-                        ],
+    Fn {
+        params: [],
+        ret: Some(
+            Path {
+                segments: [
+                    Segment {
+                        ident: "R",
+                        generic_args: [],
                     },
-                ),
-            ),
-        },
-    ),
+                ],
+            },
+        ),
+    },
 )

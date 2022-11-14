@@ -3,26 +3,14 @@ source: crates/syntax/src/parser/tests.rs
 expression: result
 ---
 Ok(
-    Literal(
-        Tuple(
-            Tuple {
-                fields: [
-                    Literal(
-                        Int(
-                            Int {
-                                value: 0,
-                            },
-                        ),
-                    ),
-                    Literal(
-                        Int(
-                            Int {
-                                value: 1,
-                            },
-                        ),
-                    ),
-                ],
+    Tuple {
+        fields: [
+            Int {
+                value: 0,
             },
-        ),
-    ),
+            Int {
+                value: 1,
+            },
+        ],
+    },
 )

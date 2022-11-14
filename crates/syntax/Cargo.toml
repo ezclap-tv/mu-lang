@@ -12,3 +12,4 @@ logos = "0.12.1"
 serde = { version = "1.0.147", features = ["derive"] }
 stacker = "0.1.15"
 thiserror = "1.0.37"
+syntax_derive = { path = "./syntax_derive" }

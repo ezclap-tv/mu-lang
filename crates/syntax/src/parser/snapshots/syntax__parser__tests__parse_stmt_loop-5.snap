@@ -12,35 +12,21 @@ Ok(
             aliases: {},
         },
         top_level: [
-            Loop(
-                For(
-                    For {
-                        item: "_",
-                        iter: Range(
-                            Range {
-                                start: Literal(
-                                    Int(
-                                        Int {
-                                            value: 0,
-                                        },
-                                    ),
-                                ),
-                                end: Literal(
-                                    Int(
-                                        Int {
-                                            value: 10,
-                                        },
-                                    ),
-                                ),
-                            },
-                        ),
-                        body: Block {
-                            items: [],
-                            last: None,
-                        },
+            For {
+                item: "_",
+                iter: Range {
+                    start: Int {
+                        value: 0,
                     },
-                ),
-            ),
+                    end: Int {
+                        value: 10,
+                    },
+                },
+                body: Block {
+                    items: [],
+                    last: None,
+                },
+            },
         ],
     },
 )

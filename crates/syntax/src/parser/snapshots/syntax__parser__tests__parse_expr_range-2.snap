@@ -3,18 +3,12 @@ source: crates/syntax/src/parser/tests.rs
 expression: result
 ---
 Ok(
-    Range(
-        Range {
-            start: GetVar(
-                GetVar {
-                    name: "a",
-                },
-            ),
-            end: GetVar(
-                GetVar {
-                    name: "b",
-                },
-            ),
+    Range {
+        start: GetVar {
+            name: "a",
         },
-    ),
+        end: GetVar {
+            name: "b",
+        },
+    },
 )

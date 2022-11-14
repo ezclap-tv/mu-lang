@@ -3,27 +3,15 @@ source: crates/syntax/src/parser/tests.rs
 expression: result
 ---
 Ok(
-    Do(
+    DoBlock(
         Block {
             items: [
-                Expr(
-                    Literal(
-                        Int(
-                            Int {
-                                value: 10,
-                            },
-                        ),
-                    ),
-                ),
-                Expr(
-                    Literal(
-                        Int(
-                            Int {
-                                value: 10,
-                            },
-                        ),
-                    ),
-                ),
+                Int {
+                    value: 10,
+                },
+                Int {
+                    value: 10,
+                },
             ],
             last: None,
         },

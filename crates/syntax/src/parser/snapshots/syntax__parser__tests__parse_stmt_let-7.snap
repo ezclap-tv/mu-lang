@@ -12,30 +12,20 @@ Ok(
             aliases: {},
         },
         top_level: [
-            Let(
-                Let {
-                    name: "v",
-                    ty: None,
-                    value: Literal(
-                        Tuple(
-                            Tuple {
-                                fields: [
-                                    GetVar(
-                                        GetVar {
-                                            name: "v",
-                                        },
-                                    ),
-                                    GetVar(
-                                        GetVar {
-                                            name: "v",
-                                        },
-                                    ),
-                                ],
-                            },
-                        ),
-                    ),
+            Let {
+                name: "v",
+                ty: None,
+                value: Tuple {
+                    fields: [
+                        GetVar {
+                            name: "v",
+                        },
+                        GetVar {
+                            name: "v",
+                        },
+                    ],
                 },
-            ),
+            },
         ],
     },
 )

@@ -3,19 +3,17 @@ source: crates/syntax/src/parser/tests.rs
 expression: result
 ---
 Ok(
-    Try(
-        Try {
-            body: Block {
+    Try {
+        body: Block {
+            items: [],
+            last: None,
+        },
+        catch: (
+            "e",
+            Block {
                 items: [],
                 last: None,
             },
-            catch: (
-                "e",
-                Block {
-                    items: [],
-                    last: None,
-                },
-            ),
-        },
-    ),
+        ),
+    },
 )

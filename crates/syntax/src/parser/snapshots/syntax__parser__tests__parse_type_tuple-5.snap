@@ -3,40 +3,32 @@ source: crates/syntax/src/parser/tests.rs
 expression: result
 ---
 Ok(
-    Tuple(
-        Tuple {
-            items: [
-                Path(
-                    Path {
-                        segments: [
-                            Segment {
-                                ident: "A",
-                                generic_args: [],
-                            },
-                        ],
+    Tuple {
+        items: [
+            Path {
+                segments: [
+                    Segment {
+                        ident: "A",
+                        generic_args: [],
                     },
-                ),
-                Path(
-                    Path {
-                        segments: [
-                            Segment {
-                                ident: "B",
-                                generic_args: [],
-                            },
-                        ],
+                ],
+            },
+            Path {
+                segments: [
+                    Segment {
+                        ident: "B",
+                        generic_args: [],
                     },
-                ),
-                Path(
-                    Path {
-                        segments: [
-                            Segment {
-                                ident: "C",
-                                generic_args: [],
-                            },
-                        ],
+                ],
+            },
+            Path {
+                segments: [
+                    Segment {
+                        ident: "C",
+                        generic_args: [],
                     },
-                ),
-            ],
-        },
-    ),
+                ],
+            },
+        ],
+    },
 )

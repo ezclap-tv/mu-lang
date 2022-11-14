@@ -3,32 +3,28 @@ source: crates/syntax/src/parser/tests.rs
 expression: result
 ---
 Ok(
-    Class(
-        Class {
-            target: Path {
-                segments: [
-                    Segment {
-                        ident: "Foo",
-                        generic_args: [],
-                    },
-                    Segment {
-                        ident: "Bar",
-                        generic_args: [
-                            Path(
-                                Path {
-                                    segments: [
-                                        Segment {
-                                            ident: "int",
-                                            generic_args: [],
-                                        },
-                                    ],
+    Class {
+        target: Path {
+            segments: [
+                Segment {
+                    ident: "Foo",
+                    generic_args: [],
+                },
+                Segment {
+                    ident: "Bar",
+                    generic_args: [
+                        Path {
+                            segments: [
+                                Segment {
+                                    ident: "int",
+                                    generic_args: [],
                                 },
-                            ),
-                        ],
-                    },
-                ],
-            },
-            fields: [],
+                            ],
+                        },
+                    ],
+                },
+            ],
         },
-    ),
+        fields: [],
+    },
 )
