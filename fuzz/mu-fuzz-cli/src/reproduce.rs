@@ -1,5 +1,5 @@
 use syntax::lexer::Lexer;
-use syntax::parser::parse;
+use syntax::parser::{parse, Error};
 
 pub fn lexer(input: &str) {
   let tokens = Lexer::new(input).into_iter().collect::<Vec<_>>();
@@ -21,8 +21,12 @@ pub fn parser(input: &str) {
       println!("[REPRO] Gracefully parsed the input module.")
     }
     Err(errors) => {
+      let errors = errors
+        .into_iter()
+        .filter(|e| !matches!(e, Error::Lexer(_, _)))
+        .collect::<Vec<_>>();
       println!(
-        "[REPRO] Gracefully parsed the input module with errors:\n{:#?}",
+        "[REPRO] Gracefully parsed the input module with errors (lexer errors filtered out):\n{:#?}",
         errors
       );
     }
