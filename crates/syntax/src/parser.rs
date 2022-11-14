@@ -178,24 +178,17 @@ impl<'a> Parser<'a> {
       self.expect(Semicolon)?;
       stmt
     } else {
-      let stmt = self.parse_stmt_expr();
+      let stmt = self.parse_stmt_expr()?;
       // semicolon after expr stmt is only required if the expr does not end with `}`,
       // for example:
       // if true { "a" } else { "b" } // not required
       // "b" // required
       if !self.previous().is(BraceR) {
-        let semi = self.expect(Semicolon);
-        if let Err(e) = semi {
-          // Preserve the original error
-          if let Err(stmt_error) = stmt {
-            self.errors.push(stmt_error);
-          }
-          return Err(e);
-        }
+        self.expect(Semicolon)?;
       } else {
         self.bump_if(Semicolon);
       }
-      stmt
+      Ok(stmt)
     }
   }
 
