@@ -356,13 +356,13 @@ pub mod stmt {
 
   #[derive(Clone, DebugInner)]
   pub enum Loop<'a> {
-    For(For<'a>),
-    While(While<'a>),
-    Inf(InfLoop<'a>),
+    For(LoopFor<'a>),
+    While(LoopWhile<'a>),
+    Inf(LoopInf<'a>),
   }
 
   #[derive(Clone, Debug)]
-  pub struct For<'a> {
+  pub struct LoopFor<'a> {
     pub item: Ident<'a>,
     pub iter: Expr<'a>,
     pub body: Block<'a>,
@@ -370,28 +370,28 @@ pub mod stmt {
 
   #[inline]
   pub fn for_<'a>(item: Ident<'a>, iter: Expr<'a>, body: Block<'a>) -> StmtKind<'a> {
-    StmtKind::Loop(Box::new(Loop::For(For { item, iter, body })))
+    StmtKind::Loop(Box::new(Loop::For(LoopFor { item, iter, body })))
   }
 
   #[derive(Clone, Debug)]
-  pub struct While<'a> {
+  pub struct LoopWhile<'a> {
     pub cond: Expr<'a>,
     pub body: Block<'a>,
   }
 
   #[inline]
   pub fn while_<'a>(cond: Expr<'a>, body: Block<'a>) -> StmtKind<'a> {
-    StmtKind::Loop(Box::new(Loop::While(While { cond, body })))
+    StmtKind::Loop(Box::new(Loop::While(LoopWhile { cond, body })))
   }
 
   #[derive(Clone, Debug)]
-  pub struct InfLoop<'a> {
+  pub struct LoopInf<'a> {
     pub body: Block<'a>,
   }
 
   #[inline]
   pub fn loop_<'a>(body: Block<'a>) -> StmtKind<'a> {
-    StmtKind::Loop(Box::new(Loop::Inf(InfLoop { body })))
+    StmtKind::Loop(Box::new(Loop::Inf(LoopInf { body })))
   }
 
   pub fn expr<'a>(expr: Expr<'a>) -> StmtKind<'a> {
