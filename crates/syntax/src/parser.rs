@@ -1073,7 +1073,7 @@ fn check_recursion_limit(span: Span) -> Result<(), Error> {
   // at compile time.
   #[cfg(not(any(target_os = "linux", target_os = "windows", target_os = "macos")))]
   {
-    const WARNING: &str = "The detect platform is neither linux, windows, macos, or wasm, which means that the parser can cause a stack overflow. Use with care.";
+    const WARNING: &str = "The detected platform is neither Linux, Windows, MacOS, or WASM, which means that the parser may panic on stack overflow. Use with care.";
   }
 
   if stacker::remaining_stack()
