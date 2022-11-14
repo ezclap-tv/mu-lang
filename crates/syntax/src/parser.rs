@@ -20,9 +20,6 @@ use crate::ast::{
 use crate::lexer::{Lexer, Token, TokenKind, ANGLES, BRACES, BRACKETS, PARENS};
 use crate::span::{Span, Spanned};
 
-#[macro_use]
-mod macros;
-
 // https://github.com/ves-lang/ves/blob/master/ves-parser/src/parser.rs
 
 pub fn parse(source: &str) -> Result<Module<'_>, Vec<Error>> {
