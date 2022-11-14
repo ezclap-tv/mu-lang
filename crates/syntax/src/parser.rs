@@ -1052,13 +1052,14 @@ impl<'a> Parser<'a> {
 
 // On average, a single parse_XXX() method consumes between 10 and 700 bytes of
 // stack space. Assuming ~50 recursive calls per dive and 700 bytes of stack
-// space per call, we'll require 50 * 700 = 35,000 bytes of stack space in order
-// to dive. We may want to tune this value.
-const RECURSION_CHAIN_DEPTH: usize = 50;
-const PESSIMISTIC_STACKFRAME_SIZE: usize = 700;
-const MINIMUM_STACK_REQUIRED: usize = RECURSION_CHAIN_DEPTH * PESSIMISTIC_STACKFRAME_SIZE;
+// space per call, we'll require 50 * 700 = 35k bytes of stack space in order
+// to dive. For future proofing, we round this value up to 64k bytes.
+const MINIMUM_STACK_REQUIRED: usize = 64_000;
 
-// On WASM, remaining_stack() will always return None.
+// On WASM, remaining_stack() will always return None. Stack overflow panics
+// are converted to exceptions and handled by the host, which means a
+// `try { ... } catch { ... }` around a call to one of the Mu compiler functions
+// would be enough.
 #[cfg(target_family = "wasm")]
 fn check_recursion_limit(_span: Span) -> Result<(), Error> {
   Ok(())
