@@ -12,19 +12,13 @@ Ok(
             aliases: {},
         },
         top_level: [
-            Let(
-                Let {
-                    name: "v",
-                    ty: None,
-                    value: Literal(
-                        Bool(
-                            Bool {
-                                value: true,
-                            },
-                        ),
-                    ),
+            Let {
+                name: "v",
+                ty: None,
+                value: Bool {
+                    value: true,
                 },
-            ),
+            },
         ],
     },
 )

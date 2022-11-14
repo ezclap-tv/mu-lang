@@ -3,11 +3,7 @@ source: crates/syntax/src/parser/tests.rs
 expression: result
 ---
 Ok(
-    Literal(
-        Float(
-            Float {
-                value: 3.14,
-            },
-        ),
-    ),
+    Float {
+        value: 3.14,
+    },
 )

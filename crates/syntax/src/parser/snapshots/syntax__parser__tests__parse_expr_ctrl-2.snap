@@ -3,17 +3,11 @@ source: crates/syntax/src/parser/tests.rs
 expression: result
 ---
 Ok(
-    Ctrl(
-        Return(
-            Some(
-                Literal(
-                    Int(
-                        Int {
-                            value: 10,
-                        },
-                    ),
-                ),
-            ),
+    Return(
+        Some(
+            Int {
+                value: 10,
+            },
         ),
     ),
 )

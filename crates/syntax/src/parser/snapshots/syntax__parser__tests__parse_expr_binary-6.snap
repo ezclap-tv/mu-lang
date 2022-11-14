@@ -3,29 +3,19 @@ source: crates/syntax/src/parser/tests.rs
 expression: result
 ---
 Ok(
-    Binary(
-        Binary {
-            op: Add,
-            left: Binary(
-                Binary {
-                    op: Subtract,
-                    left: GetVar(
-                        GetVar {
-                            name: "a",
-                        },
-                    ),
-                    right: GetVar(
-                        GetVar {
-                            name: "b",
-                        },
-                    ),
-                },
-            ),
-            right: GetVar(
-                GetVar {
-                    name: "c",
-                },
-            ),
+    Binary {
+        op: Add,
+        left: Binary {
+            op: Subtract,
+            left: GetVar {
+                name: "a",
+            },
+            right: GetVar {
+                name: "b",
+            },
         },
-    ),
+        right: GetVar {
+            name: "c",
+        },
+    },
 )

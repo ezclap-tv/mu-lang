@@ -12,19 +12,13 @@ Ok(
             aliases: {},
         },
         top_level: [
-            Let(
-                Let {
-                    name: "v",
-                    ty: None,
-                    value: Literal(
-                        Int(
-                            Int {
-                                value: 0,
-                            },
-                        ),
-                    ),
+            Let {
+                name: "v",
+                ty: None,
+                value: Int {
+                    value: 0,
                 },
-            ),
+            },
         ],
     },
 )

@@ -3,11 +3,7 @@ source: crates/syntax/src/parser/tests.rs
 expression: result
 ---
 Ok(
-    Literal(
-        Bool(
-            Bool {
-                value: true,
-            },
-        ),
-    ),
+    Bool {
+        value: true,
+    },
 )

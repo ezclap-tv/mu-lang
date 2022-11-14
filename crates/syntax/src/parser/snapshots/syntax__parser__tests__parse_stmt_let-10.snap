@@ -12,30 +12,18 @@ Ok(
             aliases: {},
         },
         top_level: [
-            Let(
-                Let {
-                    name: "v",
-                    ty: None,
-                    value: Literal(
-                        Array(
-                            Copy(
-                                GetVar(
-                                    GetVar {
-                                        name: "v",
-                                    },
-                                ),
-                                Literal(
-                                    Int(
-                                        Int {
-                                            value: 1024,
-                                        },
-                                    ),
-                                ),
-                            ),
-                        ),
-                    ),
-                },
-            ),
+            Let {
+                name: "v",
+                ty: None,
+                value: Copy(
+                    GetVar {
+                        name: "v",
+                    },
+                    Int {
+                        value: 1024,
+                    },
+                ),
+            },
         ],
     },
 )

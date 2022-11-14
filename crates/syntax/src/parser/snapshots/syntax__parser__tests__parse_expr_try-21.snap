@@ -3,42 +3,28 @@ source: crates/syntax/src/parser/tests.rs
 expression: result
 ---
 Ok(
-    Try(
-        Try {
-            body: Block {
+    Try {
+        body: Block {
+            items: [
+                GetVar {
+                    name: "a",
+                },
+                GetVar {
+                    name: "b",
+                },
+            ],
+            last: None,
+        },
+        catch: (
+            "e",
+            Block {
                 items: [
-                    Expr(
-                        GetVar(
-                            GetVar {
-                                name: "a",
-                            },
-                        ),
-                    ),
-                    Expr(
-                        GetVar(
-                            GetVar {
-                                name: "b",
-                            },
-                        ),
-                    ),
+                    GetVar {
+                        name: "e",
+                    },
                 ],
                 last: None,
             },
-            catch: (
-                "e",
-                Block {
-                    items: [
-                        Expr(
-                            GetVar(
-                                GetVar {
-                                    name: "e",
-                                },
-                            ),
-                        ),
-                    ],
-                    last: None,
-                },
-            ),
-        },
-    ),
+        ),
+    },
 )

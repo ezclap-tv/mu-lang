@@ -3,29 +3,19 @@ source: crates/syntax/src/parser/tests.rs
 expression: result
 ---
 Ok(
-    GetIndex(
-        GetIndex {
+    GetIndex {
+        opt: true,
+        target: GetIndex {
             opt: true,
-            target: GetIndex(
-                GetIndex {
-                    opt: true,
-                    target: GetVar(
-                        GetVar {
-                            name: "a",
-                        },
-                    ),
-                    key: GetVar(
-                        GetVar {
-                            name: "b",
-                        },
-                    ),
-                },
-            ),
-            key: GetVar(
-                GetVar {
-                    name: "c",
-                },
-            ),
+            target: GetVar {
+                name: "a",
+            },
+            key: GetVar {
+                name: "b",
+            },
         },
-    ),
+        key: GetVar {
+            name: "c",
+        },
+    },
 )

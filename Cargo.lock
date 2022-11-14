@@ -119,6 +119,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "derive_utils"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7590f99468735a318c254ca9158d0c065aa9b5312896b5a043b5e39bc96f5fa2"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "dirs"
 version = "2.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -578,7 +589,15 @@ dependencies = [
  "logos",
  "serde",
  "stacker",
+ "syntax_derive",
  "thiserror",
+]
+
+[[package]]
+name = "syntax_derive"
+version = "0.0.0"
+dependencies = [
+ "derive_utils",
 ]
 
 [[package]]

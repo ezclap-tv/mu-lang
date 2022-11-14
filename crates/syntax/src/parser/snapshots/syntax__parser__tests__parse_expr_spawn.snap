@@ -3,12 +3,10 @@ source: crates/syntax/src/parser/tests.rs
 expression: result
 ---
 Ok(
-    Spawn(
-        Block(
-            Block {
-                items: [],
-                last: None,
-            },
-        ),
+    Block(
+        Block {
+            items: [],
+            last: None,
+        },
     ),
 )

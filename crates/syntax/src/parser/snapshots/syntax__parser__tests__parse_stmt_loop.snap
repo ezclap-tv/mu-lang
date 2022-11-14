@@ -12,16 +12,12 @@ Ok(
             aliases: {},
         },
         top_level: [
-            Loop(
-                Inf(
-                    Inf {
-                        body: Block {
-                            items: [],
-                            last: None,
-                        },
-                    },
-                ),
-            ),
+            InfLoop {
+                body: Block {
+                    items: [],
+                    last: None,
+                },
+            },
         ],
     },
 )

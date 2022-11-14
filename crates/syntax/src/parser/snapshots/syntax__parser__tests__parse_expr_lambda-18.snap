@@ -3,19 +3,15 @@ source: crates/syntax/src/parser/tests.rs
 expression: result
 ---
 Ok(
-    Lambda(
-        Lambda {
-            params: [],
-            body: Block {
-                items: [],
-                last: Some(
-                    GetVar(
-                        GetVar {
-                            name: "a",
-                        },
-                    ),
-                ),
-            },
+    Lambda {
+        params: [],
+        body: Block {
+            items: [],
+            last: Some(
+                GetVar {
+                    name: "a",
+                },
+            ),
         },
-    ),
+    },
 )

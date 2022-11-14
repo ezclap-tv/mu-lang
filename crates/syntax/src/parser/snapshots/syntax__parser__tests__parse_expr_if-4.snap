@@ -3,84 +3,56 @@ source: crates/syntax/src/parser/tests.rs
 expression: result
 ---
 Ok(
-    If(
-        If {
-            branches: [
-                (
-                    Literal(
-                        Bool(
-                            Bool {
-                                value: true,
-                            },
-                        ),
-                    ),
-                    Block {
-                        items: [
-                            Expr(
-                                GetVar(
-                                    GetVar {
-                                        name: "a",
-                                    },
-                                ),
-                            ),
-                        ],
-                        last: Some(
-                            GetVar(
-                                GetVar {
-                                    name: "b",
-                                },
-                            ),
-                        ),
-                    },
-                ),
-                (
-                    Literal(
-                        Bool(
-                            Bool {
-                                value: false,
-                            },
-                        ),
-                    ),
-                    Block {
-                        items: [
-                            Expr(
-                                GetVar(
-                                    GetVar {
-                                        name: "a",
-                                    },
-                                ),
-                            ),
-                        ],
-                        last: Some(
-                            GetVar(
-                                GetVar {
-                                    name: "b",
-                                },
-                            ),
-                        ),
-                    },
-                ),
-            ],
-            else_: Some(
+    If {
+        branches: [
+            (
+                Bool {
+                    value: true,
+                },
                 Block {
                     items: [
-                        Expr(
-                            GetVar(
-                                GetVar {
-                                    name: "a",
-                                },
-                            ),
-                        ),
+                        GetVar {
+                            name: "a",
+                        },
                     ],
                     last: Some(
-                        GetVar(
-                            GetVar {
-                                name: "b",
-                            },
-                        ),
+                        GetVar {
+                            name: "b",
+                        },
                     ),
                 },
             ),
-        },
-    ),
+            (
+                Bool {
+                    value: false,
+                },
+                Block {
+                    items: [
+                        GetVar {
+                            name: "a",
+                        },
+                    ],
+                    last: Some(
+                        GetVar {
+                            name: "b",
+                        },
+                    ),
+                },
+            ),
+        ],
+        else_: Some(
+            Block {
+                items: [
+                    GetVar {
+                        name: "a",
+                    },
+                ],
+                last: Some(
+                    GetVar {
+                        name: "b",
+                    },
+                ),
+            },
+        ),
+    },
 )

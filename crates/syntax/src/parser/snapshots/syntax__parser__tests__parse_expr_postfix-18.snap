@@ -3,52 +3,36 @@ source: crates/syntax/src/parser/tests.rs
 expression: result
 ---
 Ok(
-    Cast(
-        Cast {
+    Cast {
+        opt: true,
+        target: Call {
             opt: true,
-            target: Call(
-                Call {
+            target: GetIndex {
+                opt: true,
+                target: GetField {
                     opt: true,
-                    target: GetIndex(
-                        GetIndex {
-                            opt: true,
-                            target: GetField(
-                                GetField {
-                                    opt: true,
-                                    target: GetVar(
-                                        GetVar {
-                                            name: "a",
-                                        },
-                                    ),
-                                    key: "b",
-                                },
-                            ),
-                            key: GetVar(
-                                GetVar {
-                                    name: "c",
-                                },
-                            ),
-                        },
-                    ),
-                    args: [
-                        GetVar(
-                            GetVar {
-                                name: "d",
-                            },
-                        ),
-                    ],
+                    target: GetVar {
+                        name: "a",
+                    },
+                    key: "b",
                 },
-            ),
-            ty: Path(
-                Path {
-                    segments: [
-                        Segment {
-                            ident: "E",
-                            generic_args: [],
-                        },
-                    ],
+                key: GetVar {
+                    name: "c",
                 },
-            ),
+            },
+            args: [
+                GetVar {
+                    name: "d",
+                },
+            ],
         },
-    ),
+        ty: Path {
+            segments: [
+                Segment {
+                    ident: "E",
+                    generic_args: [],
+                },
+            ],
+        },
+    },
 )

@@ -29,6 +29,7 @@ use std::borrow::Cow;
 use std::ops::Deref;
 
 use indexmap::IndexMap;
+use syntax_derive::DebugInner;
 
 use crate::lexer::Token;
 use crate::span::{Span, Spanned};
@@ -190,7 +191,7 @@ impl<'a> Symbols<'a> {
 }
 
 pub mod symbol {
-  use super::{expr, Expr, Ident, Span, Type};
+  use super::{expr, DebugInner, Expr, Ident, Span, Type};
 
   /// A visibility modifier.
   #[derive(Clone, Copy, Debug)]
@@ -307,22 +308,28 @@ pub mod symbol {
     pub constraint: Vec<Type<'a>>,
   }
 
-  #[derive(Clone, Debug)]
+  #[derive(Clone, DebugInner)]
   pub enum ClassMember<'a> {
-    Field(Ident<'a>, Type<'a>),
+    Field(ClassField<'a>),
     Fn(Fn<'a>),
     Alias(Alias<'a>),
     Impl(Impl<'a>),
   }
 
   #[derive(Clone, Debug)]
+  pub struct ClassField<'a> {
+    pub name: Ident<'a>,
+    pub ty: Type<'a>,
+  }
+
+  #[derive(Clone, DebugInner)]
   pub enum TraitMember<'a> {
     Fn(Fn<'a>),
     Alias(Alias<'a>),
   }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, DebugInner)]
 pub enum StmtKind<'a> {
   Let(Box<stmt::Let<'a>>),
   Loop(Box<stmt::Loop<'a>>),
@@ -333,7 +340,7 @@ pub type Stmt<'a> = Spanned<StmtKind<'a>>;
 
 pub mod stmt {
   use super::expr::Block;
-  use super::{Expr, Ident, StmtKind, Type};
+  use super::{DebugInner, Expr, Ident, StmtKind, Type};
 
   #[derive(Clone, Debug)]
   pub struct Let<'a> {
@@ -347,11 +354,11 @@ pub mod stmt {
     StmtKind::Let(Box::new(Let { name, ty, value }))
   }
 
-  #[derive(Clone, Debug)]
+  #[derive(Clone, DebugInner)]
   pub enum Loop<'a> {
     For(For<'a>),
     While(While<'a>),
-    Inf(Inf<'a>),
+    Inf(InfLoop<'a>),
   }
 
   #[derive(Clone, Debug)]
@@ -378,13 +385,13 @@ pub mod stmt {
   }
 
   #[derive(Clone, Debug)]
-  pub struct Inf<'a> {
+  pub struct InfLoop<'a> {
     pub body: Block<'a>,
   }
 
   #[inline]
   pub fn loop_<'a>(body: Block<'a>) -> StmtKind<'a> {
-    StmtKind::Loop(Box::new(Loop::Inf(Inf { body })))
+    StmtKind::Loop(Box::new(Loop::Inf(InfLoop { body })))
   }
 
   pub fn expr<'a>(expr: Expr<'a>) -> StmtKind<'a> {
@@ -392,7 +399,7 @@ pub mod stmt {
   }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, DebugInner)]
 pub enum TypeKind<'a> {
   Opt(Box<ty::Opt<'a>>),
   Path(Box<Path<'a>>),
@@ -488,10 +495,10 @@ pub struct Segment<'a> {
   pub generic_args: Vec<Type<'a>>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, DebugInner)]
 pub enum ExprKind<'a> {
   Ctrl(Box<expr::Ctrl<'a>>),
-  Do(Box<expr::Block<'a>>),
+  Do(Box<expr::DoBlock<'a>>),
   If(Box<expr::If<'a>>),
   Try(Box<expr::Try<'a>>),
   Spawn(Box<expr::Spawn<'a>>),
@@ -515,7 +522,7 @@ pub enum ExprKind<'a> {
 pub type Expr<'a> = Spanned<ExprKind<'a>>;
 
 pub mod expr {
-  use super::{Expr, ExprKind, Ident, Path, Stmt, Type};
+  use super::{DebugInner, Expr, ExprKind, Ident, Path, Stmt, Type};
 
   /// A list of statements.
   ///
@@ -532,6 +539,9 @@ pub mod expr {
     pub items: Vec<Stmt<'a>>,
     pub last: Option<Expr<'a>>,
   }
+
+  #[derive(Clone, Debug)]
+  pub struct DoBlock<'a>(Block<'a>);
 
   #[derive(Clone, Debug)]
   pub enum Ctrl<'a> {
@@ -563,7 +573,7 @@ pub mod expr {
 
   #[inline]
   pub fn do_<'a>(block: Block<'a>) -> ExprKind<'a> {
-    ExprKind::Do(Box::new(block))
+    ExprKind::Do(Box::new(DoBlock(block)))
   }
 
   #[derive(Clone, Debug)]
@@ -821,9 +831,9 @@ pub mod expr {
     ExprKind::Class(Box::new(Class { target, fields }))
   }
 
-  #[derive(Clone, Debug)]
+  #[derive(Clone, DebugInner)]
   pub enum Literal<'a> {
-    Null,
+    Null(Null),
     Bool(Bool),
     Int(Int),
     Float(Float),
@@ -831,6 +841,9 @@ pub mod expr {
     Array(Array<'a>),
     Tuple(Tuple<'a>),
   }
+
+  #[derive(Clone, Debug)]
+  pub struct Null;
 
   #[derive(Clone, Copy, Debug)]
   pub struct Bool {
@@ -864,7 +877,7 @@ pub mod expr {
   }
 
   pub fn null<'a>() -> ExprKind<'a> {
-    ExprKind::Literal(Box::new(Literal::Null))
+    ExprKind::Literal(Box::new(Literal::Null(Null)))
   }
 
   pub fn bool<'a>(value: bool) -> ExprKind<'a> {

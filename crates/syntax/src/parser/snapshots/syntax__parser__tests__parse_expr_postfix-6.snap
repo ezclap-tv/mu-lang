@@ -3,33 +3,23 @@ source: crates/syntax/src/parser/tests.rs
 expression: result
 ---
 Ok(
-    Call(
-        Call {
+    Call {
+        opt: false,
+        target: Call {
             opt: false,
-            target: Call(
-                Call {
-                    opt: false,
-                    target: GetVar(
-                        GetVar {
-                            name: "a",
-                        },
-                    ),
-                    args: [
-                        GetVar(
-                            GetVar {
-                                name: "b",
-                            },
-                        ),
-                    ],
-                },
-            ),
+            target: GetVar {
+                name: "a",
+            },
             args: [
-                GetVar(
-                    GetVar {
-                        name: "c",
-                    },
-                ),
+                GetVar {
+                    name: "b",
+                },
             ],
         },
-    ),
+        args: [
+            GetVar {
+                name: "c",
+            },
+        ],
+    },
 )

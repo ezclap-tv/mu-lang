@@ -3,9 +3,7 @@ source: crates/syntax/src/parser/tests.rs
 expression: result
 ---
 Ok(
-    Ctrl(
-        Throw(
-            None,
-        ),
+    Throw(
+        None,
     ),
 )
