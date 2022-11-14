@@ -12,7 +12,7 @@ Ok(
             aliases: {},
         },
         top_level: [
-            While {
+            LoopWhile {
                 cond: GetField {
                     opt: false,
                     target: GetVar {

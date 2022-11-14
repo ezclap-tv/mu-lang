@@ -12,7 +12,7 @@ Ok(
             aliases: {},
         },
         top_level: [
-            InfLoop {
+            LoopInf {
                 body: Block {
                     items: [],
                     last: None,

@@ -12,7 +12,7 @@ Ok(
             aliases: {},
         },
         top_level: [
-            For {
+            LoopFor {
                 item: "_",
                 iter: Range {
                     start: Int {
