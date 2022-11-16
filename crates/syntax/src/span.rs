@@ -32,20 +32,43 @@ impl std::fmt::Display for Span {
 
 #[derive(Clone, Copy, Default)]
 pub struct Spanned<T> {
-  value: T,
   pub span: Span,
+  value: T,
 }
 
 impl<T> Spanned<T> {
   pub fn new(span: impl Into<Span>, value: T) -> Spanned<T> {
     Spanned {
-      value,
       span: span.into(),
+      value,
     }
   }
 
   pub fn into_inner(self) -> T {
     self.value
+  }
+
+  /// Maps `Spanned<T>` to `Spanned<U>` by calling `f` with `T`,
+  /// and preserving the span.
+  #[inline]
+  pub fn map<U>(self, f: impl FnOnce(T) -> U) -> Spanned<U> {
+    Spanned {
+      span: self.span,
+      value: f(self.value),
+    }
+  }
+
+  /// Maps `Spanned<T>` to `Spanned<U>` by calling `f` with `Spanned<T>`,
+  /// and preserving the span.
+  ///
+  /// Useful when constructing nodes that require inner nodes to be spanned,
+  /// such as in the case of `stmt_expr`.
+  #[inline]
+  pub fn then<U>(self, f: impl FnOnce(Spanned<T>) -> U) -> Spanned<U> {
+    Spanned {
+      span: self.span,
+      value: f(self),
+    }
   }
 }
 
