@@ -582,7 +582,7 @@ impl<'a> Parser<'a> {
       return Ok(expr::get_var(ident));
     }
 
-    // expr_ctrl
+    // expr_ctrl -> expr_return
     if self.bump_if(Return) {
       let value = if !self
         .current()
@@ -595,6 +595,7 @@ impl<'a> Parser<'a> {
       return Ok(expr::return_(value));
     }
 
+    // expr_ctrl -> expr_throw
     if self.bump_if(Throw) {
       let value = if !self
         .current()
@@ -607,10 +608,12 @@ impl<'a> Parser<'a> {
       return Ok(expr::throw_(value));
     }
 
+    // expr_ctrl -> expr_continue
     if self.bump_if(Continue) {
       return Ok(expr::continue_());
     }
 
+    // expr_ctrl -> expr_break
     if self.bump_if(Break) {
       return Ok(expr::break_());
     }
@@ -1049,15 +1052,6 @@ fn check_recursion_limit(_span: Span) -> Result<(), Error> {
 
 #[cfg(not(target_family = "wasm"))]
 fn check_recursion_limit(span: Span) -> Result<(), Error> {
-  // On the platforms we're targeting (linux, windows, osx), remaining_stack()
-  // should always return Some, so we'll able to bail out if an overflow is
-  // likely. On all other platforms, we'll continue parsing, but warn the user
-  // at compile time.
-  #[cfg(not(any(target_os = "linux", target_os = "windows", target_os = "macos")))]
-  {
-    const WARNING: &str = "The detected platform is neither Linux, Windows, MacOS, or WASM, which means that the parser may panic on stack overflow. Use with care.";
-  }
-
   if stacker::remaining_stack()
     .map(|available| available > MINIMUM_STACK_REQUIRED)
     .unwrap_or(true)
