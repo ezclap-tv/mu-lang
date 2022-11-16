@@ -498,7 +498,7 @@ pub struct Segment<'a> {
 #[derive(Clone, DebugInner)]
 pub enum ExprKind<'a> {
   Ctrl(Box<expr::Ctrl<'a>>),
-  Do(Box<expr::DoBlock<'a>>),
+  Block(Box<expr::Block<'a>>),
   If(Box<expr::If<'a>>),
   Try(Box<expr::Try<'a>>),
   Spawn(Box<expr::Spawn<'a>>),
@@ -541,9 +541,6 @@ pub mod expr {
   }
 
   #[derive(Clone, Debug)]
-  pub struct DoBlock<'a>(Block<'a>);
-
-  #[derive(Clone, Debug)]
   pub enum Ctrl<'a> {
     Return(Option<Expr<'a>>),
     Throw(Option<Expr<'a>>),
@@ -572,8 +569,8 @@ pub mod expr {
   }
 
   #[inline]
-  pub fn do_<'a>(block: Block<'a>) -> ExprKind<'a> {
-    ExprKind::Do(Box::new(DoBlock(block)))
+  pub fn block<'a>(block: Block<'a>) -> ExprKind<'a> {
+    ExprKind::Block(Box::new(block))
   }
 
   #[derive(Clone, Debug)]

@@ -576,7 +576,7 @@ impl<'a> Parser<'a> {
       return Ok(expr::array_list(items));
     }
 
-    // expr_var or expr_class
+    // expr_var
     if self.bump_if(Ident) {
       let ident = to_ident(self.previous());
       return Ok(expr::get_var(ident));
@@ -615,11 +615,10 @@ impl<'a> Parser<'a> {
       return Ok(expr::break_());
     }
 
-    // TODO: drop the `do` keyword and rename to `expr_block`
-    // expr_do
+    // expr_block
     if self.current().is(BraceL) {
       let block = self.parse_block()?;
-      return Ok(expr::do_(block));
+      return Ok(expr::block(block));
     }
 
     // expr_if

@@ -181,7 +181,7 @@ expr = expr_assign ;
     | expr_array
     | expr_var
     | expr_ctrl
-    | expr_do
+    | expr_block
     | expr_if
     | expr_try
     | expr_spawn
@@ -206,7 +206,7 @@ expr = expr_assign ;
     | "continue"
     | "break"
     ;
-  expr_do = "do" block ;
+  expr_block = "do" block ;
   expr_if =
     "if" cond:expr_before_block if_body
     ("else" "if" cond:expr_before_block if_body)*

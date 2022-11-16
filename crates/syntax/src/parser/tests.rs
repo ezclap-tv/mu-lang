@@ -122,7 +122,7 @@ fn parse_expr_ctrl() {
 }
 
 #[test]
-fn parse_expr_do() {
+fn parse_expr_block() {
   snapshot!("{ 10 }", parse_expr);
   snapshot!("{ 10; }", parse_expr);
   snapshot!("{ 10; 10 }", parse_expr);
