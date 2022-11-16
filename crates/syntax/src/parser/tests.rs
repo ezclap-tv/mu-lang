@@ -123,10 +123,10 @@ fn parse_expr_ctrl() {
 
 #[test]
 fn parse_expr_do() {
-  snapshot!("do { 10 }", parse_expr);
-  snapshot!("do { 10; }", parse_expr);
-  snapshot!("do { 10; 10 }", parse_expr);
-  snapshot!("do { 10; 10; }", parse_expr);
+  snapshot!("{ 10 }", parse_expr);
+  snapshot!("{ 10; }", parse_expr);
+  snapshot!("{ 10; 10 }", parse_expr);
+  snapshot!("{ 10; 10; }", parse_expr);
 }
 
 #[test]

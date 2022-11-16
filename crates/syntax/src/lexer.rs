@@ -158,8 +158,8 @@ pub enum TokenKind {
   Continue,
   #[token("throw")]
   Throw,
-  #[token("do")]
-  Do,
+  // #[token("do")]
+  // Do,
   #[token("if")]
   If,
   #[token("else")]
@@ -355,7 +355,7 @@ impl std::fmt::Display for TokenKind {
       TokenKind::Break => "break",
       TokenKind::Continue => "continue",
       TokenKind::Throw => "throw",
-      TokenKind::Do => "do",
+      // TokenKind::Do => "do",
       TokenKind::If => "if",
       TokenKind::Else => "else",
       TokenKind::Try => "try",

@@ -501,9 +501,8 @@ impl<'a> Parser<'a> {
 
   fn parse_expr_primary(&mut self) -> Result<ExprKind<'a>, Error> {
     use TokenKind::{
-      Bool, BraceL, BraceR, BracketL, BracketR, Break, Catch, Comma, Continue, Do, Else, Eof,
-      Float, Ident, If, Int, Lambda, Null, ParenL, ParenR, Return, Semicolon, Spawn, String, Throw,
-      Try,
+      Bool, BraceL, BraceR, BracketL, BracketR, Break, Catch, Comma, Continue, Else, Eof, Float,
+      Ident, If, Int, Lambda, Null, ParenL, ParenR, Return, Semicolon, Spawn, String, Throw, Try,
     };
     check_recursion_limit(self.current().span)?;
 
@@ -618,7 +617,7 @@ impl<'a> Parser<'a> {
 
     // TODO: drop the `do` keyword and rename to `expr_block`
     // expr_do
-    if self.bump_if(Do) {
+    if self.current().is(BraceL) {
       let block = self.parse_block()?;
       return Ok(expr::do_(block));
     }
@@ -899,19 +898,6 @@ impl<'a> Parser<'a> {
     self.expect(r)?;
     Ok(inner)
   }
-
-  /* #[inline]
-  fn list<T>(
-    &mut self,
-    separator: TokenKind,
-    mut cons: impl FnMut(&mut Self) -> Result<T, Error>,
-  ) -> Result<Vec<T>, Error> {
-    let mut items = vec![cons(self)?];
-    while self.bump_if(separator) {
-      items.push(cons(self)?);
-    }
-    Ok(items)
-  } */
 
   /// Helper function for parsing bracketed lists, e.g. `[a, b, c,]`,
   /// with support for trailing separators.
