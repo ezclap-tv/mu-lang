@@ -1,5 +1,14 @@
+//! This module contains the implementation of spans for Mu,
+//! and various utilities for working with them.
+
 use std::ops::{Deref, DerefMut, Range};
 
+/// Represents a span of bytes in some source string.
+///
+/// This type is just like [`std::ops::Range<usize>`],
+/// but unlike the standard Range, it is marked [`std::marker::Copy`].
+///
+/// It is used for highlighting code in emitted diagnostics.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Span {
   pub start: usize,
@@ -7,6 +16,7 @@ pub struct Span {
 }
 
 impl Span {
+  /// Create a new span which starts at `self.start` and ends at `other.end`.
   pub fn join(&self, other: Span) -> Span {
     Span {
       start: self.start,
@@ -30,6 +40,9 @@ impl std::fmt::Display for Span {
   }
 }
 
+/// Represents a value, and its span in the source string from which it was
+/// parsed. This allows tracing syntax nodes back to their location in the
+/// source string.
 #[derive(Clone, Copy, Default)]
 pub struct Spanned<T> {
   pub span: Span,
@@ -50,6 +63,8 @@ impl<T> Spanned<T> {
 
   /// Maps `Spanned<T>` to `Spanned<U>` by calling `f` with `T`,
   /// and preserving the span.
+  ///
+  /// Useful when wrapping values in nodes, such as in the case of `ExprKind`
   #[inline]
   pub fn map<U>(self, f: impl FnOnce(T) -> U) -> Spanned<U> {
     Spanned {

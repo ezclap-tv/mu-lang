@@ -6,6 +6,8 @@
 //! The parser is implemented using a technique called [recursive descent](https://en.wikipedia.org/wiki/Recursive_descent_parser).
 //! It is implemented according to the [grammar][`crate::grammar`]. Both must be
 //! kept in sync with eachother.
+//!
+//! The entrypoints of this is [parse][`crate::parser::parse`].
 #![deny(unused_must_use)]
 #![allow(clippy::needless_lifetimes)]
 
