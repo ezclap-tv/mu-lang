@@ -31,7 +31,6 @@ use std::ops::Deref;
 use indexmap::IndexMap;
 use syntax_derive::DebugInner;
 
-use crate::lexer::Token;
 use crate::span::{Span, Spanned};
 
 // TODO: spans
@@ -43,12 +42,6 @@ use crate::span::{Span, Spanned};
 /// numbers: `a`, `_b`, `c_0`, etc.
 /// It is invalid for an identifier to start with a digit.
 pub type Ident<'a> = Spanned<Cow<'a, str>>;
-
-/// Converts a `Token` to an identifier. Only use this if `token.kind ==
-/// TokenKind::Ident`.
-pub fn ident<'a>(token: &Token<'a>) -> Ident<'a> {
-  Spanned::new(token.span, token.lexeme.clone())
-}
 
 /// Order-preserving hash map
 pub type Map<'a, T> = IndexMap<Cow<'a, str>, T>;
