@@ -22,7 +22,7 @@ use crate::span::{Span, Spanned};
 
 // https://github.com/ves-lang/ves/blob/master/ves-parser/src/parser.rs
 
-pub fn parse(source: &str) -> Result<Module<'_>, Vec<Error>> {
+pub fn parse(source: &str) -> (Module<'_>, Vec<Error>) {
   Parser {
     lexer: Lexer::new(source),
     module: Module::default(),
@@ -52,7 +52,7 @@ struct Context {
 }
 
 impl<'a> Parser<'a> {
-  fn parse(mut self) -> Result<Module<'a>, Vec<Error>> {
+  fn parse(mut self) -> (Module<'a>, Vec<Error>) {
     use TokenKind::Eof;
 
     self.bump();
@@ -65,11 +65,7 @@ impl<'a> Parser<'a> {
       }
     }
 
-    if !self.errors.is_empty() {
-      return Err(self.errors);
-    }
-
-    Ok(self.module)
+    (self.module, self.errors)
   }
 
   fn parse_top_level(&mut self) -> Result<(), Error> {
