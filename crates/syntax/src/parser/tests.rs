@@ -21,11 +21,7 @@ macro_rules! snapshot {
     let mut parser = parser!($src);
     parser.bump();
     let result = parser.$method();
-    if !parser.errors.is_empty() {
-      insta::assert_debug_snapshot!(parser.errors);
-    } else {
-      insta::assert_debug_snapshot!(result);
-    }
+    insta::assert_debug_snapshot!((result, parser.errors))
   }};
 }
 
