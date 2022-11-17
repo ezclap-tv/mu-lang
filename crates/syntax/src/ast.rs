@@ -40,8 +40,8 @@ use crate::span::{Span, Spanned};
 // - Expr
 
 /// Any kind of name containing alphanumeric characters, underscores, and
-/// numbers: `a`, `_b`, `c_0`, etc. It is invalid for an identifier to start
-/// with a digit, but internally, they may be made up of arbitrary UTF8 text.
+/// numbers: `a`, `_b`, `c_0`, etc.
+/// It is invalid for an identifier to start with a digit.
 pub type Ident<'a> = Spanned<Cow<'a, str>>;
 
 /// Converts a `Token` to an identifier. Only use this if `token.kind ==
@@ -595,20 +595,26 @@ pub mod expr {
     ExprKind::Try(Box::new(Try { body, catch }))
   }
 
-  #[derive(Clone, Debug)]
+  #[derive(Clone, DebugInner)]
   pub enum Spawn<'a> {
-    Call(Call<'a>),
-    Block(Block<'a>),
+    Call(SpawnCall<'a>),
+    Block(SpawnBlock<'a>),
   }
+
+  #[derive(Clone, Debug)]
+  pub struct SpawnCall<'a>(pub Call<'a>);
 
   #[inline]
   pub fn spawn_call<'a>(body: Call<'a>) -> ExprKind<'a> {
-    ExprKind::Spawn(Box::new(Spawn::Call(body)))
+    ExprKind::Spawn(Box::new(Spawn::Call(SpawnCall(body))))
   }
+
+  #[derive(Clone, Debug)]
+  pub struct SpawnBlock<'a>(pub Block<'a>);
 
   #[inline]
   pub fn spawn_block<'a>(body: Block<'a>) -> ExprKind<'a> {
-    ExprKind::Spawn(Box::new(Spawn::Block(body)))
+    ExprKind::Spawn(Box::new(Spawn::Block(SpawnBlock(body))))
   }
 
   #[derive(Clone, Debug)]
