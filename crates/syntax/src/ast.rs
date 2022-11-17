@@ -3,26 +3,25 @@
 //! (AST).
 //!
 //! The entrypoint for the AST is [Module][`crate::ast::Module`].
-//!
-//! Developer notes for working with spans in this module:
-//! - Use `T` wrapped in [Spanned][`crate::span::Spanned`] instead of `T` when
-//!   the full span of the syntax node cannot be reconstructed from its fields
-//!   alone. The Span inside of `Spanned` should always encapsulate the entire
-//!   syntax node.
-//! - Add a `span` ([Span][`crate::span::Span`]) field when it doesn't make
-//!   sense for the span to encapsulate the entire syntax node. One such case is
-//!   imports, which can be nested, so the resulting span would look quite
-//!   awkward, taking up multiple lines, but none of them quite fully.
-//! - If you need to add a span to an enum, add a `Kind` suffix to its name, and
-//!   create a type alias for the original name which wraps the enum in
-//!   [Spanned][`crate::span::Spanned`]. For example:
-//!
-//! ```text
-//! enum Stmt<'a> { ... }
-//! // the above becomes
-//! enum StmtKind<'a> { ... }
-//! type Stmt<'a> = Spanned<StmtKind<'a>>;
-//! ```
+
+// ### Developer notes for working with spans in this module:
+//
+// Use `T` wrapped in [Spanned][`crate::span::Spanned`] instead of `T` when
+// the full span of the syntax node cannot be reconstructed from its fields
+// alone. The Span inside of `Spanned` should always encapsulate the entire
+// syntax node.
+//
+// If you need to add a span to an enum, add a `Kind` suffix to its name, and
+// create a type alias for the original name which wraps the enum in
+// [Spanned][`crate::span::Spanned`]. For example:
+//
+// ```text
+// enum Stmt<'a> { ... }
+// // the above becomes
+// enum StmtKind<'a> { ... }
+// type Stmt<'a> = Spanned<StmtKind<'a>>;
+// ```
+
 #![allow(clippy::needless_lifetimes)]
 
 use std::borrow::Cow;
@@ -32,11 +31,6 @@ use indexmap::IndexMap;
 use syntax_derive::DebugInner;
 
 use crate::span::{Span, Spanned};
-
-// TODO: spans
-// - Type
-// - Stmt
-// - Expr
 
 /// Any kind of name containing alphanumeric characters, underscores, and
 /// numbers: `a`, `_b`, `c_0`, etc.
