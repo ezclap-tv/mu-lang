@@ -59,6 +59,7 @@ impl<'a> Parser<'a> {
 
     while !self.current().is(Eof) {
       if let Err(e) = self.parse_top_level() {
+        // TODO: do not sync if the error is missing semicolon
         self.errors.push(e);
         self.sync();
       }
@@ -152,10 +153,10 @@ impl<'a> Parser<'a> {
   }
 
   fn parse_top_level_stmt(&mut self) -> Result<StmtKind<'a>, Error> {
-    use TokenKind::{BraceR, For, Let, Loop, Semicolon, While};
+    use TokenKind::{BraceL, For, Let, Loop, Semicolon, While};
 
-    // this code is duplicated in `parse_block`,
-    // because semicolons work differently there.
+    // this code is duplicated in `parse_block`
+    // TODO: DRY this
     if self.bump_if(For) {
       self.parse_stmt_loop_for()
     } else if self.bump_if(While) {
@@ -166,18 +167,20 @@ impl<'a> Parser<'a> {
       let stmt = self.parse_stmt_let();
       self.expect(Semicolon)?;
       stmt
+    } else if self.current().is(BraceL) {
+      let inner = self.span(Self::parse_block)?.map(expr::block);
+      self.bump_if(Semicolon);
+      Ok(stmt::expr(inner))
     } else {
-      let stmt = self.parse_stmt_expr()?;
-      // semicolon after expr stmt is only required if the expr does not end with `}`,
-      // for example:
-      // if true { "a" } else { "b" } // not required
-      // "b" // required
-      if !self.previous().is(BraceR) {
+      let expr = self.span(Self::parse_expr)?;
+
+      if requires_semicolon(&expr) {
         self.expect(Semicolon)?;
       } else {
         self.bump_if(Semicolon);
       }
-      Ok(stmt)
+
+      Ok(stmt::expr(expr))
     }
   }
 
@@ -211,11 +214,6 @@ impl<'a> Parser<'a> {
     let value = self.span(Self::parse_expr)?;
 
     Ok(stmt::let_(name, ty, value))
-  }
-
-  fn parse_stmt_expr(&mut self) -> Result<StmtKind<'a>, Error> {
-    let expr = self.span(Self::parse_expr)?;
-    Ok(stmt::expr(expr))
   }
 
   #[inline]
@@ -733,7 +731,7 @@ impl<'a> Parser<'a> {
     Err(Error::unexpected(self.current()))
   }
 
-  // `"{" (stmt ";")* expr? "}"
+  // expr_block
   fn parse_block(&mut self) -> Result<Block<'a>, Error> {
     use TokenKind::{BraceL, BraceR, For, Let, Loop, Semicolon, While};
     check_recursion_limit(self.current().span)?;
@@ -755,6 +753,24 @@ impl<'a> Parser<'a> {
         let stmt = self.span(Self::parse_stmt_let)?;
         self.expect(Semicolon)?;
         stmt
+      } else if self.current().is(BraceL) {
+        // blocks require some special handling, to make the following work:
+        // let v = { { 0 } { 1 } }; // v is `1`
+        // it may look strange, but it makes sense when you consider that blocks are
+        // both statements *and* expressions, in different contexts.
+        // the last block in another block must behave like an expression.
+
+        let inner = self.span(Self::parse_block)?.map(expr::block);
+
+        // final block without semicolon = return value
+        if self.current().is(BraceR) {
+          block.last = Some(inner);
+          break;
+        }
+
+        self.bump_if(Semicolon);
+
+        inner.then(stmt::expr)
       } else {
         let expr = self.span(Self::parse_expr)?;
 
@@ -763,8 +779,14 @@ impl<'a> Parser<'a> {
           block.last = Some(expr);
           break;
         }
-        self.expect(Semicolon)?;
-        Spanned::new(expr.span, stmt::expr(expr))
+
+        if requires_semicolon(&expr) {
+          self.expect(Semicolon)?;
+        } else {
+          self.bump_if(Semicolon);
+        }
+
+        expr.then(stmt::expr)
       };
       block.items.push(stmt);
     }
@@ -1062,6 +1084,16 @@ fn check_recursion_limit(span: Span) -> Result<(), Error> {
   }
 }
 
+fn requires_semicolon(expr: &Expr<'_>) -> bool {
+  match expr.deref() {
+    ExprKind::Block(_) => false,
+    ExprKind::If(_) => false,
+    ExprKind::Try(_) => false,
+    ExprKind::Spawn(inner) if matches!(inner.deref(), expr::Spawn::Block(..)) => false,
+    _ => true,
+  }
+}
+
 // Adapted from https://docs.rs/snailquote/0.3.0/x86_64-pc-windows-msvc/src/snailquote/lib.rs.html.
 /// Unescapes the given string in-place. Returns `None` if the string contains
 /// an invalid escape sequence.
@@ -1224,7 +1256,7 @@ pub enum Error {
   // NOTE: temporary error to avoid false-positives while fuzzing.
   #[error("parsing {0} is not yet implemented")]
   NotImplemented(&'static str),
-  #[error("the maximum amount of nesting has been reached")]
+  #[error("nesting limit reached at {0}")]
   NestingLimitReached(Span),
 }
 
