@@ -130,6 +130,35 @@ fn parse_expr_block() {
 }
 
 #[test]
+fn parse_nested_blocks() {
+  snapshot!("{ { 0 } }", parse_expr);
+  snapshot!("{ { 0 }; }", parse_expr);
+  snapshot!("{ { 0 }; { 1 } }", parse_expr);
+  snapshot!("{ { 0 }; { 1 }; }", parse_expr);
+  snapshot!("{ { 0 } { 1 } }", parse_expr);
+}
+
+#[test]
+fn parse_top_level_no_semi() {
+  snapshot!(
+    "
+    { 0 }
+    { 1 }
+    { 2 }
+    { 3 }
+    "
+  );
+  snapshot!(
+    "
+    { 0 }
+    if v { 1 }
+    try v catch (e) { 2 }
+    spawn { 3 }
+    "
+  );
+}
+
+#[test]
 fn parse_expr_if() {
   snapshot!("if true { a } else { a }", parse_expr);
   snapshot!("if true { a } else if false { a } else { a }", parse_expr);
