@@ -1,21 +1,24 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: "(result, parser.errors)"
 ---
-Ok(
-    GetIndex {
-        opt: true,
-        target: GetIndex {
+(
+    Ok(
+        GetIndex {
             opt: true,
-            target: GetVar {
-                name: "a",
+            target: GetIndex {
+                opt: true,
+                target: GetVar {
+                    name: "a",
+                },
+                key: GetVar {
+                    name: "b",
+                },
             },
             key: GetVar {
-                name: "b",
+                name: "c",
             },
         },
-        key: GetVar {
-            name: "c",
-        },
-    },
+    ),
+    [],
 )

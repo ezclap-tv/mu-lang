@@ -1,18 +1,21 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: "(result, parser.errors)"
 ---
-Ok(
-    Block {
-        items: [
-            Int {
-                value: 10,
-            },
-        ],
-        last: Some(
-            Int {
-                value: 10,
-            },
-        ),
-    },
+(
+    Ok(
+        Block {
+            items: [
+                Int {
+                    value: 10,
+                },
+            ],
+            last: Some(
+                Int {
+                    value: 10,
+                },
+            ),
+        },
+    ),
+    [],
 )

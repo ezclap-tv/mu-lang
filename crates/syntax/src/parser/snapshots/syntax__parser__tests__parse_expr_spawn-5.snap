@@ -1,15 +1,18 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: "(result, parser.errors)"
 ---
-Ok(
-    SpawnCall(
-        Call {
-            opt: false,
-            target: GetVar {
-                name: "f",
+(
+    Ok(
+        SpawnCall(
+            Call {
+                opt: false,
+                target: GetVar {
+                    name: "f",
+                },
+                args: [],
             },
-            args: [],
-        },
+        ),
     ),
+    [],
 )

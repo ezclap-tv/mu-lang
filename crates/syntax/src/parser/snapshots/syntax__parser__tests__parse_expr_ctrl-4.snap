@@ -1,13 +1,16 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: "(result, parser.errors)"
 ---
-Ok(
-    Throw(
-        Some(
-            Int {
-                value: 10,
-            },
+(
+    Ok(
+        Throw(
+            Some(
+                Int {
+                    value: 10,
+                },
+            ),
         ),
     ),
+    [],
 )

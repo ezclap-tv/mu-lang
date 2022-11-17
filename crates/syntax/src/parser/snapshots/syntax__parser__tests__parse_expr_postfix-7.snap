@@ -1,20 +1,23 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: "(result, parser.errors)"
 ---
-Ok(
-    Cast {
-        opt: false,
-        target: GetVar {
-            name: "a",
+(
+    Ok(
+        Cast {
+            opt: false,
+            target: GetVar {
+                name: "a",
+            },
+            ty: Path {
+                segments: [
+                    Segment {
+                        ident: "A",
+                        generic_args: [],
+                    },
+                ],
+            },
         },
-        ty: Path {
-            segments: [
-                Segment {
-                    ident: "A",
-                    generic_args: [],
-                },
-            ],
-        },
-    },
+    ),
+    [],
 )

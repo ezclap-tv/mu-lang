@@ -1,25 +1,28 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: "(result, parser.errors)"
 ---
-Ok(
-    Call {
-        opt: false,
-        target: Call {
+(
+    Ok(
+        Call {
             opt: false,
-            target: GetVar {
-                name: "a",
+            target: Call {
+                opt: false,
+                target: GetVar {
+                    name: "a",
+                },
+                args: [
+                    GetVar {
+                        name: "b",
+                    },
+                ],
             },
             args: [
                 GetVar {
-                    name: "b",
+                    name: "c",
                 },
             ],
         },
-        args: [
-            GetVar {
-                name: "c",
-            },
-        ],
-    },
+    ),
+    [],
 )

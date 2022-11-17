@@ -1,16 +1,19 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: "(result, parser.errors)"
 ---
-Ok(
-    Opt {
-        inner: Path {
-            segments: [
-                Segment {
-                    ident: "T",
-                    generic_args: [],
-                },
-            ],
+(
+    Ok(
+        Opt {
+            inner: Path {
+                segments: [
+                    Segment {
+                        ident: "T",
+                        generic_args: [],
+                    },
+                ],
+            },
         },
-    },
+    ),
+    [],
 )

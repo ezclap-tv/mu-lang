@@ -1,38 +1,41 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: "(result, parser.errors)"
 ---
-Ok(
-    Cast {
-        opt: true,
-        target: Call {
+(
+    Ok(
+        Cast {
             opt: true,
-            target: GetIndex {
+            target: Call {
                 opt: true,
-                target: GetField {
+                target: GetIndex {
                     opt: true,
-                    target: GetVar {
-                        name: "a",
+                    target: GetField {
+                        opt: true,
+                        target: GetVar {
+                            name: "a",
+                        },
+                        key: "b",
                     },
-                    key: "b",
+                    key: GetVar {
+                        name: "c",
+                    },
                 },
-                key: GetVar {
-                    name: "c",
-                },
+                args: [
+                    GetVar {
+                        name: "d",
+                    },
+                ],
             },
-            args: [
-                GetVar {
-                    name: "d",
-                },
-            ],
+            ty: Path {
+                segments: [
+                    Segment {
+                        ident: "E",
+                        generic_args: [],
+                    },
+                ],
+            },
         },
-        ty: Path {
-            segments: [
-                Segment {
-                    ident: "E",
-                    generic_args: [],
-                },
-            ],
-        },
-    },
+    ),
+    [],
 )

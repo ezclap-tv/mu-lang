@@ -1,58 +1,61 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: "(result, parser.errors)"
 ---
-Ok(
-    If {
-        branches: [
-            (
-                Bool {
-                    value: true,
-                },
-                Block {
-                    items: [
-                        GetVar {
-                            name: "a",
-                        },
-                    ],
-                    last: Some(
-                        GetVar {
-                            name: "b",
-                        },
-                    ),
-                },
-            ),
-            (
-                Bool {
-                    value: false,
-                },
-                Block {
-                    items: [
-                        GetVar {
-                            name: "a",
-                        },
-                    ],
-                    last: Some(
-                        GetVar {
-                            name: "b",
-                        },
-                    ),
-                },
-            ),
-        ],
-        else_: Some(
-            Block {
-                items: [
-                    GetVar {
-                        name: "a",
+(
+    Ok(
+        If {
+            branches: [
+                (
+                    Bool {
+                        value: true,
                     },
-                ],
-                last: Some(
-                    GetVar {
-                        name: "b",
+                    Block {
+                        items: [
+                            GetVar {
+                                name: "a",
+                            },
+                        ],
+                        last: Some(
+                            GetVar {
+                                name: "b",
+                            },
+                        ),
                     },
                 ),
-            },
-        ),
-    },
+                (
+                    Bool {
+                        value: false,
+                    },
+                    Block {
+                        items: [
+                            GetVar {
+                                name: "a",
+                            },
+                        ],
+                        last: Some(
+                            GetVar {
+                                name: "b",
+                            },
+                        ),
+                    },
+                ),
+            ],
+            else_: Some(
+                Block {
+                    items: [
+                        GetVar {
+                            name: "a",
+                        },
+                    ],
+                    last: Some(
+                        GetVar {
+                            name: "b",
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+    [],
 )

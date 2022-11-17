@@ -16,19 +16,17 @@ pub fn lexer(input: &str) {
 }
 
 pub fn parser(input: &str) {
-  match parse(input) {
-    Ok(_) => {
-      println!("[REPRO] Gracefully parsed the input module.")
-    }
-    Err(errors) => {
-      let errors = errors
-        .into_iter()
-        .filter(|e| !matches!(e, Error::Lexer(_, _)))
-        .collect::<Vec<_>>();
-      println!(
-        "[REPRO] Gracefully parsed the input module with errors (lexer errors filtered out):\n{:#?}",
-        errors
-      );
-    }
+  let (_, errors) = parse(input);
+  if !errors.is_empty() {
+    let errors = errors
+      .into_iter()
+      .filter(|e| !matches!(e, Error::Lexer(_, _)))
+      .collect::<Vec<_>>();
+    println!(
+      "[REPRO] Gracefully parsed the input module with errors (lexer errors filtered out):\n{:#?}",
+      errors
+    );
+  } else {
+    println!("[REPRO] Gracefully parsed the input module.")
   }
 }

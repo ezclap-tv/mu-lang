@@ -1,27 +1,30 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: "(result, parser.errors)"
 ---
-Ok(
-    Fn {
-        params: [
-            Path {
-                segments: [
-                    Segment {
-                        ident: "A",
-                        generic_args: [],
-                    },
-                ],
-            },
-            Path {
-                segments: [
-                    Segment {
-                        ident: "B",
-                        generic_args: [],
-                    },
-                ],
-            },
-        ],
-        ret: None,
-    },
+(
+    Ok(
+        Fn {
+            params: [
+                Path {
+                    segments: [
+                        Segment {
+                            ident: "A",
+                            generic_args: [],
+                        },
+                    ],
+                },
+                Path {
+                    segments: [
+                        Segment {
+                            ident: "B",
+                            generic_args: [],
+                        },
+                    ],
+                },
+            ],
+            ret: None,
+        },
+    ),
+    [],
 )

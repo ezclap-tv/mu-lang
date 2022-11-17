@@ -1,13 +1,16 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: "(result, parser.errors)"
 ---
-Ok(
-    SetVar {
-        name: "a",
-        value: GetVar {
-            name: "b",
+(
+    Ok(
+        SetVar {
+            name: "a",
+            value: GetVar {
+                name: "b",
+            },
+            op: None,
         },
-        op: None,
-    },
+    ),
+    [],
 )

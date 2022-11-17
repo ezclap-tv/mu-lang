@@ -1,45 +1,48 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: "(result, parser.errors)"
 ---
-Ok(
-    Try {
-        body: Block {
-            items: [],
-            last: Some(
-                Call {
-                    opt: false,
-                    target: GetIndex {
-                        opt: false,
-                        target: GetField {
-                            opt: false,
-                            target: GetVar {
-                                name: "a",
-                            },
-                            key: "b",
-                        },
-                        key: GetVar {
-                            name: "c",
-                        },
-                    },
-                    args: [
-                        GetVar {
-                            name: "d",
-                        },
-                    ],
-                },
-            ),
-        },
-        catch: (
-            "e",
-            Block {
+(
+    Ok(
+        Try {
+            body: Block {
                 items: [],
                 last: Some(
-                    GetVar {
-                        name: "e",
+                    Call {
+                        opt: false,
+                        target: GetIndex {
+                            opt: false,
+                            target: GetField {
+                                opt: false,
+                                target: GetVar {
+                                    name: "a",
+                                },
+                                key: "b",
+                            },
+                            key: GetVar {
+                                name: "c",
+                            },
+                        },
+                        args: [
+                            GetVar {
+                                name: "d",
+                            },
+                        ],
                     },
                 ),
             },
-        ),
-    },
+            catch: (
+                "e",
+                Block {
+                    items: [],
+                    last: Some(
+                        GetVar {
+                            name: "e",
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+    [],
 )

@@ -1,9 +1,12 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: "(result, parser.errors)"
 ---
-Ok(
-    Throw(
-        None,
+(
+    Ok(
+        Throw(
+            None,
+        ),
     ),
+    [],
 )

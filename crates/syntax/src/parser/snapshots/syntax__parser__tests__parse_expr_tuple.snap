@@ -1,13 +1,16 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: "(result, parser.errors)"
 ---
-Ok(
-    Tuple {
-        fields: [
-            Int {
-                value: 0,
-            },
-        ],
-    },
+(
+    Ok(
+        Tuple {
+            fields: [
+                Int {
+                    value: 0,
+                },
+            ],
+        },
+    ),
+    [],
 )

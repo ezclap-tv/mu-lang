@@ -1,31 +1,34 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: "(result, parser.errors)"
 ---
-Ok(
-    Try {
-        body: Block {
-            items: [
-                GetVar {
-                    name: "a",
-                },
-            ],
-            last: Some(
-                GetVar {
-                    name: "b",
-                },
-            ),
-        },
-        catch: (
-            "e",
-            Block {
-                items: [],
+(
+    Ok(
+        Try {
+            body: Block {
+                items: [
+                    GetVar {
+                        name: "a",
+                    },
+                ],
                 last: Some(
                     GetVar {
-                        name: "e",
+                        name: "b",
                     },
                 ),
             },
-        ),
-    },
+            catch: (
+                "e",
+                Block {
+                    items: [],
+                    last: Some(
+                        GetVar {
+                            name: "e",
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+    [],
 )

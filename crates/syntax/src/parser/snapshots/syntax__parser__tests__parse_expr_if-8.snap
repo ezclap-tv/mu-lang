@@ -1,51 +1,54 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: "(result, parser.errors)"
 ---
-Ok(
-    If {
-        branches: [
-            (
-                Call {
-                    opt: false,
-                    target: GetIndex {
+(
+    Ok(
+        If {
+            branches: [
+                (
+                    Call {
                         opt: false,
-                        target: GetField {
+                        target: GetIndex {
                             opt: false,
-                            target: GetVar {
-                                name: "a",
+                            target: GetField {
+                                opt: false,
+                                target: GetVar {
+                                    name: "a",
+                                },
+                                key: "b",
                             },
-                            key: "b",
+                            key: GetVar {
+                                name: "c",
+                            },
                         },
-                        key: GetVar {
-                            name: "c",
-                        },
+                        args: [
+                            GetVar {
+                                name: "d",
+                            },
+                        ],
                     },
-                    args: [
-                        GetVar {
-                            name: "d",
-                        },
-                    ],
-                },
+                    Block {
+                        items: [],
+                        last: Some(
+                            Int {
+                                value: 0,
+                            },
+                        ),
+                    },
+                ),
+            ],
+            else_: Some(
                 Block {
                     items: [],
                     last: Some(
                         Int {
-                            value: 0,
+                            value: 1,
                         },
                     ),
                 },
             ),
-        ],
-        else_: Some(
-            Block {
-                items: [],
-                last: Some(
-                    Int {
-                        value: 1,
-                    },
-                ),
-            },
-        ),
-    },
+        },
+    ),
+    [],
 )

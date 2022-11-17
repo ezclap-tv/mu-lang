@@ -1,15 +1,18 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: "(result, parser.errors)"
 ---
-Ok(
-    Unary {
-        op: Negate,
-        inner: Unary {
-            op: Invert,
-            inner: GetVar {
-                name: "a",
+(
+    Ok(
+        Unary {
+            op: Negate,
+            inner: Unary {
+                op: Invert,
+                inner: GetVar {
+                    name: "a",
+                },
             },
         },
-    },
+    ),
+    [],
 )

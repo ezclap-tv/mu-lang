@@ -1,14 +1,45 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: "(result, parser.errors)"
 ---
-Ok(
-    If {
-        branches: [
-            (
-                Bool {
-                    value: true,
-                },
+(
+    Ok(
+        If {
+            branches: [
+                (
+                    Bool {
+                        value: true,
+                    },
+                    Block {
+                        items: [
+                            GetVar {
+                                name: "a",
+                            },
+                            GetVar {
+                                name: "b",
+                            },
+                        ],
+                        last: None,
+                    },
+                ),
+                (
+                    Bool {
+                        value: false,
+                    },
+                    Block {
+                        items: [
+                            GetVar {
+                                name: "a",
+                            },
+                            GetVar {
+                                name: "b",
+                            },
+                        ],
+                        last: None,
+                    },
+                ),
+            ],
+            else_: Some(
                 Block {
                     items: [
                         GetVar {
@@ -21,35 +52,7 @@ Ok(
                     last: None,
                 },
             ),
-            (
-                Bool {
-                    value: false,
-                },
-                Block {
-                    items: [
-                        GetVar {
-                            name: "a",
-                        },
-                        GetVar {
-                            name: "b",
-                        },
-                    ],
-                    last: None,
-                },
-            ),
-        ],
-        else_: Some(
-            Block {
-                items: [
-                    GetVar {
-                        name: "a",
-                    },
-                    GetVar {
-                        name: "b",
-                    },
-                ],
-                last: None,
-            },
-        ),
-    },
+        },
+    ),
+    [],
 )

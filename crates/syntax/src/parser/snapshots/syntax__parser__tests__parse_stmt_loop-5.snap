@@ -2,7 +2,7 @@
 source: crates/syntax/src/parser/tests.rs
 expression: result
 ---
-Ok(
+(
     Module {
         imports: [],
         symbols: Symbols {
@@ -29,4 +29,5 @@ Ok(
             },
         ],
     },
+    [],
 )

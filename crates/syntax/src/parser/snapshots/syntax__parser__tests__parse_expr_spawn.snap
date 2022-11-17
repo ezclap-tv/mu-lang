@@ -1,12 +1,15 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: "(result, parser.errors)"
 ---
-Ok(
-    SpawnBlock(
-        Block {
-            items: [],
-            last: None,
-        },
+(
+    Ok(
+        SpawnBlock(
+            Block {
+                items: [],
+                last: None,
+            },
+        ),
     ),
+    [],
 )

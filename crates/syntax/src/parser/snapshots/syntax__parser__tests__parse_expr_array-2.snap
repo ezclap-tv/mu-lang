@@ -1,14 +1,17 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: "(result, parser.errors)"
 ---
-Ok(
-    Copy(
-        Int {
-            value: 0,
-        },
-        Int {
-            value: 100,
-        },
+(
+    Ok(
+        Copy(
+            Int {
+                value: 0,
+            },
+            Int {
+                value: 100,
+            },
+        ),
     ),
+    [],
 )

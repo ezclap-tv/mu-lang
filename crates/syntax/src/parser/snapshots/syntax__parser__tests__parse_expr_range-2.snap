@@ -1,14 +1,17 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: "(result, parser.errors)"
 ---
-Ok(
-    Range {
-        start: GetVar {
-            name: "a",
+(
+    Ok(
+        Range {
+            start: GetVar {
+                name: "a",
+            },
+            end: GetVar {
+                name: "b",
+            },
         },
-        end: GetVar {
-            name: "b",
-        },
-    },
+    ),
+    [],
 )

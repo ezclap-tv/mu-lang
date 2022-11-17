@@ -1,9 +1,12 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: "(result, parser.errors)"
 ---
-Ok(
-    Int {
-        value: 0,
-    },
+(
+    Ok(
+        Int {
+            value: 0,
+        },
+    ),
+    [],
 )

@@ -1,14 +1,30 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: "(result, parser.errors)"
 ---
-Ok(
-    If {
-        branches: [
-            (
-                Bool {
-                    value: true,
-                },
+(
+    Ok(
+        If {
+            branches: [
+                (
+                    Bool {
+                        value: true,
+                    },
+                    Block {
+                        items: [
+                            GetVar {
+                                name: "a",
+                            },
+                        ],
+                        last: Some(
+                            GetVar {
+                                name: "b",
+                            },
+                        ),
+                    },
+                ),
+            ],
+            else_: Some(
                 Block {
                     items: [
                         GetVar {
@@ -22,20 +38,7 @@ Ok(
                     ),
                 },
             ),
-        ],
-        else_: Some(
-            Block {
-                items: [
-                    GetVar {
-                        name: "a",
-                    },
-                ],
-                last: Some(
-                    GetVar {
-                        name: "b",
-                    },
-                ),
-            },
-        ),
-    },
+        },
+    ),
+    [],
 )

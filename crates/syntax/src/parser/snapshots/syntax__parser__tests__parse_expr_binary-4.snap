@@ -1,21 +1,24 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: "(result, parser.errors)"
 ---
-Ok(
-    Binary {
-        op: NotEquals,
-        left: Binary {
-            op: Equals,
-            left: GetVar {
-                name: "a",
+(
+    Ok(
+        Binary {
+            op: NotEquals,
+            left: Binary {
+                op: Equals,
+                left: GetVar {
+                    name: "a",
+                },
+                right: GetVar {
+                    name: "b",
+                },
             },
             right: GetVar {
-                name: "b",
+                name: "c",
             },
         },
-        right: GetVar {
-            name: "c",
-        },
-    },
+    ),
+    [],
 )

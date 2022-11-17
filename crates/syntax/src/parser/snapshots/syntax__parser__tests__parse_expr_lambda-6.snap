@@ -1,22 +1,25 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: "(result, parser.errors)"
 ---
-Ok(
-    Lambda {
-        params: [
-            "a",
-        ],
-        body: Block {
-            items: [
-                GetVar {
-                    name: "a",
-                },
-                GetVar {
-                    name: "b",
-                },
+(
+    Ok(
+        Lambda {
+            params: [
+                "a",
             ],
-            last: None,
+            body: Block {
+                items: [
+                    GetVar {
+                        name: "a",
+                    },
+                    GetVar {
+                        name: "b",
+                    },
+                ],
+                last: None,
+            },
         },
-    },
+    ),
+    [],
 )

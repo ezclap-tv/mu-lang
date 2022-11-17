@@ -1,68 +1,71 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: "(result, parser.errors)"
 ---
-Ok(
-    Try {
-        body: Block {
-            items: [],
-            last: Some(
-                Class {
-                    target: Path {
-                        segments: [
-                            Segment {
-                                ident: "T",
-                                generic_args: [],
-                            },
-                        ],
-                    },
-                    fields: [
-                        (
-                            "v",
-                            Try {
-                                body: Block {
-                                    items: [],
-                                    last: Some(
-                                        Class {
-                                            target: Path {
-                                                segments: [
-                                                    Segment {
-                                                        ident: "T",
-                                                        generic_args: [],
-                                                    },
-                                                ],
-                                            },
-                                            fields: [],
-                                        },
-                                    ),
+(
+    Ok(
+        Try {
+            body: Block {
+                items: [],
+                last: Some(
+                    Class {
+                        target: Path {
+                            segments: [
+                                Segment {
+                                    ident: "T",
+                                    generic_args: [],
                                 },
-                                catch: (
-                                    "e",
-                                    Block {
+                            ],
+                        },
+                        fields: [
+                            (
+                                "v",
+                                Try {
+                                    body: Block {
                                         items: [],
                                         last: Some(
-                                            GetVar {
-                                                name: "e",
+                                            Class {
+                                                target: Path {
+                                                    segments: [
+                                                        Segment {
+                                                            ident: "T",
+                                                            generic_args: [],
+                                                        },
+                                                    ],
+                                                },
+                                                fields: [],
                                             },
                                         ),
                                     },
-                                ),
-                            },
-                        ),
-                    ],
-                },
-            ),
-        },
-        catch: (
-            "e",
-            Block {
-                items: [],
-                last: Some(
-                    GetVar {
-                        name: "e",
+                                    catch: (
+                                        "e",
+                                        Block {
+                                            items: [],
+                                            last: Some(
+                                                GetVar {
+                                                    name: "e",
+                                                },
+                                            ),
+                                        },
+                                    ),
+                                },
+                            ),
+                        ],
                     },
                 ),
             },
-        ),
-    },
+            catch: (
+                "e",
+                Block {
+                    items: [],
+                    last: Some(
+                        GetVar {
+                            name: "e",
+                        },
+                    ),
+                },
+            ),
+        },
+    ),
+    [],
 )

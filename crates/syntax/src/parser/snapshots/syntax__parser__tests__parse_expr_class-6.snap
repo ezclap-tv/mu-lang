@@ -1,21 +1,24 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: "(result, parser.errors)"
 ---
-Ok(
-    Class {
-        target: Path {
-            segments: [
-                Segment {
-                    ident: "Foo",
-                    generic_args: [],
-                },
-                Segment {
-                    ident: "Bar",
-                    generic_args: [],
-                },
-            ],
+(
+    Ok(
+        Class {
+            target: Path {
+                segments: [
+                    Segment {
+                        ident: "Foo",
+                        generic_args: [],
+                    },
+                    Segment {
+                        ident: "Bar",
+                        generic_args: [],
+                    },
+                ],
+            },
+            fields: [],
         },
-        fields: [],
-    },
+    ),
+    [],
 )
