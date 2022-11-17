@@ -1,0 +1,19 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    Block {
+        items: [],
+        last: Some(
+            Block {
+                items: [],
+                last: Some(
+                    Int {
+                        value: 0,
+                    },
+                ),
+            },
+        ),
+    },
+)

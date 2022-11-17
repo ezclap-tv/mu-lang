@@ -1,0 +1,74 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+Ok(
+    Module {
+        imports: [],
+        symbols: Symbols {
+            fns: {},
+            classes: {},
+            traits: {},
+            aliases: {},
+        },
+        top_level: [
+            Block {
+                items: [],
+                last: Some(
+                    Int {
+                        value: 0,
+                    },
+                ),
+            },
+            If {
+                branches: [
+                    (
+                        GetVar {
+                            name: "v",
+                        },
+                        Block {
+                            items: [],
+                            last: Some(
+                                Int {
+                                    value: 1,
+                                },
+                            ),
+                        },
+                    ),
+                ],
+                else_: None,
+            },
+            Try {
+                body: Block {
+                    items: [],
+                    last: Some(
+                        GetVar {
+                            name: "v",
+                        },
+                    ),
+                },
+                catch: (
+                    "e",
+                    Block {
+                        items: [],
+                        last: Some(
+                            Int {
+                                value: 2,
+                            },
+                        ),
+                    },
+                ),
+            },
+            SpawnBlock(
+                Block {
+                    items: [],
+                    last: Some(
+                        Int {
+                            value: 3,
+                        },
+                    ),
+                },
+            ),
+        ],
+    },
+)

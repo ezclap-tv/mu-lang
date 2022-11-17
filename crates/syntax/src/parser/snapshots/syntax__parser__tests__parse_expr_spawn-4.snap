@@ -3,7 +3,7 @@ source: crates/syntax/src/parser/tests.rs
 expression: result
 ---
 Ok(
-    Block(
+    SpawnBlock(
         Block {
             items: [
                 GetVar {
