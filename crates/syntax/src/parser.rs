@@ -7,7 +7,7 @@
 //! It is implemented according to the [grammar][`crate::grammar`]. Both must be
 //! kept in sync with eachother.
 //!
-//! The entrypoints of this is [parse][`crate::parser::parse`].
+//! The entrypoint of this module is [parse][`crate::parser::parse`].
 #![deny(unused_must_use)]
 #![allow(clippy::needless_lifetimes)]
 
