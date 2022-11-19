@@ -25,10 +25,9 @@
 #![allow(clippy::needless_lifetimes)]
 
 use std::borrow::Cow;
-use std::ops::Deref;
 
 use indexmap::IndexMap;
-use span::{Span, Spanned};
+use span::Spanned;
 use syntax_derive::DebugInner;
 
 /// Any kind of name containing alphanumeric characters, underscores, and
@@ -77,110 +76,17 @@ pub struct Import<'a> {
 
 #[derive(Clone, Debug, Default)]
 pub struct Symbols<'a> {
-  pub fns: Map<'a, symbol::Fn<'a>>,
-  pub classes: Map<'a, symbol::Class<'a>>,
-  pub traits: Map<'a, symbol::Trait<'a>>,
-  pub aliases: Map<'a, symbol::Alias<'a>>,
-}
-
-impl<'a> Symbols<'a> {
-  // Helper function to simplify adding `Fn` symbols
-  #[allow(clippy::too_many_arguments)]
-  #[inline]
-  pub fn insert_fn(
-    &mut self,
-    name: Ident<'a>,
-    tparams: Vec<symbol::TParam<'a>>,
-    params: Vec<symbol::Param<'a>>,
-    ret: Option<Type<'a>>,
-    bounds: Vec<symbol::Bound<'a>>,
-    body: Option<expr::Block<'a>>,
-    span: Span,
-  ) {
-    self.fns.insert(
-      name.deref().clone(),
-      symbol::Fn {
-        name,
-        tparams,
-        params,
-        ret,
-        bounds,
-        body,
-        span,
-      },
-    );
-  }
-
-  // Helper function to simplify adding `Class` symbols
-  #[inline]
-  pub fn insert_class(
-    &mut self,
-    name: Ident<'a>,
-    tparams: Vec<symbol::TParam<'a>>,
-    bounds: Vec<symbol::Bound<'a>>,
-    members: Vec<symbol::ClassMember<'a>>,
-    span: Span,
-  ) {
-    self.classes.insert(
-      name.deref().clone(),
-      symbol::Class {
-        name,
-        tparams,
-        bounds,
-        members,
-        span,
-      },
-    );
-  }
-
-  // Helper function to simplify adding `Trait` symbols
-  #[inline]
-  pub fn insert_trait(
-    &mut self,
-    name: Ident<'a>,
-    tparams: Vec<symbol::TParam<'a>>,
-    members: Vec<symbol::TraitMember<'a>>,
-    span: Span,
-  ) {
-    self.traits.insert(
-      name.deref().clone(),
-      symbol::Trait {
-        name,
-        tparams,
-        members,
-        span,
-      },
-    );
-  }
-
-  // Helper function to simplify adding `Alias` symbols
-  #[inline]
-  pub fn insert_alias(
-    &mut self,
-    name: Ident<'a>,
-    tparams: Vec<symbol::TParam<'a>>,
-    bounds: Vec<symbol::Bound<'a>>,
-    ty: Type<'a>,
-    span: Span,
-  ) {
-    self.aliases.insert(
-      name.deref().clone(),
-      symbol::Alias {
-        name,
-        tparams,
-        bounds,
-        ty,
-        span,
-      },
-    );
-  }
+  pub fns: Map<'a, (symbol::Vis, symbol::Fn<'a>)>,
+  pub classes: Map<'a, (symbol::Vis, symbol::Class<'a>)>,
+  pub traits: Map<'a, (symbol::Vis, symbol::Trait<'a>)>,
+  pub aliases: Map<'a, (symbol::Vis, symbol::Alias<'a>)>,
 }
 
 pub mod symbol {
-  use super::{expr, DebugInner, Expr, Ident, Span, Type};
+  use super::{expr, Expr, Ident, Map, Type};
 
   /// A visibility modifier.
-  #[derive(Clone, Copy, Debug)]
+  #[derive(Clone, Copy, Debug, PartialEq)]
   pub enum Vis {
     /// `pub`
     Public,
@@ -208,7 +114,6 @@ pub mod symbol {
     pub ret: Option<Type<'a>>,
     pub bounds: Vec<Bound<'a>>,
     pub body: Option<expr::Block<'a>>,
-    pub span: Span,
   }
 
   /// Classes encapsulate data, and operations on that data.
@@ -225,8 +130,15 @@ pub mod symbol {
     pub name: Ident<'a>,
     pub tparams: Vec<TParam<'a>>,
     pub bounds: Vec<Bound<'a>>,
-    pub members: Vec<ClassMember<'a>>,
-    pub span: Span,
+    pub members: ClassMembers<'a>,
+  }
+
+  #[derive(Clone, Debug, Default)]
+  pub struct ClassMembers<'a> {
+    pub fields: Map<'a, Field<'a>>,
+    pub fns: Map<'a, Fn<'a>>,
+    pub aliases: Map<'a, Alias<'a>>,
+    pub impls: Vec<Impl<'a>>,
   }
 
   /// Traits encapsulate behavior.
@@ -246,8 +158,13 @@ pub mod symbol {
   pub struct Trait<'a> {
     pub name: Ident<'a>,
     pub tparams: Vec<TParam<'a>>,
-    pub members: Vec<TraitMember<'a>>,
-    pub span: Span,
+    pub members: TraitMembers<'a>,
+  }
+
+  #[derive(Clone, Debug, Default)]
+  pub struct TraitMembers<'a> {
+    pub fns: Map<'a, Fn<'a>>,
+    pub aliases: Map<'a, Alias<'a>>,
   }
 
   /// A type alias allows renaming types and partially instantiating generic
@@ -264,15 +181,13 @@ pub mod symbol {
     pub tparams: Vec<TParam<'a>>,
     pub bounds: Vec<Bound<'a>>,
     pub ty: Type<'a>,
-    pub span: Span,
   }
 
   #[derive(Clone, Debug)]
   pub struct Impl<'a> {
     pub tparams: Vec<TParam<'a>>,
-    pub trait_: Type<'a>,
-    pub members: Vec<TraitMember<'a>>,
-    pub span: Span,
+    pub ty: Type<'a>,
+    pub members: TraitMembers<'a>,
   }
 
   #[derive(Clone, Debug)]
@@ -284,7 +199,7 @@ pub mod symbol {
   #[derive(Clone, Debug)]
   pub struct Param<'a> {
     pub name: Ident<'a>,
-    pub ty: Type<'a>,
+    pub ty: Option<Type<'a>>,
     pub default: Option<Expr<'a>>,
   }
 
@@ -294,24 +209,10 @@ pub mod symbol {
     pub constraint: Vec<Type<'a>>,
   }
 
-  #[derive(Clone, DebugInner)]
-  pub enum ClassMember<'a> {
-    Field(ClassField<'a>),
-    Fn(Fn<'a>),
-    Alias(Alias<'a>),
-    Impl(Impl<'a>),
-  }
-
   #[derive(Clone, Debug)]
-  pub struct ClassField<'a> {
+  pub struct Field<'a> {
     pub name: Ident<'a>,
     pub ty: Type<'a>,
-  }
-
-  #[derive(Clone, DebugInner)]
-  pub enum TraitMember<'a> {
-    Fn(Fn<'a>),
-    Alias(Alias<'a>),
   }
 }
 
@@ -897,5 +798,105 @@ pub mod expr {
 
   pub fn tuple<'a>(fields: Vec<Expr<'a>>) -> ExprKind<'a> {
     ExprKind::Literal(Box::new(Literal::Tuple(Tuple { fields })))
+  }
+}
+
+// display impls
+
+use std::fmt;
+
+impl<'a> fmt::Display for TypeKind<'a> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self {
+      TypeKind::Opt(ty) => write!(f, "{ty}"),
+      TypeKind::Path(p) => write!(f, "{p}"),
+      TypeKind::Fn(ty) => write!(f, "{ty}"),
+      TypeKind::Array(ty) => write!(f, "{ty}"),
+      TypeKind::Tuple(ty) => write!(f, "{ty}"),
+      TypeKind::Inst(ty) => write!(f, "{ty}"),
+      TypeKind::Field(ty) => write!(f, "{ty}"),
+    }
+  }
+}
+
+impl<'a> fmt::Display for ty::Opt<'a> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "({})?", self.inner)
+  }
+}
+
+impl<'a> fmt::Display for Path<'a> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    let mut iter = self.segments.iter().peekable();
+    while let Some(segment) = iter.next() {
+      write!(f, "{}", segment.ident)?;
+      if !segment.generic_args.is_empty() {
+        write!(f, "<")?;
+        fmt_type_list(&segment.generic_args, f)?;
+        write!(f, ">")?;
+      }
+      if iter.peek().is_some() {
+        write!(f, ".")?;
+      }
+    }
+
+    Ok(())
+  }
+}
+
+impl<'a> fmt::Display for ty::Fn<'a> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "fn")?;
+    write!(f, "(")?;
+    fmt_type_list(&self.params, f)?;
+    write!(f, ")")?;
+    if let Some(ret) = &self.ret {
+      write!(f, "-> {}", ret)?;
+    }
+
+    Ok(())
+  }
+}
+
+impl<'a> fmt::Display for ty::Array<'a> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "[{}]", self.item)
+  }
+}
+
+impl<'a> fmt::Display for ty::Tuple<'a> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "(")?;
+    fmt_type_list(&self.items, f)?;
+    write!(f, ")")?;
+
+    Ok(())
+  }
+}
+
+impl<'a> fmt::Display for ty::Inst<'a> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "{}<", self.cons)?;
+    fmt_type_list(&self.args, f)?;
+    write!(f, ">")?;
+
+    Ok(())
+  }
+}
+
+fn fmt_type_list(list: &[Type], f: &mut fmt::Formatter<'_>) -> fmt::Result {
+  let mut iter = list.iter().peekable();
+  while let Some(arg) = iter.next() {
+    write!(f, "{arg}")?;
+    if iter.peek().is_some() {
+      write!(f, ", ")?;
+    }
+  }
+  Ok(())
+}
+
+impl<'a> fmt::Display for ty::Field<'a> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    write!(f, "{}.{}", self.ty, self.name)
   }
 }
