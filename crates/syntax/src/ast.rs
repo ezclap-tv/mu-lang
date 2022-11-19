@@ -28,9 +28,8 @@ use std::borrow::Cow;
 use std::ops::Deref;
 
 use indexmap::IndexMap;
+use span::{Span, Spanned};
 use syntax_derive::DebugInner;
-
-use crate::span::{Span, Spanned};
 
 /// Any kind of name containing alphanumeric characters, underscores, and
 /// numbers: `a`, `_b`, `c_0`, etc.

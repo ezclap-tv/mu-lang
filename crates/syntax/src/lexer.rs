@@ -11,8 +11,7 @@ use std::borrow::Cow;
 use std::mem::discriminant;
 
 use logos::{FilterResult, Logos};
-
-use crate::span::Span;
+use span::Span;
 
 pub struct Lexer<'a> {
   inner: logos::Lexer<'a, TokenKind>,

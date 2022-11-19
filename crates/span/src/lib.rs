@@ -34,6 +34,15 @@ impl From<Range<usize>> for Span {
   }
 }
 
+impl From<Span> for Range<usize> {
+  fn from(value: Span) -> Self {
+    Range {
+      start: value.start,
+      end: value.end,
+    }
+  }
+}
+
 impl std::fmt::Display for Span {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(f, "{}..{}", self.start, self.end)

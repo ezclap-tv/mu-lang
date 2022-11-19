@@ -1,5 +1,7 @@
 [workspace]
 members = [
+  "crates/diagnosis",
+  "crates/span",
   "crates/syntax",
   "crates/syntax/syntax_derive",
   "fuzz/mu-fuzz-cli",

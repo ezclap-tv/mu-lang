@@ -13,6 +13,7 @@
 
 use std::ops::Deref;
 
+use span::{Span, Spanned};
 use thiserror::Error;
 
 use crate::ast::expr::{AssignOp, BinaryOp, Block, UnaryOp};
@@ -20,7 +21,6 @@ use crate::ast::{
   expr, stmt, ty, Expr, ExprKind, Ident, Import, Module, Path, Segment, StmtKind, TypeKind,
 };
 use crate::lexer::{Lexer, Token, TokenKind, ANGLES, BRACES, BRACKETS, PARENS};
-use crate::span::{Span, Spanned};
 
 // https://github.com/ves-lang/ves/blob/master/ves-parser/src/parser.rs
 
@@ -1235,32 +1235,32 @@ impl<T: Clone> WithElem<T> for Vec<T> {
 
 #[derive(Clone, Debug, Error)]
 pub enum Error {
-  #[error("invalid character sequence `{0}` at {1}")]
+  #[error("invalid character sequence `{0}`")]
   Lexer(String, Span),
-  #[error("unexpected visibility modifier at {0}")]
+  #[error("unexpected visibility modifier")]
   UnexpectedVis(Span),
-  #[error("expected {0} at {1}")]
+  #[error("expected {0}")]
   Expected(TokenKind, Span),
-  #[error("unexpected {0} at {1}")]
+  #[error("unexpected {0}")]
   Unexpected(TokenKind, Span),
-  #[error("invalid assignment target at {0}")]
+  #[error("invalid assignment target")]
   InvalidAssign(Span),
-  #[error("string at {0} contains an invalid escape sequence")]
+  #[error("string contains an invalid escape sequence")]
   InvalidEscapeSequence(Span),
-  #[error("expr at {0} cannot be the instantiated")]
+  #[error("expr cannot be the instantiated")]
   InvalidClassInst(Span),
   #[error("only blocks or function calls may be spawned")]
   InvalidSpawn(Span),
-  #[error("invalid optional expr at {0}")]
+  #[error("invalid optional expr")]
   InvalidOptional(Span),
-  #[error("failed to parse int at {0}: {1}")]
+  #[error("failed to parse int: {1}")]
   ParseInt(Span, #[source] std::num::ParseIntError),
-  #[error("failed to parse float at {0}: {1}")]
+  #[error("failed to parse float: {1}")]
   ParseFloat(Span, #[source] std::num::ParseFloatError),
   // NOTE: temporary error to avoid false-positives while fuzzing.
   #[error("parsing {0} is not yet implemented")]
   NotImplemented(&'static str),
-  #[error("nesting limit reached at {0}")]
+  #[error("nesting limit reached")]
   NestingLimitReached(Span),
 }
 
