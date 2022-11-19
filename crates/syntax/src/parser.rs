@@ -11,18 +11,21 @@
 #![deny(unused_must_use)]
 #![allow(clippy::needless_lifetimes)]
 
+use std::fmt;
 use std::ops::Deref;
 
 use span::{Span, Spanned};
 use thiserror::Error;
 
 use crate::ast::expr::{AssignOp, BinaryOp, Block, UnaryOp};
+use crate::ast::symbol::{Bound, ClassMembers, Field, Param, TParam, TraitMembers, Vis};
 use crate::ast::{
-  expr, stmt, ty, Expr, ExprKind, Ident, Import, Module, Path, Segment, StmtKind, TypeKind,
+  expr, stmt, symbol, ty, Expr, ExprKind, Ident, Import, Module, Path, Segment, StmtKind, Type,
+  TypeKind,
 };
 use crate::lexer::{Lexer, Token, TokenKind, ANGLES, BRACES, BRACKETS, PARENS};
 
-// https://github.com/ves-lang/ves/blob/master/ves-parser/src/parser.rs
+// TODO: better error handling - blocks should collect errors
 
 pub fn parse(source: &str) -> Result<Module<'_>, Vec<Error>> {
   let (module, errors) = Parser {
@@ -77,44 +80,266 @@ impl<'a> Parser<'a> {
   }
 
   fn parse_top_level(&mut self) -> Result<(), Error> {
-    use TokenKind::{Class, Fn, Pub, Trait, Type, Use};
+    use TokenKind::{Class, Fn, Pub, Semicolon, Trait, Type, Use};
 
-    self.bump_if(Pub);
+    let vis = match self.bump_if(Pub) {
+      true => Vis::Public,
+      false => Vis::Private,
+    };
 
     if self.bump_if(Fn) {
-      self.parse_decl_fn(self.previous().is(Pub))?;
+      // decl_fn
+      let fn_ = self.parse_decl_fn()?;
+      let fns = &mut self.module.symbols.fns;
+      fns.insert(fn_.name.deref().clone(), (vis, fn_));
     } else if self.bump_if(Type) {
-      self.parse_decl_type(self.previous().is(Pub))?;
+      // decl_alias
+      let alias = self.parse_decl_alias()?;
+      self.expect(Semicolon)?;
+      let aliases = &mut self.module.symbols.aliases;
+      aliases.insert(alias.name.deref().clone(), (vis, alias));
     } else if self.bump_if(Class) {
-      self.parse_decl_class(self.previous().is(Pub))?;
+      // decl_class
+      let class = self.parse_decl_class()?;
+      let classes = &mut self.module.symbols.classes;
+      classes.insert(class.name.deref().clone(), (vis, class));
     } else if self.bump_if(Trait) {
-      self.parse_decl_trait(self.previous().is(Pub))?;
+      // decl_trait
+      let trait_ = self.parse_decl_trait()?;
+      let traits = &mut self.module.symbols.traits;
+      traits.insert(trait_.name.deref().clone(), (vis, trait_));
     } else if self.bump_if(Use) {
+      // import
       self.parse_import()?;
-    } else if !self.previous().is(Pub) {
+    } else if vis != Vis::Public {
+      // stmt
       let stmt = self.span(Self::parse_top_level_stmt)?;
       self.module.top_level.push(stmt);
     } else {
-      return Err(Error::unexpected_vis(self.previous().span))?;
+      return Err(Error::UnexpectedVis(self.previous().span))?;
     }
 
     Ok(())
   }
 
-  fn parse_decl_fn(&mut self, _is_pub: bool) -> Result<(), Error> {
-    Err(Error::NotImplemented("function declarations"))
+  fn parse_decl_fn(&mut self) -> Result<symbol::Fn<'a>, Error> {
+    use TokenKind::{ArrowThin, Less, Semicolon, Where};
+
+    let name = self.parse_ident()?;
+    let tparams = if self.current().is(Less) {
+      self.parse_type_param_list()?
+    } else {
+      vec![]
+    };
+    let params = self.parse_param_list()?;
+    let ret = self.maybe(ArrowThin, |p, _| p.span(Self::parse_type))?;
+    let bounds = self
+      .maybe(Where, |p, _| p.parse_bound_list())?
+      .unwrap_or_default();
+    let body = if !self.bump_if(Semicolon) {
+      Some(self.parse_block()?)
+    } else {
+      None
+    };
+
+    Ok(symbol::Fn {
+      name,
+      tparams,
+      params,
+      ret,
+      bounds,
+      body,
+    })
   }
 
-  fn parse_decl_type(&mut self, _is_pub: bool) -> Result<(), Error> {
-    Err(Error::NotImplemented("type declarations"))
+  fn parse_decl_alias(&mut self) -> Result<symbol::Alias<'a>, Error> {
+    use TokenKind::{Equal, Less, Where};
+
+    let name = self.parse_ident()?;
+    let tparams = if self.current().is(Less) {
+      self.parse_type_param_list()?
+    } else {
+      vec![]
+    };
+    let bounds = self
+      .maybe(Where, |p, _| p.parse_bound_list())?
+      .unwrap_or_default();
+    self.expect(Equal)?;
+    let ty = self.span(Self::parse_type)?;
+
+    Ok(symbol::Alias {
+      name,
+      tparams,
+      bounds,
+      ty,
+    })
   }
 
-  fn parse_decl_class(&mut self, _is_pub: bool) -> Result<(), Error> {
-    Err(Error::NotImplemented("class declarations"))
+  fn parse_decl_class(&mut self) -> Result<symbol::Class<'a>, Error> {
+    use TokenKind::{Less, Where};
+
+    let name = self.parse_ident()?;
+    let tparams = if self.current().is(Less) {
+      self.parse_type_param_list()?
+    } else {
+      vec![]
+    };
+    let bounds = self
+      .maybe(Where, |p, _| p.parse_bound_list())?
+      .unwrap_or_default();
+    let members = self.parse_class_members()?;
+
+    Ok(symbol::Class {
+      name,
+      tparams,
+      bounds,
+      members,
+    })
   }
 
-  fn parse_decl_trait(&mut self, _is_pub: bool) -> Result<(), Error> {
-    Err(Error::NotImplemented("trait declarations"))
+  fn parse_class_members(&mut self) -> Result<ClassMembers<'a>, Error> {
+    use TokenKind::{BraceL, BraceR, Eof, Fn, Ident, Impl, Semicolon, Type};
+
+    let mut members = ClassMembers::default();
+
+    self.expect(BraceL)?;
+    while !self.current().is(BraceR) && !self.current().is(Eof) {
+      if self.bump_if(Fn) {
+        // decl_fn
+        let fn_ = self.parse_decl_fn()?;
+        if members.fns.contains_key(fn_.name.deref()) {
+          self.errors.push(Error::Duplicate(
+            DuplicateSymbol::Function,
+            fn_.name.to_string(),
+            fn_.name.span,
+          ));
+        } else {
+          members.fns.insert(fn_.name.deref().clone(), fn_);
+        }
+      } else if self.bump_if(Type) {
+        // decl_alias
+        let alias = self.parse_decl_alias()?;
+        self.expect(Semicolon)?;
+        if members.aliases.contains_key(alias.name.deref()) {
+          self.errors.push(Error::Duplicate(
+            DuplicateSymbol::Alias,
+            alias.name.to_string(),
+            alias.name.span,
+          ))
+        } else {
+          members.aliases.insert(alias.name.deref().clone(), alias);
+        }
+      } else if self.bump_if(Impl) {
+        // decl_impl
+        let impl_ = self.parse_decl_impl()?;
+        members.impls.push(impl_);
+      } else if self.current().is(Ident) {
+        // class_field
+        let field = self.parse_class_field()?;
+        self.expect(Semicolon)?;
+        if members.fields.contains_key(field.name.deref()) {
+          self.errors.push(Error::Duplicate(
+            DuplicateSymbol::Field,
+            field.name.to_string(),
+            field.name.span,
+          ))
+        } else {
+          members.fields.insert(field.name.deref().clone(), field);
+        }
+      } else {
+        return Err(Error::Unexpected(self.current().kind, self.current().span));
+      }
+    }
+    self.expect(BraceR)?;
+
+    Ok(members)
+  }
+
+  fn parse_class_field(&mut self) -> Result<Field<'a>, Error> {
+    use TokenKind::Colon;
+
+    let name = self.parse_ident()?;
+    self.expect(Colon)?;
+    let ty = self.span(Self::parse_type)?;
+
+    Ok(Field { name, ty })
+  }
+
+  fn parse_decl_impl(&mut self) -> Result<symbol::Impl<'a>, Error> {
+    use TokenKind::Less;
+
+    let tparams = if self.current().is(Less) {
+      self.parse_type_param_list()?
+    } else {
+      vec![]
+    };
+    let ty = self.span(Self::parse_type)?;
+    let members = self.parse_trait_members()?;
+
+    Ok(symbol::Impl {
+      tparams,
+      ty,
+      members,
+    })
+  }
+
+  fn parse_decl_trait(&mut self) -> Result<symbol::Trait<'a>, Error> {
+    use TokenKind::Less;
+
+    let name = self.parse_ident()?;
+    let tparams = if self.current().is(Less) {
+      self.parse_type_param_list()?
+    } else {
+      vec![]
+    };
+    let members = self.parse_trait_members()?;
+
+    Ok(symbol::Trait {
+      name,
+      tparams,
+      members,
+    })
+  }
+
+  fn parse_trait_members(&mut self) -> Result<TraitMembers<'a>, Error> {
+    use TokenKind::{BraceL, BraceR, Eof, Fn, Semicolon, Type};
+
+    let mut members = TraitMembers::default();
+
+    self.expect(BraceL)?;
+    while !self.current().is(BraceR) && !self.current().is(Eof) {
+      if self.bump_if(Fn) {
+        // decl_fn
+        let fn_ = self.parse_decl_fn()?;
+        if members.fns.contains_key(fn_.name.deref()) {
+          self.errors.push(Error::Duplicate(
+            DuplicateSymbol::Function,
+            fn_.name.to_string(),
+            fn_.name.span,
+          ));
+        } else {
+          members.fns.insert(fn_.name.deref().clone(), fn_);
+        }
+      } else if self.bump_if(Type) {
+        // decl_alias
+        let alias = self.parse_decl_alias()?;
+        self.expect(Semicolon)?;
+        if members.aliases.contains_key(alias.name.deref()) {
+          self.errors.push(Error::Duplicate(
+            DuplicateSymbol::Alias,
+            alias.name.to_string(),
+            alias.name.span,
+          ))
+        } else {
+          members.aliases.insert(alias.name.deref().clone(), alias);
+        }
+      } else {
+        return Err(Error::Unexpected(self.current().kind, self.current().span));
+      }
+    }
+    self.expect(BraceR)?;
+
+    Ok(members)
   }
 
   fn parse_import(&mut self) -> Result<(), Error> {
@@ -261,7 +486,7 @@ impl<'a> Parser<'a> {
       GetVar(v) => expr::set_var(v.name, value, op),
       GetField(v) => expr::set_field(v.target, v.key, value, op),
       GetIndex(v) => expr::set_index(v.target, v.key, value, op),
-      _ => return Err(Error::invalid_assign(target_span)),
+      _ => return Err(Error::InvalidAssign(target_span)),
     };
     Ok(expr)
   }
@@ -475,7 +700,7 @@ impl<'a> Parser<'a> {
         // expr_class
         BraceL if !opt && !self.ctx.expr_before_block => {
           let Some(target) = expr_class_target_to_path(&expr) else {
-            return Err(Error::invalid_class_inst(expr.span))
+            return Err(Error::InvalidClassInst(expr.span))
           };
           let fields = self.span(|p| {
             p.wrap_list(BRACES, Comma, |p| {
@@ -491,7 +716,7 @@ impl<'a> Parser<'a> {
           );
         }
         _ if opt => {
-          return Err(Error::invalid_optional(
+          return Err(Error::InvalidOptional(
             self.previous().span.join(self.current().span),
           ));
         }
@@ -526,7 +751,7 @@ impl<'a> Parser<'a> {
         token
           .lexeme
           .parse()
-          .map_err(|e| Error::parse_int(token.span, e))?,
+          .map_err(|e| Error::ParseInt(token.span, e))?,
       ));
     }
 
@@ -539,7 +764,7 @@ impl<'a> Parser<'a> {
         token
           .lexeme
           .parse()
-          .map_err(|e| Error::parse_float(token.span, e))?
+          .map_err(|e| Error::ParseFloat(token.span, e))?
       };
       return Ok(expr::float(value));
     }
@@ -549,7 +774,7 @@ impl<'a> Parser<'a> {
       let token = self.previous();
       let mut value = token.lexeme.trim_matches('"').to_string();
       if unescape_in_place(&mut value).is_none() {
-        return Err(Error::invalid_escape_sequence(token.span));
+        return Err(Error::InvalidEscapeSequence(token.span));
       }
       return Ok(expr::string(value));
     }
@@ -692,7 +917,7 @@ impl<'a> Parser<'a> {
         let expr = self.span(Self::parse_expr)?;
         let span = expr.span;
         let ExprKind::Call(c) = expr.into_inner() else {
-          return Err(Error::invalid_spawn(span))
+          return Err(Error::InvalidSpawn(span))
         };
         return Ok(expr::spawn_call(*c));
       }
@@ -732,12 +957,12 @@ impl<'a> Parser<'a> {
     }
 
     // + unexpected token
-    Err(Error::unexpected(self.current()))
+    Err(Error::Unexpected(self.current().kind, self.current().span))
   }
 
   // expr_block
   fn parse_block(&mut self) -> Result<Block<'a>, Error> {
-    use TokenKind::{BraceL, BraceR, For, Let, Loop, Semicolon, While};
+    use TokenKind::{BraceL, BraceR, Eof, For, Let, Loop, Semicolon, While};
     check_recursion_limit(self.current().span)?;
 
     let mut block = Block {
@@ -746,7 +971,7 @@ impl<'a> Parser<'a> {
     };
 
     self.expect(BraceL)?;
-    while !self.current().is(BraceR) {
+    while !self.current().is(BraceR) && !self.current().is(Eof) {
       let stmt = if self.bump_if(For) {
         self.span(Self::parse_stmt_loop_for)?
       } else if self.bump_if(While) {
@@ -860,7 +1085,73 @@ impl<'a> Parser<'a> {
       return Ok(ty);
     }
 
-    Err(Error::unexpected(self.current()))
+    Err(Error::Unexpected(self.current().kind, self.current().span))
+  }
+
+  fn parse_type_param_list(&mut self) -> Result<Vec<TParam<'a>>, Error> {
+    use TokenKind::Comma;
+
+    self.wrap_list(ANGLES, Comma, Self::parse_type_param)
+  }
+
+  fn parse_type_param(&mut self) -> Result<TParam<'a>, Error> {
+    use TokenKind::Equal;
+
+    let name = self.parse_ident()?;
+    let default = self.maybe(Equal, |p, _| p.span(Self::parse_type))?;
+    Ok(TParam { name, default })
+  }
+
+  fn parse_bound_list(&mut self) -> Result<Vec<Bound<'a>>, Error> {
+    use TokenKind::{BraceL, Comma, Equal, Semicolon};
+
+    let mut list = vec![];
+
+    list.push(self.parse_bound()?);
+    while self.bump_if(Comma) && !self.current().is_any(&[Semicolon, BraceL, Equal]) {
+      list.push(self.parse_bound()?);
+    }
+
+    Ok(list)
+  }
+
+  fn parse_bound(&mut self) -> Result<Bound<'a>, Error> {
+    use TokenKind::Colon;
+
+    let ty = self.span(Self::parse_type)?;
+    self.expect(Colon)?;
+    let constraint = self.parse_constraint()?;
+
+    Ok(Bound { ty, constraint })
+  }
+
+  fn parse_constraint(&mut self) -> Result<Vec<Type<'a>>, Error> {
+    use TokenKind::Plus;
+
+    let mut parts = vec![];
+
+    parts.push(self.span(Self::parse_type)?);
+    while self.bump_if(Plus) {
+      parts.push(self.span(Self::parse_type)?);
+    }
+
+    Ok(parts)
+  }
+
+  fn parse_param_list(&mut self) -> Result<Vec<Param<'a>>, Error> {
+    use TokenKind::Comma;
+
+    self.wrap_list(PARENS, Comma, Self::parse_param)
+  }
+
+  fn parse_param(&mut self) -> Result<Param<'a>, Error> {
+    use TokenKind::{Colon, Equal};
+
+    let name = self.parse_ident()?;
+    let ty = self.maybe(Colon, |p, _| p.span(Self::parse_type))?;
+    let default = self.maybe(Equal, |p, _| p.span(Self::parse_expr))?;
+
+    Ok(Param { name, ty, default })
   }
 
   fn parse_ident(&mut self) -> Result<Ident<'a>, Error> {
@@ -970,7 +1261,7 @@ impl<'a> Parser<'a> {
     if self.current().is(which) {
       Ok(self.bump())
     } else {
-      Err(Error::expected(which, self.current().span))
+      Err(Error::Expected(which, self.current().span))
     }
   }
 
@@ -1040,7 +1331,10 @@ impl<'a> Parser<'a> {
   fn bump(&mut self) -> &Token<'a> {
     self.lexer.bump();
     while self.current().is(TokenKind::Error) {
-      self.errors.push(Error::lexer(self.current()));
+      self.errors.push(Error::Lexer(
+        self.current().lexeme.to_string(),
+        self.current().span,
+      ));
       self.lexer.bump();
     }
     self.previous()
@@ -1167,13 +1461,13 @@ fn check_assign_target<'a>(target: &Expr<'a>) -> Result<(), Error> {
     ExprKind::GetVar(..) => Ok(()),
     ExprKind::GetField(ref get) => {
       if get.opt {
-        Err(Error::invalid_assign(target.span))
+        Err(Error::InvalidAssign(target.span))
       } else {
         check_assign_target(&get.target)
       }
     }
     ExprKind::GetIndex(ref get) => check_assign_target(&get.target),
-    _ => Err(Error::invalid_assign(target.span)),
+    _ => Err(Error::InvalidAssign(target.span)),
   }
 }
 
@@ -1233,6 +1527,30 @@ impl<T: Clone> WithElem<T> for Vec<T> {
   }
 }
 
+#[derive(Clone, Copy, Debug)]
+pub enum DuplicateSymbol {
+  Function,
+  Alias,
+  Class,
+  Trait,
+  Impl,
+  Field,
+}
+
+impl fmt::Display for DuplicateSymbol {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    let str = match self {
+      DuplicateSymbol::Function => "function",
+      DuplicateSymbol::Alias => "alias",
+      DuplicateSymbol::Class => "class",
+      DuplicateSymbol::Trait => "trait",
+      DuplicateSymbol::Impl => "impl of",
+      DuplicateSymbol::Field => "field",
+    };
+    write!(f, "{str}")
+  }
+}
+
 #[derive(Clone, Debug, Error)]
 pub enum Error {
   #[error("invalid character sequence `{0}`")]
@@ -1262,52 +1580,8 @@ pub enum Error {
   NotImplemented(&'static str),
   #[error("nesting limit reached")]
   NestingLimitReached(Span),
-}
-
-impl Error {
-  fn lexer(token: &Token<'_>) -> Self {
-    Error::Lexer(token.lexeme.to_string(), token.span)
-  }
-
-  fn unexpected_vis(span: Span) -> Self {
-    Error::UnexpectedVis(span)
-  }
-
-  fn unexpected(token: &Token<'_>) -> Self {
-    Error::Unexpected(token.kind, token.span)
-  }
-
-  fn expected(which: TokenKind, span: Span) -> Self {
-    Error::Expected(which, span)
-  }
-
-  fn invalid_assign(span: Span) -> Self {
-    Error::InvalidAssign(span)
-  }
-
-  fn invalid_escape_sequence(span: Span) -> Self {
-    Error::InvalidEscapeSequence(span)
-  }
-
-  fn invalid_class_inst(span: Span) -> Self {
-    Error::InvalidClassInst(span)
-  }
-
-  fn invalid_spawn(span: Span) -> Self {
-    Error::InvalidSpawn(span)
-  }
-
-  fn invalid_optional(span: Span) -> Self {
-    Error::InvalidOptional(span)
-  }
-
-  fn parse_int(span: Span, e: std::num::ParseIntError) -> Self {
-    Error::ParseInt(span, e)
-  }
-
-  fn parse_float(span: Span, e: std::num::ParseFloatError) -> Self {
-    Error::ParseFloat(span, e)
-  }
+  #[error("duplicate {0} `{1}`")]
+  Duplicate(DuplicateSymbol, String, Span),
 }
 
 #[cfg(test)]
