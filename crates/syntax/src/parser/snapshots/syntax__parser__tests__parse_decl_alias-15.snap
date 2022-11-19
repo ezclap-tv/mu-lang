@@ -1,0 +1,118 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: result
+---
+(
+    Module {
+        imports: [],
+        symbols: Symbols {
+            fns: {},
+            classes: {},
+            traits: {},
+            aliases: {
+                "Foo": (
+                    Private,
+                    Alias {
+                        name: "Foo",
+                        tparams: [
+                            TParam {
+                                name: "T",
+                                default: Some(
+                                    Path {
+                                        segments: [
+                                            Segment {
+                                                ident: "d",
+                                                generic_args: [],
+                                            },
+                                        ],
+                                    },
+                                ),
+                            },
+                            TParam {
+                                name: "U",
+                                default: Some(
+                                    Path {
+                                        segments: [
+                                            Segment {
+                                                ident: "d",
+                                                generic_args: [],
+                                            },
+                                        ],
+                                    },
+                                ),
+                            },
+                        ],
+                        bounds: [
+                            Bound {
+                                ty: Path {
+                                    segments: [
+                                        Segment {
+                                            ident: "T",
+                                            generic_args: [],
+                                        },
+                                    ],
+                                },
+                                constraint: [
+                                    Path {
+                                        segments: [
+                                            Segment {
+                                                ident: "x",
+                                                generic_args: [],
+                                            },
+                                        ],
+                                    },
+                                    Path {
+                                        segments: [
+                                            Segment {
+                                                ident: "y",
+                                                generic_args: [],
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                            Bound {
+                                ty: Path {
+                                    segments: [
+                                        Segment {
+                                            ident: "U",
+                                            generic_args: [],
+                                        },
+                                    ],
+                                },
+                                constraint: [
+                                    Path {
+                                        segments: [
+                                            Segment {
+                                                ident: "x",
+                                                generic_args: [],
+                                            },
+                                        ],
+                                    },
+                                    Path {
+                                        segments: [
+                                            Segment {
+                                                ident: "y",
+                                                generic_args: [],
+                                            },
+                                        ],
+                                    },
+                                ],
+                            },
+                        ],
+                        ty: Path {
+                            segments: [
+                                Segment {
+                                    ident: "t",
+                                    generic_args: [],
+                                },
+                            ],
+                        },
+                    },
+                ),
+            },
+        },
+        top_level: [],
+    },
+    [],
+)
