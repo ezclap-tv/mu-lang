@@ -40,7 +40,7 @@ module = body:top_level* ;
 
 top_level =
   | "pub"? decl_fn
-  | "pub"? decl_type ";"
+  | "pub"? decl_alias ";"
   | "pub"? decl_class
   | "pub"? decl_trait
   | import ";"
@@ -79,7 +79,7 @@ stmt =
     (block | ";")
     ;
 
-  decl_type =
+  decl_alias =
     "type" name:ident
     type_params:type_params_list?
     ("where" bounds:list{bound})?
@@ -96,7 +96,7 @@ stmt =
     class_member =
       | class_field ";"
       | decl_fn
-      | decl_type ";"
+      | decl_alias ";"
       | decl_impl
       ;
 
@@ -108,15 +108,15 @@ stmt =
     "{" body:trait_member* "}"
     ;
 
+  (* | "impl" type_params:type_params_list? trait:type "for" type *)
   decl_impl =
-    | "impl" type_params:type_params_list? trait:type "for" type
     | "impl" type_params:type_params_list? type:type 
     $ ("{" body:trait_member* "}")?
     ;
 
     trait_member =
       | decl_fn
-      | decl_type ";"
+      | decl_alias ";"
       ;
 
   stmt_loop =
