@@ -1,0 +1,10 @@
+---
+source: crates/diagnosis/src/lib.rs
+expression: buf
+---
+[31merror[39m: expected semicolon
+[34m>[39m test.mu:1
+[34m|[39m 
+[34m|[39m let x = 10[4m[31m_[39m[0m
+[34m|[39m 
+
