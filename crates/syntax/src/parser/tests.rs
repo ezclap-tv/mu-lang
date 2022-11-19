@@ -26,6 +26,34 @@ macro_rules! snapshot {
 }
 
 // TODO: test for errors
+// TODO: test class, trait
+
+#[test]
+fn parse_decl_alias() {
+  snapshot!("type Foo = t;");
+  snapshot!("type Foo<T> = t;");
+  snapshot!("type Foo<T> where T: x + y = t;");
+  snapshot!("type Foo<T,> = t;");
+  snapshot!("type Foo<T,> where T: x + y = t;");
+  snapshot!("type Foo<T, U> = t;");
+  snapshot!("type Foo<T, U> where T: x + y, U: x + y = t;");
+  snapshot!("type Foo<T, U,> = t;");
+  snapshot!("type Foo<T, U,> where T: x + y, U: x + y = t;");
+  snapshot!("type Foo<T = d> = t;");
+  snapshot!("type Foo<T = d> where T: x + y = t;");
+  snapshot!("type Foo<T = d,> = t;");
+  snapshot!("type Foo<T = d,> where T: x + y = t;");
+  snapshot!("type Foo<T = d, U = d> = t;");
+  snapshot!("type Foo<T = d, U = d> where T: x + y, U: x + y = t;");
+  snapshot!("type Foo<T = d, U = d,> = t;");
+  snapshot!("type Foo<T = d, U = d,> where T: x + y, U: x + y = t;");
+}
+
+#[test]
+fn parse_decl_fn() {
+  snapshot!("fn f();");
+  snapshot!("fn f<T>(a: T, b: T, c: T) -> T where T: x + y;");
+}
 
 #[test]
 fn parse_imports() {
