@@ -24,14 +24,20 @@ use crate::span::{Span, Spanned};
 
 // https://github.com/ves-lang/ves/blob/master/ves-parser/src/parser.rs
 
-pub fn parse(source: &str) -> (Module<'_>, Vec<Error>) {
-  Parser {
+pub fn parse(source: &str) -> Result<Module<'_>, Vec<Error>> {
+  let (module, errors) = Parser {
     lexer: Lexer::new(source),
     module: Module::default(),
     errors: Vec::default(),
     ctx: Context::default(),
   }
-  .parse()
+  .parse();
+
+  if !errors.is_empty() {
+    Err(errors)
+  } else {
+    Ok(module)
+  }
 }
 
 struct Parser<'a> {
