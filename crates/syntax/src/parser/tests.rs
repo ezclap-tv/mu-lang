@@ -65,7 +65,6 @@ fn report_to_stderr(source: &str, errors: Vec<Error>) {
 }
 
 // TODO: test for errors
-// TODO: test class, trait
 
 #[test]
 fn parse_decl_alias() {
