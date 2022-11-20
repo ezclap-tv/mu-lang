@@ -173,10 +173,6 @@ impl<'a> Report<'a> {
     // | y = 10;
     // |
 
-    // TODO: add a case for VERY LARGE multi-line snippets,
-    //       where they are truncated to a max of 5 lines
-    // TODO: clean this up a bit
-
     if self.source.str.get(Range::from(self.span)).is_none() {
       return Err(EmitError::OutOfBounds);
     }
@@ -204,11 +200,13 @@ impl<'a> Report<'a> {
       snippet.line
     )?;
 
+    // empty line to give the snippet some room
     writeln!(w, "{} ", "|".blue())?;
     if snippet.s[Range::from(snippet.span)].trim().is_empty() {
       // "whitespace-only" snippet, may happen in case the span is 1 character wide
       // and lands on a newline.
       let n = snippet.s[Range::from(snippet.span)].len();
+      // | {text}{fake_underscore}
       writeln!(
         w,
         "{} {}{}",
@@ -220,6 +218,12 @@ impl<'a> Report<'a> {
       )?;
     } else if snippet.count > 1 {
       // multi-line snippet
+      // this one is complex to render, but the basic idea is that we want to
+      // highlight (using color and an underline) the part of the multi-line snippet
+      // which is spanned.
+
+      // begin by finding the first and last lines,
+      // since we know we have at least 2 lines.
       let first_lf = snippet.s[snippet.span.start..]
         .find('\n')
         .map(|i| i + snippet.span.start)
@@ -228,33 +232,69 @@ impl<'a> Report<'a> {
         .rfind('\n')
         .map(|i| i + snippet.span.start)
         .unwrap_or(snippet.s.len());
+      // write the first line, this one contains both an "unspanned" fragment,
+      // and a "spanned" fragment.
+      // | {unspanned}{spanned}
       writeln!(
         w,
         "{} {}{}",
         "|".blue(),
-        &snippet.s[..snippet.span.start],
-        snippet.s[snippet.span.start..first_lf]
+        &snippet.s[..snippet.span.start], // unspanned
+        snippet.s[snippet.span.start..first_lf] // spanned
           .trim()
           .color(color)
           .underline()
       )?;
-      if snippet.count > 2 {
-        for line in snippet.s[first_lf..last_lf].split('\n').skip(1) {
-          writeln!(w, "{} {}", "|".blue(), line.color(color).underline())?;
+
+      // write the lines inbetween the first and the last.
+      // it is separated like this because this part of the snippet is entirely
+      // contained within the span, so all of it will be colored and underlined.
+      match snippet.count {
+        // write all the lines in the middle if we have 3..=5 total lines.
+        3..=5 => {
+          for line in snippet.s[first_lf..last_lf].split('\n').skip(1) {
+            writeln!(w, "{} {}", "|".blue(), line.color(color).underline())?;
+          }
         }
+        // if we have more than 6 lines, this is considered a very large snippet, and it probably
+        // isn't useful to show all of it, so we only print the first and last lines of this
+        // "middle" region + an extra line with some dots that represents all the truncated content.
+        // example:
+        // |   b: 0,
+        // |   ...
+        // |   h: 0,
+        6.. => {
+          let mut write =
+            |line: &str| writeln!(w, "{} {}", "|".blue(), line.color(color).underline());
+
+          let mut iter = snippet.s[first_lf..last_lf].split('\n');
+          iter.next(); // skip line 1, because it's empty.
+                       // this is safer than indexing `snippet.s` with `first_lf+1..last_lf`
+          let first = iter.next().unwrap();
+          let last = iter.rev().next().unwrap();
+
+          write(first)?;
+          write(&format!("{}...", leading_whitespace(first)))?;
+          write(last)?;
+        }
+        _ => {}
       }
+
+      // write the last line the same way the first one is written, but in reverse.
+      // | {spanned}{unspanned}
       writeln!(
         w,
         "{} {}{}",
         "|".blue(),
-        snippet.s[last_lf..snippet.span.end]
+        snippet.s[last_lf..snippet.span.end] // spanned
           .trim()
           .color(color)
           .underline(),
-        &snippet.s[snippet.span.end..],
+        &snippet.s[snippet.span.end..], // unspanned
       )?;
     } else {
       // single-line snippet
+      // | {text}{spanned_text}{text}
       writeln!(
         w,
         "{} {}{}{}",
@@ -266,8 +306,10 @@ impl<'a> Report<'a> {
         &snippet.s[snippet.span.end..]
       )?;
     }
+    // empty line at the end for symmetry
     writeln!(w, "{} ", "|".blue())?;
     if let Some(label) = self.label {
+      // + {label}
       writeln!(w, "{} {}", "+".blue(), label)?;
     }
 
@@ -332,6 +374,13 @@ pub enum EmitError {
   Fmt(#[from] fmt::Error),
   #[error("span does not fit within source string")]
   OutOfBounds,
+}
+
+fn leading_whitespace(str: &str) -> &str {
+  let non_ws = str
+    .find(|c: char| !c.is_ascii_whitespace())
+    .unwrap_or(str.len());
+  &str[..non_ws]
 }
 
 #[cfg(test)]
@@ -411,6 +460,28 @@ mod tests {
       },
       message: "mismatched type".into(),
       span: (13..36).into(),
+      label: Some("expected `Foo`, found `Bar`".into()),
+    };
+
+    let mut buf = String::new();
+
+    report.emit(&mut buf).unwrap();
+
+    insta::assert_snapshot!(buf);
+  }
+
+  #[test]
+  fn emit_report_multi_line_large() {
+    let report = Report {
+      level: Level::Error,
+      source: Source {
+        name: Some("test.mu".into()),
+        str:
+          "let x: Foo = Bar {\n  a: 0,\n  b: 0,\n  c: 0,\n  d: 0,\n  e: 0,\n  f: 0,\n  g: 0,\n};"
+            .into(),
+      },
+      message: "mismatched type".into(),
+      span: (13..77).into(),
       label: Some("expected `Foo`, found `Bar`".into()),
     };
 

@@ -1,0 +1,15 @@
+---
+source: crates/diagnosis/src/lib.rs
+expression: buf
+---
+[31merror[39m: mismatched type
+[34m>[39m test.mu:1
+[34m|[39m 
+[34m|[39m let x: Foo = [4m[31mBar {[39m[0m
+[34m|[39m [4m[31m  a: 0,[39m[0m
+[34m|[39m [4m[31m  ...[39m[0m
+[34m|[39m [4m[31m  g: 0,[39m[0m
+[34m|[39m [4m[31m};[39m[0m
+[34m|[39m 
+[34m+[39m expected `Foo`, found `Bar`
+
