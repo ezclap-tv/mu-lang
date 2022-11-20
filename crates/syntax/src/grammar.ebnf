@@ -105,6 +105,7 @@ stmt =
   decl_trait =
     "trait" name:ident
     type_params:type_params_list?
+    ("where" bounds:list{bound})?
     "{" body:trait_member* "}"
     ;
 

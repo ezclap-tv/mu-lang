@@ -158,6 +158,7 @@ pub mod symbol {
   pub struct Trait<'a> {
     pub name: Ident<'a>,
     pub tparams: Vec<TParam<'a>>,
+    pub bounds: Vec<Bound<'a>>,
     pub members: TraitMembers<'a>,
   }
 

@@ -204,7 +204,20 @@ impl<'a> Parser<'a> {
 
     self.expect(BraceL)?;
     while !self.current().is(BraceR) && !self.current().is(Eof) {
-      if self.bump_if(Fn) {
+      if self.current().is(Ident) {
+        // class_field
+        let field = self.parse_class_field()?;
+        self.expect(Semicolon)?;
+        if members.fields.contains_key(field.name.deref()) {
+          self.errors.push(Error::Duplicate(
+            DuplicateSymbol::Field,
+            field.name.to_string(),
+            field.name.span,
+          ))
+        } else {
+          members.fields.insert(field.name.deref().clone(), field);
+        }
+      } else if self.bump_if(Fn) {
         // decl_fn
         let fn_ = self.parse_decl_fn()?;
         if members.fns.contains_key(fn_.name.deref()) {
@@ -233,19 +246,6 @@ impl<'a> Parser<'a> {
         // decl_impl
         let impl_ = self.parse_decl_impl()?;
         members.impls.push(impl_);
-      } else if self.current().is(Ident) {
-        // class_field
-        let field = self.parse_class_field()?;
-        self.expect(Semicolon)?;
-        if members.fields.contains_key(field.name.deref()) {
-          self.errors.push(Error::Duplicate(
-            DuplicateSymbol::Field,
-            field.name.to_string(),
-            field.name.span,
-          ))
-        } else {
-          members.fields.insert(field.name.deref().clone(), field);
-        }
       } else {
         return Err(Error::Unexpected(self.current().kind, self.current().span));
       }
@@ -284,7 +284,7 @@ impl<'a> Parser<'a> {
   }
 
   fn parse_decl_trait(&mut self) -> Result<symbol::Trait<'a>, Error> {
-    use TokenKind::Less;
+    use TokenKind::{Less, Where};
 
     let name = self.parse_ident()?;
     let tparams = if self.current().is(Less) {
@@ -292,11 +292,15 @@ impl<'a> Parser<'a> {
     } else {
       vec![]
     };
+    let bounds = self
+      .maybe(Where, |p, _| p.parse_bound_list())?
+      .unwrap_or_default();
     let members = self.parse_trait_members()?;
 
     Ok(symbol::Trait {
       name,
       tparams,
+      bounds,
       members,
     })
   }
@@ -1173,11 +1177,11 @@ impl<'a> Parser<'a> {
   }
 
   fn parse_segment(&mut self) -> Result<Segment<'a>, Error> {
-    use TokenKind::{BracketL, Comma};
+    use TokenKind::{Comma, Less};
 
     let ident = self.parse_ident()?;
-    let generic_args = if self.current().is(BracketL) {
-      self.wrap_list(BRACKETS, Comma, |p| p.span(Self::parse_type))?
+    let generic_args = if self.current().is(Less) {
+      self.wrap_list(ANGLES, Comma, |p| p.span(Self::parse_type))?
     } else {
       vec![]
     };
@@ -1575,13 +1579,35 @@ pub enum Error {
   ParseInt(Span, #[source] std::num::ParseIntError),
   #[error("failed to parse float: {1}")]
   ParseFloat(Span, #[source] std::num::ParseFloatError),
-  // NOTE: temporary error to avoid false-positives while fuzzing.
-  #[error("parsing {0} is not yet implemented")]
-  NotImplemented(&'static str),
   #[error("nesting limit reached")]
   NestingLimitReached(Span),
   #[error("duplicate {0} `{1}`")]
   Duplicate(DuplicateSymbol, String, Span),
+}
+
+impl diagnosis::ToReport for Error {
+  fn to_report<'a>(&'a self, source: diagnosis::Source<'a>) -> diagnosis::DiagnosisResult<'a> {
+    let report = diagnosis::Report::error()
+      .source(source)
+      .message(self.to_string().into());
+
+    match self {
+      Error::Lexer(_, span) => report.span(*span),
+      Error::UnexpectedVis(span) => report.span(*span),
+      Error::Expected(_, span) => report.span(*span),
+      Error::Unexpected(_, span) => report.span(*span),
+      Error::InvalidAssign(span) => report.span(*span),
+      Error::InvalidEscapeSequence(span) => report.span(*span),
+      Error::InvalidClassInst(span) => report.span(*span),
+      Error::InvalidSpawn(span) => report.span(*span),
+      Error::InvalidOptional(span) => report.span(*span),
+      Error::ParseInt(span, _) => report.span(*span),
+      Error::ParseFloat(span, _) => report.span(*span),
+      Error::NestingLimitReached(span) => report.span(*span),
+      Error::Duplicate(_, _, span) => report.span(*span),
+    }
+    .build()
+  }
 }
 
 #[cfg(test)]

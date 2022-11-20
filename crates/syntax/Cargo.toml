@@ -15,3 +15,4 @@ thiserror = "1.0.37"
 syntax_derive = { path = "./syntax_derive" }
 
 span = { path = "../span" }
+diagnosis = { path ="../diagnosis" }

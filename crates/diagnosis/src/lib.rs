@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::fmt;
 use std::fmt::Write;
 use std::ops::Range;
@@ -6,27 +7,145 @@ use owo_colors::{AnsiColors, DynColors, OwoColorize};
 use span::Span;
 use thiserror::Error;
 
+pub type DiagnosisResult<'a> = Result<Report<'a>, BuilderError>;
+
+pub trait ToReport {
+  fn to_report<'a>(&'a self, source: Source<'a>) -> DiagnosisResult<'a>;
+}
+
+#[derive(Clone)]
+pub struct ReportBuilder<'a> {
+  level: Level,
+  source: Option<Source<'a>>,
+  message: Option<Cow<'a, str>>,
+  span: Option<Span>,
+  label: Option<Cow<'a, str>>,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum BuilderError {
+  MissingSource,
+  MissingMessage,
+  MissingSpan,
+}
+
+impl<'a> ReportBuilder<'a> {
+  pub fn source(mut self, source: Source<'a>) -> Self {
+    self.source = Some(source);
+    self
+  }
+
+  pub fn message(mut self, message: Cow<'a, str>) -> Self {
+    self.message = Some(message);
+    self
+  }
+
+  pub fn span(mut self, span: Span) -> Self {
+    self.span = Some(span);
+    self
+  }
+
+  pub fn label(mut self, label: Cow<'a, str>) -> Self {
+    self.label = Some(label);
+    self
+  }
+
+  pub fn build(self) -> Result<Report<'a>, BuilderError> {
+    use BuilderError::*;
+    Ok(Report {
+      level: self.level,
+      source: self.source.ok_or(MissingSource)?,
+      message: self.message.ok_or(MissingMessage)?,
+      span: self.span.ok_or(MissingSpan)?,
+      label: self.label,
+    })
+  }
+}
+
+#[derive(Clone, Debug)]
+pub struct Source<'a> {
+  name: Option<Cow<'a, str>>,
+  str: Cow<'a, str>,
+}
+
+impl<'a> Source<'a> {
+  pub fn string(str: Cow<'a, str>) -> Self {
+    Source { name: None, str }
+  }
+
+  pub fn file(name: Cow<'a, str>, str: Cow<'a, str>) -> Self {
+    Source {
+      name: Some(name),
+      str,
+    }
+  }
+}
+
+impl<'a> From<Cow<'a, str>> for Source<'a> {
+  fn from(value: Cow<'a, str>) -> Self {
+    Source::string(value)
+  }
+}
+
+impl<'a> From<String> for Source<'a> {
+  fn from(value: String) -> Self {
+    Source::string(value.into())
+  }
+}
+
+impl<'a> From<&'a str> for Source<'a> {
+  fn from(value: &'a str) -> Self {
+    Source::string(value.into())
+  }
+}
+
+#[derive(Clone, Copy, Debug)]
 pub enum Level {
   Info,
   Warning,
   Error,
 }
 
-pub struct File<'a> {
-  pub name: &'a str,
-  pub source: &'a str,
-}
-
 pub struct Report<'a> {
   pub level: Level,
-  pub file: File<'a>,
-  pub message: &'a str,
+  pub source: Source<'a>,
+  pub message: Cow<'a, str>,
   pub span: Span,
-  pub label: Option<&'a str>,
+  pub label: Option<Cow<'a, str>>,
 }
 
 impl<'a> Report<'a> {
-  pub fn emit<W: Write>(self, w: &mut W) -> Result<()> {
+  pub fn info() -> ReportBuilder<'a> {
+    ReportBuilder {
+      level: Level::Info,
+      source: None,
+      message: None,
+      span: None,
+      label: None,
+    }
+  }
+
+  pub fn warn() -> ReportBuilder<'a> {
+    ReportBuilder {
+      level: Level::Warning,
+      source: None,
+      message: None,
+      span: None,
+      label: None,
+    }
+  }
+
+  pub fn error() -> ReportBuilder<'a> {
+    ReportBuilder {
+      level: Level::Error,
+      source: None,
+      message: None,
+      span: None,
+      label: None,
+    }
+  }
+
+  pub fn emit<W: Write>(self, w: &mut W) -> Result<(), EmitError> {
     // examples:
 
     // single line span
@@ -58,11 +177,11 @@ impl<'a> Report<'a> {
     //       where they are truncated to a max of 5 lines
     // TODO: clean this up a bit
 
-    if self.file.source.get(Range::from(self.span)).is_none() {
-      return Err(Error::OutOfBounds);
+    if self.source.str.get(Range::from(self.span)).is_none() {
+      return Err(EmitError::OutOfBounds);
     }
 
-    let snippet = Snippet::new(self.file.source, self.span);
+    let snippet = Snippet::new(self.source.str.as_ref(), self.span);
     let color = match self.level {
       Level::Info => DynColors::Ansi(AnsiColors::Blue),
       Level::Warning => DynColors::Ansi(AnsiColors::Yellow),
@@ -77,7 +196,13 @@ impl<'a> Report<'a> {
     }
     writeln!(w, ": {}", self.message)?;
     // > {file.name}:{line}
-    writeln!(w, "{} {}:{}", ">".blue(), self.file.name, snippet.line)?;
+    writeln!(
+      w,
+      "{} {}:{}",
+      ">".blue(),
+      self.source.name.unwrap_or_else(|| "code".into()),
+      snippet.line
+    )?;
 
     writeln!(w, "{} ", "|".blue())?;
     if snippet.s[Range::from(snippet.span)].trim().is_empty() {
@@ -150,10 +275,10 @@ impl<'a> Report<'a> {
   }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 struct Snippet<'a> {
   /// Snippet string
-  pub s: &'a str,
+  pub s: Cow<'a, str>,
   /// Line number of the first line in snippet
   pub line: usize,
   /// Number of lines in this snippet
@@ -193,7 +318,7 @@ impl<'a> Snippet<'a> {
     };
 
     Self {
-      s,
+      s: s.into(),
       line,
       count,
       span,
@@ -201,10 +326,8 @@ impl<'a> Snippet<'a> {
   }
 }
 
-pub type Result<T> = std::result::Result<T, Error>;
-
 #[derive(Debug, Error)]
-pub enum Error {
+pub enum EmitError {
   #[error("failed to format")]
   Fmt(#[from] fmt::Error),
   #[error("span does not fit within source string")]
@@ -214,7 +337,7 @@ pub enum Error {
 #[cfg(test)]
 mod tests {
   use super::{Report, Snippet};
-  use crate::{File, Level};
+  use crate::{Level, Source};
 
   #[test]
   fn snippet_single_line() {
@@ -223,7 +346,7 @@ mod tests {
     assert_eq!(
       Snippet::new(src, 6..17),
       Snippet {
-        s: "lorem ipsum dolor sit amet consectetur adipiscing elit",
+        s: "lorem ipsum dolor sit amet consectetur adipiscing elit".into(),
         line: 1,
         count: 1,
         span: (6..17).into(),
@@ -238,7 +361,7 @@ mod tests {
     assert_eq!(
       Snippet::new(src, 6..17),
       Snippet {
-        s: "lorem ipsum\ndolor sit amet",
+        s: "lorem ipsum\ndolor sit amet".into(),
         line: 1,
         count: 2,
         span: (6..17).into(),
@@ -250,7 +373,7 @@ mod tests {
     assert_eq!(
       Snippet::new(src, 17..31),
       Snippet {
-        s: "dolor sit amet\nconsectetur adipiscing elit",
+        s: "dolor sit amet\nconsectetur adipiscing elit".into(),
         line: 2,
         count: 2,
         span: (6..20).into(),
@@ -262,11 +385,11 @@ mod tests {
   fn emit_report_single_line() {
     let report = Report {
       level: Level::Error,
-      file: File {
-        name: "test.mu",
-        source: "let x = 10\nlet y = 20;",
+      source: Source {
+        name: Some("test.mu".into()),
+        str: "let x = 10\nlet y = 20;".into(),
       },
-      message: "expected semicolon",
+      message: "expected semicolon".into(),
       span: (10..11).into(),
       label: None,
     };
@@ -282,13 +405,13 @@ mod tests {
   fn emit_report_multi_line() {
     let report = Report {
       level: Level::Error,
-      file: File {
-        name: "test.mu",
-        source: "let x: Foo = Bar {\n  a: 0,\n  b: 0,\n};",
+      source: Source {
+        name: Some("test.mu".into()),
+        str: "let x: Foo = Bar {\n  a: 0,\n  b: 0,\n};".into(),
       },
-      message: "mismatched type",
+      message: "mismatched type".into(),
       span: (13..36).into(),
-      label: Some("expected `Foo`, found `Bar`"),
+      label: Some("expected `Foo`, found `Bar`".into()),
     };
 
     let mut buf = String::new();
