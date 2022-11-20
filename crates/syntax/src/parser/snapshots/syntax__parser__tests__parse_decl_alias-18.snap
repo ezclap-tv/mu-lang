@@ -1,0 +1,31 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: module
+---
+Module {
+    imports: [],
+    symbols: Symbols {
+        fns: {},
+        classes: {},
+        traits: {},
+        aliases: {
+            "Foo": (
+                Public,
+                Alias {
+                    name: "Foo",
+                    tparams: [],
+                    bounds: [],
+                    ty: Path {
+                        segments: [
+                            Segment {
+                                ident: "t",
+                                generic_args: [],
+                            },
+                        ],
+                    },
+                },
+            ),
+        },
+    },
+    top_level: [],
+}

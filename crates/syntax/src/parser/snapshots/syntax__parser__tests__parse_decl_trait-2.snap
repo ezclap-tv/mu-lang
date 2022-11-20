@@ -1,0 +1,27 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: module
+---
+Module {
+    imports: [],
+    symbols: Symbols {
+        fns: {},
+        classes: {},
+        traits: {
+            "T": (
+                Public,
+                Trait {
+                    name: "T",
+                    tparams: [],
+                    bounds: [],
+                    members: TraitMembers {
+                        fns: {},
+                        aliases: {},
+                    },
+                },
+            ),
+        },
+        aliases: {},
+    },
+    top_level: [],
+}

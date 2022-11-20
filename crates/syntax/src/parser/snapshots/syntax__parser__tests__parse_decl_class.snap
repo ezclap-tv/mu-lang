@@ -1,0 +1,151 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: module
+---
+Module {
+    imports: [],
+    symbols: Symbols {
+        fns: {},
+        classes: {
+            "Foo": (
+                Private,
+                Class {
+                    name: "Foo",
+                    tparams: [
+                        TParam {
+                            name: "T",
+                            default: None,
+                        },
+                    ],
+                    bounds: [
+                        Bound {
+                            ty: Path {
+                                segments: [
+                                    Segment {
+                                        ident: "T",
+                                        generic_args: [],
+                                    },
+                                ],
+                            },
+                            constraint: [
+                                Path {
+                                    segments: [
+                                        Segment {
+                                            ident: "x",
+                                            generic_args: [],
+                                        },
+                                    ],
+                                },
+                                Path {
+                                    segments: [
+                                        Segment {
+                                            ident: "y",
+                                            generic_args: [],
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                    members: ClassMembers {
+                        fields: {
+                            "a": Field {
+                                name: "a",
+                                ty: Path {
+                                    segments: [
+                                        Segment {
+                                            ident: "int",
+                                            generic_args: [],
+                                        },
+                                    ],
+                                },
+                            },
+                        },
+                        fns: {
+                            "f": Fn {
+                                name: "f",
+                                tparams: [],
+                                params: [],
+                                ret: None,
+                                bounds: [],
+                                body: None,
+                            },
+                        },
+                        aliases: {
+                            "U": Alias {
+                                name: "U",
+                                tparams: [],
+                                bounds: [],
+                                ty: Path {
+                                    segments: [
+                                        Segment {
+                                            ident: "T",
+                                            generic_args: [],
+                                        },
+                                    ],
+                                },
+                            },
+                        },
+                        impls: [
+                            Impl {
+                                tparams: [
+                                    TParam {
+                                        name: "A",
+                                        default: None,
+                                    },
+                                ],
+                                ty: Path {
+                                    segments: [
+                                        Segment {
+                                            ident: "Trait",
+                                            generic_args: [
+                                                Path {
+                                                    segments: [
+                                                        Segment {
+                                                            ident: "A",
+                                                            generic_args: [],
+                                                        },
+                                                    ],
+                                                },
+                                            ],
+                                        },
+                                    ],
+                                },
+                                members: TraitMembers {
+                                    fns: {
+                                        "f": Fn {
+                                            name: "f",
+                                            tparams: [],
+                                            params: [],
+                                            ret: None,
+                                            bounds: [],
+                                            body: None,
+                                        },
+                                    },
+                                    aliases: {
+                                        "V": Alias {
+                                            name: "V",
+                                            tparams: [],
+                                            bounds: [],
+                                            ty: Path {
+                                                segments: [
+                                                    Segment {
+                                                        ident: "A",
+                                                        generic_args: [],
+                                                    },
+                                                ],
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        ],
+                    },
+                },
+            ),
+        },
+        traits: {},
+        aliases: {},
+    },
+    top_level: [],
+}
