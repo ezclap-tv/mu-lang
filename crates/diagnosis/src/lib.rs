@@ -3,7 +3,7 @@ use std::fmt;
 use std::fmt::Write;
 use std::ops::Range;
 
-use owo_colors::{AnsiColors, DynColors, OwoColorize};
+use owo_colors::{style, AnsiColors, DynColors, OwoColorize};
 use span::Span;
 use thiserror::Error;
 
@@ -166,13 +166,6 @@ impl<'a> Report<'a> {
     // |
     // + expected "Foo", found "Bar"
 
-    // with help
-    // error: undefined variable
-    // > baz.mu:12
-    // |
-    // | y = 10;
-    // |
-
     if self.source.str.get(Range::from(self.span)).is_none() {
       return Err(EmitError::OutOfBounds);
     }
@@ -183,6 +176,7 @@ impl<'a> Report<'a> {
       Level::Warning => DynColors::Ansi(AnsiColors::Yellow),
       Level::Error => DynColors::Ansi(AnsiColors::Red),
     };
+    let style = style().color(color).underline();
 
     // {level}: {message}
     match self.level {
@@ -212,9 +206,7 @@ impl<'a> Report<'a> {
         "{} {}{}",
         "|".blue(),
         &snippet.s[..snippet.span.start],
-        format!("{:_<width$}", "_", width = n)
-          .color(color)
-          .underline(),
+        format!("{:_<width$}", "_", width = n).style(style),
       )?;
     } else if snippet.count > 1 {
       // multi-line snippet
@@ -242,8 +234,7 @@ impl<'a> Report<'a> {
         &snippet.s[..snippet.span.start], // unspanned
         snippet.s[snippet.span.start..first_lf] // spanned
           .trim()
-          .color(color)
-          .underline()
+          .style(style)
       )?;
 
       // write the lines inbetween the first and the last.
@@ -253,29 +244,32 @@ impl<'a> Report<'a> {
         // write all the lines in the middle if we have 3..=5 total lines.
         3..=5 => {
           for line in snippet.s[first_lf..last_lf].split('\n').skip(1) {
-            writeln!(w, "{} {}", "|".blue(), line.color(color).underline())?;
+            writeln!(w, "{} {}", "|".blue(), line.style(style))?;
           }
         }
         // if we have more than 6 lines, this is considered a very large snippet, and it probably
         // isn't useful to show all of it, so we only print the first and last lines of this
         // "middle" region + an extra line with some dots that represents all the truncated content.
-        // example:
-        // |   b: 0,
-        // |   ...
-        // |   h: 0,
         6.. => {
-          let mut write =
-            |line: &str| writeln!(w, "{} {}", "|".blue(), line.color(color).underline());
-
           let mut iter = snippet.s[first_lf..last_lf].split('\n');
           iter.next(); // skip line 1, because it's empty.
                        // this is safer than indexing `snippet.s` with `first_lf+1..last_lf`
           let first = iter.next().unwrap();
           let last = iter.rev().next().unwrap();
+          let ws = leading_whitespace(first);
 
-          write(first)?;
-          write(&format!("{}...", leading_whitespace(first)))?;
-          write(last)?;
+          // |   b: 0,
+          // |   ...
+          // |   h: 0,
+          writeln!(w, "{} {}", "|".blue(), first.style(style))?;
+          writeln!(
+            w,
+            "{} {}{}",
+            "|".blue(),
+            ws.style(style),
+            "...".style(style)
+          )?;
+          writeln!(w, "{} {}", "|".blue(), last.style(style))?;
         }
         _ => {}
       }
@@ -288,8 +282,7 @@ impl<'a> Report<'a> {
         "|".blue(),
         snippet.s[last_lf..snippet.span.end] // spanned
           .trim()
-          .color(color)
-          .underline(),
+          .style(style),
         &snippet.s[snippet.span.end..], // unspanned
       )?;
     } else {
@@ -300,9 +293,7 @@ impl<'a> Report<'a> {
         "{} {}{}{}",
         "|".blue(),
         &snippet.s[..snippet.span.start],
-        (&snippet.s[Range::from(snippet.span)])
-          .color(color)
-          .underline(),
+        (&snippet.s[Range::from(snippet.span)]).style(style),
         &snippet.s[snippet.span.end..]
       )?;
     }
@@ -314,6 +305,12 @@ impl<'a> Report<'a> {
     }
 
     Ok(())
+  }
+
+  pub fn emit_to_string(self) -> Result<String, EmitError> {
+    let mut buf = String::new();
+    self.emit(&mut buf)?;
+    Ok(buf)
   }
 }
 
@@ -377,9 +374,7 @@ pub enum EmitError {
 }
 
 fn leading_whitespace(str: &str) -> &str {
-  let non_ws = str
-    .find(|c: char| !c.is_ascii_whitespace())
-    .unwrap_or(str.len());
+  let non_ws = str.find(|c: char| !c.is_ascii_whitespace()).unwrap_or(0);
   &str[..non_ws]
 }
 
@@ -442,12 +437,7 @@ mod tests {
       span: (10..11).into(),
       label: None,
     };
-
-    let mut buf = String::new();
-
-    report.emit(&mut buf).unwrap();
-
-    insta::assert_snapshot!(buf);
+    insta::assert_snapshot!(report.emit_to_string().unwrap());
   }
 
   #[test]
@@ -462,12 +452,7 @@ mod tests {
       span: (13..36).into(),
       label: Some("expected `Foo`, found `Bar`".into()),
     };
-
-    let mut buf = String::new();
-
-    report.emit(&mut buf).unwrap();
-
-    insta::assert_snapshot!(buf);
+    insta::assert_snapshot!(report.emit_to_string().unwrap());
   }
 
   #[test]
@@ -481,14 +466,9 @@ mod tests {
             .into(),
       },
       message: "mismatched type".into(),
-      span: (13..77).into(),
+      span: (13..76).into(),
       label: Some("expected `Foo`, found `Bar`".into()),
     };
-
-    let mut buf = String::new();
-
-    report.emit(&mut buf).unwrap();
-
-    insta::assert_snapshot!(buf);
+    insta::assert_snapshot!(report.emit_to_string().unwrap());
   }
 }
