@@ -1,48 +1,43 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: "(result, parser.errors)"
+expression: node.unwrap()
 ---
-(
-    Ok(
-        Try {
-            body: Block {
-                items: [],
-                last: Some(
-                    Call {
+Try {
+    body: Block {
+        items: [],
+        last: Some(
+            Call {
+                opt: false,
+                target: GetIndex {
+                    opt: false,
+                    target: GetField {
                         opt: false,
-                        target: GetIndex {
-                            opt: false,
-                            target: GetField {
-                                opt: false,
-                                target: GetVar {
-                                    name: "a",
-                                },
-                                key: "b",
-                            },
-                            key: GetVar {
-                                name: "c",
-                            },
+                        target: GetVar {
+                            name: "a",
                         },
-                        args: [
-                            GetVar {
-                                name: "d",
-                            },
-                        ],
+                        key: "b",
                     },
-                ),
+                    key: GetVar {
+                        name: "c",
+                    },
+                },
+                args: [
+                    GetVar {
+                        name: "d",
+                    },
+                ],
             },
-            catch: (
-                "e",
-                Block {
-                    items: [],
-                    last: Some(
-                        GetVar {
-                            name: "e",
-                        },
-                    ),
+        ),
+    },
+    catch: (
+        "e",
+        Block {
+            items: [],
+            last: Some(
+                GetVar {
+                    name: "e",
                 },
             ),
         },
     ),
-    [],
-)
+}

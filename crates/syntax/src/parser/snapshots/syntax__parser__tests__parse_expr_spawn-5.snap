@@ -1,18 +1,13 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: "(result, parser.errors)"
+expression: node.unwrap()
 ---
-(
-    Ok(
-        SpawnCall(
-            Call {
-                opt: false,
-                target: GetVar {
-                    name: "f",
-                },
-                args: [],
-            },
-        ),
-    ),
-    [],
+SpawnCall(
+    Call {
+        opt: false,
+        target: GetVar {
+            name: "f",
+        },
+        args: [],
+    },
 )

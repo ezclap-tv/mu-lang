@@ -1,17 +1,12 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: "(result, parser.errors)"
+expression: node.unwrap()
 ---
-(
-    Ok(
-        Copy(
-            Int {
-                value: 0,
-            },
-            Int {
-                value: 100,
-            },
-        ),
-    ),
-    [],
+Copy(
+    Int {
+        value: 0,
+    },
+    Int {
+        value: 100,
+    },
 )

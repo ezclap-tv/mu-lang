@@ -1,10 +1,5 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: "(result, parser.errors)"
+expression: node.unwrap()
 ---
-(
-    Ok(
-        Null,
-    ),
-    [],
-)
+Null

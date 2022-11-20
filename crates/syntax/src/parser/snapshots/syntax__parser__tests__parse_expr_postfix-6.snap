@@ -1,28 +1,23 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: "(result, parser.errors)"
+expression: node.unwrap()
 ---
-(
-    Ok(
-        Call {
-            opt: false,
-            target: Call {
-                opt: false,
-                target: GetVar {
-                    name: "a",
-                },
-                args: [
-                    GetVar {
-                        name: "b",
-                    },
-                ],
-            },
-            args: [
-                GetVar {
-                    name: "c",
-                },
-            ],
+Call {
+    opt: false,
+    target: Call {
+        opt: false,
+        target: GetVar {
+            name: "a",
         },
-    ),
-    [],
-)
+        args: [
+            GetVar {
+                name: "b",
+            },
+        ],
+    },
+    args: [
+        GetVar {
+            name: "c",
+        },
+    ],
+}

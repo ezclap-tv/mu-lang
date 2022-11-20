@@ -1,48 +1,45 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: module
 ---
-(
-    Module {
-        imports: [],
-        symbols: Symbols {
-            fns: {},
-            classes: {},
-            traits: {},
-            aliases: {
-                "Foo": (
-                    Private,
-                    Alias {
-                        name: "Foo",
-                        tparams: [
-                            TParam {
-                                name: "T",
-                                default: Some(
-                                    Path {
-                                        segments: [
-                                            Segment {
-                                                ident: "d",
-                                                generic_args: [],
-                                            },
-                                        ],
-                                    },
-                                ),
+Module {
+    imports: [],
+    symbols: Symbols {
+        fns: {},
+        classes: {},
+        traits: {},
+        aliases: {
+            "Foo": (
+                Private,
+                Alias {
+                    name: "Foo",
+                    tparams: [
+                        TParam {
+                            name: "T",
+                            default: Some(
+                                Path {
+                                    segments: [
+                                        Segment {
+                                            ident: "d",
+                                            generic_args: [],
+                                        },
+                                    ],
+                                },
+                            ),
+                        },
+                    ],
+                    bounds: [],
+                    ty: Path {
+                        segments: [
+                            Segment {
+                                ident: "t",
+                                generic_args: [],
                             },
                         ],
-                        bounds: [],
-                        ty: Path {
-                            segments: [
-                                Segment {
-                                    ident: "t",
-                                    generic_args: [],
-                                },
-                            ],
-                        },
                     },
-                ),
-            },
+                },
+            ),
         },
-        top_level: [],
     },
-    [],
-)
+    top_level: [],
+}

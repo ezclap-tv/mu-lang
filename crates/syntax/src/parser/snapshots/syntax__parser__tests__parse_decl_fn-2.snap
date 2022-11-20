@@ -1,79 +1,26 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: module
 ---
-(
-    Module {
-        imports: [],
-        symbols: Symbols {
-            fns: {
-                "f": (
-                    Private,
-                    Fn {
-                        name: "f",
-                        tparams: [
-                            TParam {
-                                name: "T",
-                                default: None,
-                            },
-                        ],
-                        params: [
-                            Param {
-                                name: "a",
-                                ty: Some(
-                                    Path {
-                                        segments: [
-                                            Segment {
-                                                ident: "T",
-                                                generic_args: [],
-                                            },
-                                        ],
-                                    },
-                                ),
-                                default: None,
-                            },
-                            Param {
-                                name: "b",
-                                ty: Some(
-                                    Path {
-                                        segments: [
-                                            Segment {
-                                                ident: "T",
-                                                generic_args: [],
-                                            },
-                                        ],
-                                    },
-                                ),
-                                default: None,
-                            },
-                            Param {
-                                name: "c",
-                                ty: Some(
-                                    Path {
-                                        segments: [
-                                            Segment {
-                                                ident: "T",
-                                                generic_args: [],
-                                            },
-                                        ],
-                                    },
-                                ),
-                                default: None,
-                            },
-                        ],
-                        ret: Some(
-                            Path {
-                                segments: [
-                                    Segment {
-                                        ident: "T",
-                                        generic_args: [],
-                                    },
-                                ],
-                            },
-                        ),
-                        bounds: [
-                            Bound {
-                                ty: Path {
+Module {
+    imports: [],
+    symbols: Symbols {
+        fns: {
+            "f": (
+                Private,
+                Fn {
+                    name: "f",
+                    tparams: [
+                        TParam {
+                            name: "T",
+                            default: None,
+                        },
+                    ],
+                    params: [
+                        Param {
+                            name: "a",
+                            ty: Some(
+                                Path {
                                     segments: [
                                         Segment {
                                             ident: "T",
@@ -81,35 +28,85 @@ expression: result
                                         },
                                     ],
                                 },
-                                constraint: [
-                                    Path {
-                                        segments: [
-                                            Segment {
-                                                ident: "x",
-                                                generic_args: [],
-                                            },
-                                        ],
-                                    },
-                                    Path {
-                                        segments: [
-                                            Segment {
-                                                ident: "y",
-                                                generic_args: [],
-                                            },
-                                        ],
+                            ),
+                            default: None,
+                        },
+                        Param {
+                            name: "b",
+                            ty: Some(
+                                Path {
+                                    segments: [
+                                        Segment {
+                                            ident: "T",
+                                            generic_args: [],
+                                        },
+                                    ],
+                                },
+                            ),
+                            default: None,
+                        },
+                        Param {
+                            name: "c",
+                            ty: Some(
+                                Path {
+                                    segments: [
+                                        Segment {
+                                            ident: "T",
+                                            generic_args: [],
+                                        },
+                                    ],
+                                },
+                            ),
+                            default: None,
+                        },
+                    ],
+                    ret: Some(
+                        Path {
+                            segments: [
+                                Segment {
+                                    ident: "T",
+                                    generic_args: [],
+                                },
+                            ],
+                        },
+                    ),
+                    bounds: [
+                        Bound {
+                            ty: Path {
+                                segments: [
+                                    Segment {
+                                        ident: "T",
+                                        generic_args: [],
                                     },
                                 ],
                             },
-                        ],
-                        body: None,
-                    },
-                ),
-            },
-            classes: {},
-            traits: {},
-            aliases: {},
+                            constraint: [
+                                Path {
+                                    segments: [
+                                        Segment {
+                                            ident: "x",
+                                            generic_args: [],
+                                        },
+                                    ],
+                                },
+                                Path {
+                                    segments: [
+                                        Segment {
+                                            ident: "y",
+                                            generic_args: [],
+                                        },
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                    body: None,
+                },
+            ),
         },
-        top_level: [],
+        classes: {},
+        traits: {},
+        aliases: {},
     },
-    [],
-)
+    top_level: [],
+}

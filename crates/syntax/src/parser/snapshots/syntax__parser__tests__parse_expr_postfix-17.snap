@@ -1,34 +1,29 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: "(result, parser.errors)"
+expression: node.unwrap()
 ---
-(
-    Ok(
-        Cast {
-            opt: true,
-            target: Cast {
-                opt: true,
-                target: GetVar {
-                    name: "a",
-                },
-                ty: Path {
-                    segments: [
-                        Segment {
-                            ident: "A",
-                            generic_args: [],
-                        },
-                    ],
-                },
-            },
-            ty: Path {
-                segments: [
-                    Segment {
-                        ident: "B",
-                        generic_args: [],
-                    },
-                ],
-            },
+Cast {
+    opt: true,
+    target: Cast {
+        opt: true,
+        target: GetVar {
+            name: "a",
         },
-    ),
-    [],
-)
+        ty: Path {
+            segments: [
+                Segment {
+                    ident: "A",
+                    generic_args: [],
+                },
+            ],
+        },
+    },
+    ty: Path {
+        segments: [
+            Segment {
+                ident: "B",
+                generic_args: [],
+            },
+        ],
+    },
+}

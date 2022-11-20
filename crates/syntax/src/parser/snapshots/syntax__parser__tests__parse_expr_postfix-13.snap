@@ -1,24 +1,19 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: "(result, parser.errors)"
+expression: node.unwrap()
 ---
-(
-    Ok(
-        GetIndex {
-            opt: true,
-            target: GetIndex {
-                opt: true,
-                target: GetVar {
-                    name: "a",
-                },
-                key: GetVar {
-                    name: "b",
-                },
-            },
-            key: GetVar {
-                name: "c",
-            },
+GetIndex {
+    opt: true,
+    target: GetIndex {
+        opt: true,
+        target: GetVar {
+            name: "a",
         },
-    ),
-    [],
-)
+        key: GetVar {
+            name: "b",
+        },
+    },
+    key: GetVar {
+        name: "c",
+    },
+}

@@ -1,15 +1,10 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: "(result, parser.errors)"
+expression: node.unwrap()
 ---
-(
-    Ok(
-        Unary {
-            op: Invert,
-            inner: GetVar {
-                name: "a",
-            },
-        },
-    ),
-    [],
-)
+Unary {
+    op: Invert,
+    inner: GetVar {
+        name: "a",
+    },
+}

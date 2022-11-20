@@ -1,33 +1,30 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: module
 ---
-(
-    Module {
-        imports: [],
-        symbols: Symbols {
-            fns: {},
-            classes: {},
-            traits: {},
-            aliases: {},
-        },
-        top_level: [
-            LoopFor {
-                item: "_",
-                iter: Range {
-                    start: Int {
-                        value: 0,
-                    },
-                    end: Int {
-                        value: 10,
-                    },
+Module {
+    imports: [],
+    symbols: Symbols {
+        fns: {},
+        classes: {},
+        traits: {},
+        aliases: {},
+    },
+    top_level: [
+        LoopFor {
+            item: "_",
+            iter: Range {
+                start: Int {
+                    value: 0,
                 },
-                body: Block {
-                    items: [],
-                    last: None,
+                end: Int {
+                    value: 10,
                 },
             },
-        ],
-    },
-    [],
-)
+            body: Block {
+                items: [],
+                last: None,
+            },
+        },
+    ],
+}

@@ -1,36 +1,33 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: module
 ---
-(
-    Module {
-        imports: [],
-        symbols: Symbols {
-            fns: {},
-            classes: {},
-            traits: {},
-            aliases: {},
-        },
-        top_level: [
-            Let {
-                name: "v",
-                ty: None,
-                value: GetIndex {
-                    opt: false,
-                    target: GetVar {
-                        name: "v",
+Module {
+    imports: [],
+    symbols: Symbols {
+        fns: {},
+        classes: {},
+        traits: {},
+        aliases: {},
+    },
+    top_level: [
+        Let {
+            name: "v",
+            ty: None,
+            value: GetIndex {
+                opt: false,
+                target: GetVar {
+                    name: "v",
+                },
+                key: Range {
+                    start: Int {
+                        value: 0,
                     },
-                    key: Range {
-                        start: Int {
-                            value: 0,
-                        },
-                        end: Int {
-                            value: 512,
-                        },
+                    end: Int {
+                        value: 512,
                     },
                 },
             },
-        ],
-    },
-    [],
-)
+        },
+    ],
+}

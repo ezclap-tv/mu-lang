@@ -1,18 +1,13 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: "(result, parser.errors)"
+expression: node.unwrap()
 ---
-(
-    Ok(
-        Binary {
-            op: NullOr,
-            left: GetVar {
-                name: "a",
-            },
-            right: GetVar {
-                name: "b",
-            },
-        },
-    ),
-    [],
-)
+Binary {
+    op: NullOr,
+    left: GetVar {
+        name: "a",
+    },
+    right: GetVar {
+        name: "b",
+    },
+}

@@ -1,68 +1,65 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: module
 ---
-(
-    Module {
-        imports: [],
-        symbols: Symbols {
-            fns: {},
-            classes: {},
-            traits: {},
-            aliases: {
-                "Foo": (
-                    Private,
-                    Alias {
-                        name: "Foo",
-                        tparams: [
-                            TParam {
-                                name: "T",
-                                default: None,
+Module {
+    imports: [],
+    symbols: Symbols {
+        fns: {},
+        classes: {},
+        traits: {},
+        aliases: {
+            "Foo": (
+                Private,
+                Alias {
+                    name: "Foo",
+                    tparams: [
+                        TParam {
+                            name: "T",
+                            default: None,
+                        },
+                    ],
+                    bounds: [
+                        Bound {
+                            ty: Path {
+                                segments: [
+                                    Segment {
+                                        ident: "T",
+                                        generic_args: [],
+                                    },
+                                ],
                             },
-                        ],
-                        bounds: [
-                            Bound {
-                                ty: Path {
+                            constraint: [
+                                Path {
                                     segments: [
                                         Segment {
-                                            ident: "T",
+                                            ident: "x",
                                             generic_args: [],
                                         },
                                     ],
                                 },
-                                constraint: [
-                                    Path {
-                                        segments: [
-                                            Segment {
-                                                ident: "x",
-                                                generic_args: [],
-                                            },
-                                        ],
-                                    },
-                                    Path {
-                                        segments: [
-                                            Segment {
-                                                ident: "y",
-                                                generic_args: [],
-                                            },
-                                        ],
-                                    },
-                                ],
-                            },
-                        ],
-                        ty: Path {
-                            segments: [
-                                Segment {
-                                    ident: "t",
-                                    generic_args: [],
+                                Path {
+                                    segments: [
+                                        Segment {
+                                            ident: "y",
+                                            generic_args: [],
+                                        },
+                                    ],
                                 },
                             ],
                         },
+                    ],
+                    ty: Path {
+                        segments: [
+                            Segment {
+                                ident: "t",
+                                generic_args: [],
+                            },
+                        ],
                     },
-                ),
-            },
+                },
+            ),
         },
-        top_level: [],
     },
-    [],
-)
+    top_level: [],
+}

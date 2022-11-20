@@ -1,34 +1,29 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: "(result, parser.errors)"
+expression: node.unwrap()
 ---
-(
-    Ok(
-        Try {
-            body: Block {
-                items: [
-                    GetVar {
-                        name: "a",
-                    },
-                ],
-                last: Some(
-                    GetVar {
-                        name: "b",
-                    },
-                ),
+Try {
+    body: Block {
+        items: [
+            GetVar {
+                name: "a",
             },
-            catch: (
-                "e",
-                Block {
-                    items: [
-                        GetVar {
-                            name: "e",
-                        },
-                    ],
-                    last: None,
+        ],
+        last: Some(
+            GetVar {
+                name: "b",
+            },
+        ),
+    },
+    catch: (
+        "e",
+        Block {
+            items: [
+                GetVar {
+                    name: "e",
                 },
-            ),
+            ],
+            last: None,
         },
     ),
-    [],
-)
+}

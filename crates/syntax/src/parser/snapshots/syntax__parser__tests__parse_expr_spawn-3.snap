@@ -1,23 +1,18 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: "(result, parser.errors)"
+expression: node.unwrap()
 ---
-(
-    Ok(
-        SpawnBlock(
-            Block {
-                items: [
-                    GetVar {
-                        name: "a",
-                    },
-                ],
-                last: Some(
-                    GetVar {
-                        name: "b",
-                    },
-                ),
+SpawnBlock(
+    Block {
+        items: [
+            GetVar {
+                name: "a",
+            },
+        ],
+        last: Some(
+            GetVar {
+                name: "b",
             },
         ),
-    ),
-    [],
+    },
 )

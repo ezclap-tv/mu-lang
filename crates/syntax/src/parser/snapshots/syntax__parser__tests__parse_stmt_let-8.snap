@@ -1,25 +1,22 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: result
+expression: module
 ---
-(
-    Module {
-        imports: [],
-        symbols: Symbols {
-            fns: {},
-            classes: {},
-            traits: {},
-            aliases: {},
-        },
-        top_level: [
-            Let {
-                name: "v",
-                ty: None,
-                value: List(
-                    [],
-                ),
-            },
-        ],
+Module {
+    imports: [],
+    symbols: Symbols {
+        fns: {},
+        classes: {},
+        traits: {},
+        aliases: {},
     },
-    [],
-)
+    top_level: [
+        Let {
+            name: "v",
+            ty: None,
+            value: List(
+                [],
+            ),
+        },
+    ],
+}

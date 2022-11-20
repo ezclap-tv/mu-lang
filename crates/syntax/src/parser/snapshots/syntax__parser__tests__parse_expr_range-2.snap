@@ -1,17 +1,12 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: "(result, parser.errors)"
+expression: node.unwrap()
 ---
-(
-    Ok(
-        Range {
-            start: GetVar {
-                name: "a",
-            },
-            end: GetVar {
-                name: "b",
-            },
-        },
-    ),
-    [],
-)
+Range {
+    start: GetVar {
+        name: "a",
+    },
+    end: GetVar {
+        name: "b",
+    },
+}

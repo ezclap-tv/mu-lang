@@ -1,20 +1,15 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: "(result, parser.errors)"
+expression: node.unwrap()
 ---
-(
-    Ok(
-        GetField {
-            opt: false,
-            target: GetField {
-                opt: false,
-                target: GetVar {
-                    name: "a",
-                },
-                key: "b",
-            },
-            key: "c",
+GetField {
+    opt: false,
+    target: GetField {
+        opt: false,
+        target: GetVar {
+            name: "a",
         },
-    ),
-    [],
-)
+        key: "b",
+    },
+    key: "c",
+}

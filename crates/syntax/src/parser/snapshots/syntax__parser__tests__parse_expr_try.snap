@@ -1,22 +1,17 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: "(result, parser.errors)"
+expression: node.unwrap()
 ---
-(
-    Ok(
-        Try {
-            body: Block {
-                items: [],
-                last: None,
-            },
-            catch: (
-                "e",
-                Block {
-                    items: [],
-                    last: None,
-                },
-            ),
+Try {
+    body: Block {
+        items: [],
+        last: None,
+    },
+    catch: (
+        "e",
+        Block {
+            items: [],
+            last: None,
         },
     ),
-    [],
-)
+}

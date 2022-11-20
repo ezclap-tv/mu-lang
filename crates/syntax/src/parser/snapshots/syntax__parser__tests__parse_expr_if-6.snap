@@ -1,58 +1,53 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: "(result, parser.errors)"
+expression: node.unwrap()
 ---
-(
-    Ok(
-        If {
-            branches: [
-                (
-                    Bool {
-                        value: true,
+If {
+    branches: [
+        (
+            Bool {
+                value: true,
+            },
+            Block {
+                items: [
+                    GetVar {
+                        name: "a",
                     },
-                    Block {
-                        items: [
-                            GetVar {
-                                name: "a",
-                            },
-                            GetVar {
-                                name: "b",
-                            },
-                        ],
-                        last: None,
+                    GetVar {
+                        name: "b",
                     },
-                ),
-                (
-                    Bool {
-                        value: false,
+                ],
+                last: None,
+            },
+        ),
+        (
+            Bool {
+                value: false,
+            },
+            Block {
+                items: [
+                    GetVar {
+                        name: "a",
                     },
-                    Block {
-                        items: [
-                            GetVar {
-                                name: "a",
-                            },
-                            GetVar {
-                                name: "b",
-                            },
-                        ],
-                        last: None,
+                    GetVar {
+                        name: "b",
                     },
-                ),
-            ],
-            else_: Some(
-                Block {
-                    items: [
-                        GetVar {
-                            name: "a",
-                        },
-                        GetVar {
-                            name: "b",
-                        },
-                    ],
-                    last: None,
+                ],
+                last: None,
+            },
+        ),
+    ],
+    else_: Some(
+        Block {
+            items: [
+                GetVar {
+                    name: "a",
                 },
-            ),
+                GetVar {
+                    name: "b",
+                },
+            ],
+            last: None,
         },
     ),
-    [],
-)
+}

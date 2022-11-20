@@ -1,34 +1,16 @@
 ---
 source: crates/syntax/src/parser/tests.rs
-expression: "(result, parser.errors)"
+expression: node.unwrap()
 ---
-(
-    Ok(
-        Path {
-            segments: [
-                Segment {
-                    ident: "T",
-                    generic_args: [],
-                },
-                Segment {
-                    ident: "A",
-                    generic_args: [
-                        Path {
-                            segments: [
-                                Segment {
-                                    ident: "B",
-                                    generic_args: [],
-                                },
-                            ],
-                        },
-                    ],
-                },
-                Segment {
-                    ident: "C",
-                    generic_args: [],
-                },
-            ],
+Path {
+    segments: [
+        Segment {
+            ident: "T",
+            generic_args: [],
         },
-    ),
-    [],
-)
+        Segment {
+            ident: "A",
+            generic_args: [],
+        },
+    ],
+}
