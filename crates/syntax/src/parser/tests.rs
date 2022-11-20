@@ -1,28 +1,67 @@
 use super::*;
 
-macro_rules! parser {
+macro_rules! parse {
   ($src:expr) => {{
     let lexer = Lexer::new($src);
-    Parser {
+    let parser = Parser {
       lexer,
       module: Module::default(),
       errors: Vec::default(),
       ctx: Context::default(),
+    };
+    parser.parse()
+  }};
+  ($src:expr, $method:ident) => {{
+    let lexer = Lexer::new($src);
+    let mut parser = Parser {
+      lexer,
+      module: Module::default(),
+      errors: Vec::default(),
+      ctx: Context::default(),
+    };
+    parser.bump();
+    match parser.$method() {
+      Ok(node) => (Some(node), parser.errors),
+      Err(e) => {
+        parser.errors.push(e);
+        (None, parser.errors)
+      }
     }
   }};
 }
 
 macro_rules! snapshot {
   ($src:expr) => {
-    let result = parser!($src).parse();
-    insta::assert_debug_snapshot!(result);
+    let source = $src;
+    let (module, errors) = parse!(source);
+    if errors.is_empty() {
+      insta::assert_debug_snapshot!(module);
+    } else {
+      report_to_stderr(source, errors);
+    }
   };
   ($src:expr, $method:ident) => {{
-    let mut parser = parser!($src);
-    parser.bump();
-    let result = parser.$method();
-    insta::assert_debug_snapshot!((result, parser.errors))
+    let source = $src;
+    let (node, errors) = parse!(source, $method);
+    if errors.is_empty() {
+      insta::assert_debug_snapshot!(node.unwrap())
+    } else {
+      report_to_stderr(source, errors);
+    }
   }};
+}
+
+fn report_to_stderr(source: &str, errors: Vec<Error>) {
+  let reports = errors
+    .iter()
+    .map(|e| diagnosis::ToReport::to_report(e, source.into()).unwrap());
+  let mut buf = String::new();
+  for report in reports {
+    report.emit(&mut buf).unwrap();
+    eprintln!("{}", buf);
+    buf.clear();
+  }
+  panic!("Failed to parse source, see errors above.")
 }
 
 // TODO: test for errors
@@ -47,6 +86,42 @@ fn parse_decl_alias() {
   snapshot!("type Foo<T = d, U = d> where T: x + y, U: x + y = t;");
   snapshot!("type Foo<T = d, U = d,> = t;");
   snapshot!("type Foo<T = d, U = d,> where T: x + y, U: x + y = t;");
+  snapshot!("pub type Foo = t;");
+}
+
+#[test]
+fn parse_decl_class() {
+  snapshot!(
+    "
+class Foo<T,> where T: x + y {
+  a: int;
+
+  fn f();
+
+  type U = T;
+
+  impl<A,> Trait<A> {
+    fn f();
+    type V = A;
+  }
+}
+"
+  );
+  snapshot!("pub class T {}");
+}
+
+#[test]
+fn parse_decl_trait() {
+  snapshot!(
+    "
+trait Foo<T,> where T: x + y {
+  fn f();
+
+  type U = T;
+}
+"
+  );
+  snapshot!("pub trait T {}");
 }
 
 #[test]
