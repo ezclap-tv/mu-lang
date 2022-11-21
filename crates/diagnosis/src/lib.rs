@@ -1,9 +1,9 @@
 use std::borrow::Cow;
 use std::fmt;
-use std::fmt::Write;
+use std::fmt::{Display, Write};
 use std::ops::Range;
 
-use owo_colors::{style, AnsiColors, DynColors, OwoColorize};
+use owo_colors as colors;
 use span::Span;
 use thiserror::Error;
 
@@ -20,6 +20,7 @@ pub struct ReportBuilder<'a> {
   message: Option<Cow<'a, str>>,
   span: Option<Span>,
   label: Option<Cow<'a, str>>,
+  color: bool,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -50,6 +51,11 @@ impl<'a> ReportBuilder<'a> {
     self
   }
 
+  pub fn color(mut self, enabled: bool) -> Self {
+    self.color = enabled;
+    self
+  }
+
   pub fn build(self) -> Result<Report<'a>, BuilderError> {
     use BuilderError::*;
     Ok(Report {
@@ -58,6 +64,7 @@ impl<'a> ReportBuilder<'a> {
       message: self.message.ok_or(MissingMessage)?,
       span: self.span.ok_or(MissingSpan)?,
       label: self.label,
+      color: self.color,
     })
   }
 }
@@ -112,6 +119,7 @@ pub struct Report<'a> {
   pub message: Cow<'a, str>,
   pub span: Span,
   pub label: Option<Cow<'a, str>>,
+  pub color: bool,
 }
 
 impl<'a> Report<'a> {
@@ -122,6 +130,7 @@ impl<'a> Report<'a> {
       message: None,
       span: None,
       label: None,
+      color: true,
     }
   }
 
@@ -132,6 +141,7 @@ impl<'a> Report<'a> {
       message: None,
       span: None,
       label: None,
+      color: true,
     }
   }
 
@@ -142,6 +152,7 @@ impl<'a> Report<'a> {
       message: None,
       span: None,
       label: None,
+      color: true,
     }
   }
 
@@ -170,32 +181,44 @@ impl<'a> Report<'a> {
       return Err(EmitError::OutOfBounds);
     }
 
-    let snippet = Snippet::new(self.source.str.as_ref(), self.span);
-    let color = match self.level {
-      Level::Info => DynColors::Ansi(AnsiColors::Blue),
-      Level::Warning => DynColors::Ansi(AnsiColors::Yellow),
-      Level::Error => DynColors::Ansi(AnsiColors::Red),
+    let style = Style {
+      enabled: self.color,
+      span: match self.level {
+        Level::Info => colors::style().blue(),
+        Level::Warning => colors::style().yellow(),
+        Level::Error => colors::style().red(),
+      }
+      .underline(),
+      level: match self.level {
+        Level::Info => colors::style().blue(),
+        Level::Warning => colors::style().yellow(),
+        Level::Error => colors::style().red(),
+      },
+      symbol: colors::style().blue(),
     };
-    let style = style().color(color).underline();
+
+    let snippet = Snippet::new(self.source.str.as_ref(), self.span);
+
+    let pipe = style.symbol("|");
 
     // {level}: {message}
-    match self.level {
-      Level::Info => write!(w, "{}", "info".blue())?,
-      Level::Warning => write!(w, "{}", "warning".yellow())?,
-      Level::Error => write!(w, "{}", "error".red())?,
-    }
-    writeln!(w, ": {}", self.message)?;
+    writeln!(
+      w,
+      "{}: {}",
+      style.level(format!("{}", self.level)),
+      self.message
+    )?;
     // > {file.name}:{line}
     writeln!(
       w,
       "{} {}:{}",
-      ">".blue(),
+      style.symbol(">"),
       self.source.name.unwrap_or_else(|| "code".into()),
       snippet.line
     )?;
 
     // empty line to give the snippet some room
-    writeln!(w, "{} ", "|".blue())?;
+    writeln!(w, "{} ", pipe)?;
     if snippet.s[Range::from(snippet.span)].trim().is_empty() {
       // "whitespace-only" snippet, may happen in case the span is 1 character wide
       // and lands on a newline.
@@ -204,9 +227,9 @@ impl<'a> Report<'a> {
       writeln!(
         w,
         "{} {}{}",
-        "|".blue(),
+        pipe,
         &snippet.s[..snippet.span.start],
-        format!("{:_<width$}", "_", width = n).style(style),
+        style.span(&format!("{:_<width$}", "_", width = n)),
       )?;
     } else if snippet.count > 1 {
       // multi-line snippet
@@ -230,11 +253,12 @@ impl<'a> Report<'a> {
       writeln!(
         w,
         "{} {}{}",
-        "|".blue(),
+        pipe,
         &snippet.s[..snippet.span.start], // unspanned
-        snippet.s[snippet.span.start..first_lf] // spanned
-          .trim()
-          .style(style)
+        style.span(
+          snippet.s[snippet.span.start..first_lf] // spanned
+            .trim()
+        )
       )?;
 
       // write the lines inbetween the first and the last.
@@ -244,7 +268,7 @@ impl<'a> Report<'a> {
         // write all the lines in the middle if we have 3..=5 total lines.
         3..=5 => {
           for line in snippet.s[first_lf..last_lf].split('\n').skip(1) {
-            writeln!(w, "{} {}", "|".blue(), line.style(style))?;
+            writeln!(w, "{} {}", pipe, style.span(line))?;
           }
         }
         // if we have more than 6 lines, this is considered a very large snippet, and it probably
@@ -261,15 +285,9 @@ impl<'a> Report<'a> {
           // |   b: 0,
           // |   ...
           // |   h: 0,
-          writeln!(w, "{} {}", "|".blue(), first.style(style))?;
-          writeln!(
-            w,
-            "{} {}{}",
-            "|".blue(),
-            ws.style(style),
-            "...".style(style)
-          )?;
-          writeln!(w, "{} {}", "|".blue(), last.style(style))?;
+          writeln!(w, "{} {}", pipe, style.span(first))?;
+          writeln!(w, "{} {}{}", pipe, style.span(ws), style.span("..."))?;
+          writeln!(w, "{} {}", pipe, style.span(last))?;
         }
         _ => {}
       }
@@ -279,10 +297,11 @@ impl<'a> Report<'a> {
       writeln!(
         w,
         "{} {}{}",
-        "|".blue(),
-        snippet.s[last_lf..snippet.span.end] // spanned
-          .trim()
-          .style(style),
+        pipe,
+        style.span(
+          snippet.s[last_lf..snippet.span.end] // spanned
+            .trim()
+        ),
         &snippet.s[snippet.span.end..], // unspanned
       )?;
     } else {
@@ -291,17 +310,17 @@ impl<'a> Report<'a> {
       writeln!(
         w,
         "{} {}{}{}",
-        "|".blue(),
+        pipe,
         &snippet.s[..snippet.span.start],
-        (&snippet.s[Range::from(snippet.span)]).style(style),
+        style.span(&snippet.s[Range::from(snippet.span)]),
         &snippet.s[snippet.span.end..]
       )?;
     }
     // empty line at the end for symmetry
-    writeln!(w, "{} ", "|".blue())?;
+    writeln!(w, "{} ", pipe)?;
     if let Some(label) = self.label {
       // + {label}
-      writeln!(w, "{} {}", "+".blue(), label)?;
+      writeln!(w, "{} {}", style.symbol("+"), label)?;
     }
 
     Ok(())
@@ -378,6 +397,64 @@ fn leading_whitespace(str: &str) -> &str {
   &str[..non_ws]
 }
 
+struct Style {
+  pub enabled: bool,
+  pub span: colors::Style,
+  pub level: colors::Style,
+  pub symbol: colors::Style,
+}
+
+impl Style {
+  pub fn span<'a, T: Display + 'a>(&'a self, inner: T) -> Styled<'a, T> {
+    Styled {
+      inner,
+      style: self.enabled.then_some(&self.span),
+    }
+  }
+
+  pub fn level<'a, T: Display + 'a>(&'a self, inner: T) -> Styled<'a, T> {
+    Styled {
+      inner,
+      style: self.enabled.then_some(&self.level),
+    }
+  }
+
+  pub fn symbol<'a, T: Display + 'a>(&'a self, inner: T) -> Styled<'a, T> {
+    Styled {
+      inner,
+      style: self.enabled.then_some(&self.symbol),
+    }
+  }
+}
+
+struct Styled<'a, T: Display + 'a> {
+  inner: T,
+  style: Option<&'a colors::Style>,
+}
+
+impl<'a, T: Display> Display for Styled<'a, T> {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    use colors::OwoColorize;
+
+    if let Some(style) = self.style {
+      write!(f, "{}", self.inner.style(*style))
+    } else {
+      write!(f, "{}", self.inner)
+    }
+  }
+}
+
+impl Display for Level {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    let level = match self {
+      Level::Info => "info",
+      Level::Warning => "warning",
+      Level::Error => "error",
+    };
+    write!(f, "{level}")
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::{Report, Snippet};
@@ -436,6 +513,7 @@ mod tests {
       message: "expected semicolon".into(),
       span: (10..11).into(),
       label: None,
+      color: true,
     };
     insta::assert_snapshot!(report.emit_to_string().unwrap());
   }
@@ -451,6 +529,7 @@ mod tests {
       message: "mismatched type".into(),
       span: (13..36).into(),
       label: Some("expected `Foo`, found `Bar`".into()),
+      color: true,
     };
     insta::assert_snapshot!(report.emit_to_string().unwrap());
   }
@@ -468,6 +547,57 @@ mod tests {
       message: "mismatched type".into(),
       span: (13..76).into(),
       label: Some("expected `Foo`, found `Bar`".into()),
+      color: true,
+    };
+    insta::assert_snapshot!(report.emit_to_string().unwrap());
+  }
+
+  #[test]
+  fn emit_report_single_line_no_color() {
+    let report = Report {
+      level: Level::Error,
+      source: Source {
+        name: Some("test.mu".into()),
+        str: "let x = 10\nlet y = 20;".into(),
+      },
+      message: "expected semicolon".into(),
+      span: (10..11).into(),
+      label: None,
+      color: false,
+    };
+    insta::assert_snapshot!(report.emit_to_string().unwrap());
+  }
+
+  #[test]
+  fn emit_report_multi_line_no_color() {
+    let report = Report {
+      level: Level::Error,
+      source: Source {
+        name: Some("test.mu".into()),
+        str: "let x: Foo = Bar {\n  a: 0,\n  b: 0,\n};".into(),
+      },
+      message: "mismatched type".into(),
+      span: (13..36).into(),
+      label: Some("expected `Foo`, found `Bar`".into()),
+      color: false,
+    };
+    insta::assert_snapshot!(report.emit_to_string().unwrap());
+  }
+
+  #[test]
+  fn emit_report_multi_line_large_no_color() {
+    let report = Report {
+      level: Level::Error,
+      source: Source {
+        name: Some("test.mu".into()),
+        str:
+          "let x: Foo = Bar {\n  a: 0,\n  b: 0,\n  c: 0,\n  d: 0,\n  e: 0,\n  f: 0,\n  g: 0,\n};"
+            .into(),
+      },
+      message: "mismatched type".into(),
+      span: (13..76).into(),
+      label: Some("expected `Foo`, found `Bar`".into()),
+      color: false,
     };
     insta::assert_snapshot!(report.emit_to_string().unwrap());
   }
