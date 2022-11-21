@@ -1586,7 +1586,10 @@ pub enum Error {
 }
 
 impl diagnosis::ToReport for Error {
-  fn to_report<'a>(&'a self, source: diagnosis::Source<'a>) -> diagnosis::DiagnosisResult<'a> {
+  fn to_report<'a>(
+    &'a self,
+    source: diagnosis::Source<'a>,
+  ) -> Result<diagnosis::Report<'a>, diagnosis::report::BuilderError> {
     let report = diagnosis::Report::error()
       .source(source)
       .message(self.to_string().into());

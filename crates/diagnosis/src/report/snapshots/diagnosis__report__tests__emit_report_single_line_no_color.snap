@@ -1,5 +1,5 @@
 ---
-source: crates/diagnosis/src/lib.rs
+source: crates/diagnosis/src/report/tests.rs
 expression: report.emit_to_string().unwrap()
 ---
 error: expected semicolon

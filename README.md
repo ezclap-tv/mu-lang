@@ -12,8 +12,21 @@ Mu is a statically typed, interpreted, embeddable programming language.
 
 ⚠ Currently heavily WIP ⚠
 
+### Project structure
+
+```
+crates/
+├─ diagnosis
+├─ span
+├─ syntax
+```
+
+- [`diagnosis`](./crates/diagnosis/) - error reporting
+- [`span`](./crates/span/) - code spans
+- [`syntax`](./crates/syntax/) - lexer and parser
 
 ### Fuzzing
+
 1. Install cargo-fuzz with `cargo install --force cargo-fuzz`
 2. List the available fuzz targets using `just fuzz-targets` and pick one.
 3. Fuzz the picked target using `just fuzz <target>`. The fuzzer will run indefinitely, until it detects a crash or the program timeouts or runs out of memory. To stop the fuzzer, press Ctrl+C. Example:
@@ -22,8 +35,8 @@ Mu is a statically typed, interpreted, embeddable programming language.
    $ just fuzz lexer-from-bytes
    INFO: Running with entropic power schedule (0xFF, 100).
    INFO: Seed: 717794509
-   INFO: Loaded 1 modules   (36225 inline 8-bit counters): 36225 [0x559cf4818810, 0x559cf4821591), 
-   INFO: Loaded 1 PC tables (36225 PCs): 36225 [0x559cf4821598,0x559cf48aeda8), 
+   INFO: Loaded 1 modules   (36225 inline 8-bit counters): 36225 [0x559cf4818810, 0x559cf4821591),
+   INFO: Loaded 1 PC tables (36225 PCs): 36225 [0x559cf4821598,0x559cf48aeda8),
    INFO: -fork=6: fuzzing in separate process(s)
    ...
    ^C
@@ -33,7 +46,9 @@ Mu is a statically typed, interpreted, embeddable programming language.
    [FUZZ] Reproduce this crash with:
    just repro parser /path/to/mu/fuzz/libfuzzer/artifacts/parser_from_bytes/crash-25f28287a3ad257fc30e266f12516a66c0ee3b1b --print-input
    ```
+
 4. Reproduce a crash with `just repro <lexer | parser> <file>]`. Example:
+
    ```bash
    $ just repro parser /<...>/crash-25f28287a3ad257fc30e266f12516a66c0ee3b1b --print-input
    INPUT:`
