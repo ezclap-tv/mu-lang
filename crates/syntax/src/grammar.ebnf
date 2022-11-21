@@ -234,7 +234,6 @@ expr = expr_assign ;
   expr_group = "(" expr ")" ;
 
 
-(* TODO *)
 type = type_optional ;
   type_optional = type_primary "?" ;
   type_primary =
