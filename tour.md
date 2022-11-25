@@ -44,7 +44,7 @@ let name = 0;
 
 // explicit type
 // this declaration shadows the previous one, so its type may differ
-name: string = "value";
+let name: string = "value";
 ```
 
 Operators
