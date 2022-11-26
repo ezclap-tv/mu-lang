@@ -57,11 +57,27 @@ let v = Foo { value: 10 };
 v.value = 20; // error: cannot assign to `v.value`, as it is not mutable
 ```
 
+It is not possible to assign an immutable value to a mutable variable or field:
+
+```rust,ignore
+let foo = Foo { value: 10 };
+let mut bar = foo; // error: value cannot be assigned to `bar`, as it is not mutable
+let mut bar = Bar { foo: foo }; // error: value cannot be assigned to `foo`, as it is not mutable
+```
+
+This ensures that immutable values are _truly_ immutable.
+
 We'll expand on this in the chapter about [functions](./functions.md), and once more in [classes](./classes.md)
 
 ### Type inference
 
-By default, the variable's type is inferred from the value that's being assigned to it. You may instead choose to annotate the variable with a type:
+By default, a variable's type is inferred from the value that's being assigned to it:
+
+```rust,ignore
+let v = 10;
+```
+
+You may instead choose to annotate the variable with a type:
 
 ```rust,ignore
 let v: int = 10;
@@ -109,7 +125,7 @@ let v = "Hello, world!";
 print(v); // prints `Hello, world!`
 ```
 
-And of course, variables may be shadowed in inner scopes as well:
+Variables may be shadowed in inner scopes as well:
 
 ```rust,ignore
 let v = 10;
