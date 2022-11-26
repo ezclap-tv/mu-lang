@@ -4,21 +4,22 @@ Mu divides values into primitive, compound, and user-defined types.
 
 The primitives types are:
 
-| type     | example  |
-| :------- | :------- |
-| `null`   | `null`   |
-| `int`    | `10`     |
-| `float`  | `3.14`   |
-| `bool`   | `true`   |
-| `string` | `"test"` |
+| type    | example |
+| :------ | :------ |
+| `null`  | `null`  |
+| `int`   | `10`    |
+| `float` | `3.14`  |
+| `bool`  | `true`  |
 
 The built-in compound types are:
 
-| type    | example     |
-| :------ | :---------- |
-| `tuple` | `(a, b, c)` |
-| `array` | `[a, b, c]` |
-| `range` | `0..10`     |
+| type     | example           |
+| :------- | :---------------- |
+| `tuple`  | `(a, b, c)`       |
+| `array`  | `[a, b, c]`       |
+| `range`  | `0..10`           |
+| `slice`  | `[a, b, c][0..3]` |
+| `string` | `"test"`          |
 
 User-defined types are described in the chapter on [classes](./classes.md)
 
@@ -148,35 +149,6 @@ Mu also supports comparison operators which return boolean values:
 | equality                    | `a == b` |
 | inequality                  | `a != b` |
 
-### Strings
-
-Mu strings are represented as an immutable sequence of utf8-encoded characters, just like Rust's `str` type. They are written inside of double quotes:
-
-```rust,ignore
-let s = "Hello, world!";
-```
-
-Strings support escapes:
-
-|            | result                   |
-| :--------- | :----------------------- |
-| `\n`       | newline                  |
-| `\r`       | carriage return          |
-| `\t`       | tab                      |
-| `\\`       | backslash                |
-| `\"`       | double quote             |
-| `\u{7FFF}` | unicode (up to 4 digits) |
-
-You can use the built-in `str` module to build up larger strings:
-
-```rust,ignore
-let mut s = str.builder();
-s.push("a");
-s.push("b");
-s.push("c");
-let s = s.build();
-```
-
 ### Tuples
 
 Tuples are compound types which can hold any number of values, and each value may have a different type:
@@ -239,7 +211,7 @@ They may be used to create slices out of arrays. A slice allows you to access a 
 
 ```rust,ignore
 let a = ["a", "b", "c", "d", "e"];
-let s = a[1..4];
+let s: Slice<string> = a[1..4];
 print(s); // prints `["b", "c", "d"]`
 ```
 
@@ -277,3 +249,49 @@ let a = [];
 print(a[0..10]); // throws an out of bounds exception
 ```
 
+Slices have the type `Slice<T>`, where `T` is the element type. Their functionality is almost the same as that of arrays, the major difference being that you may not do anything to a slice that would change its length. `push`, `pop`, and `remove` are examples of methods which are not available for slices.
+
+### Strings
+
+Mu strings are represented as an immutable sequence of utf8-encoded characters, just like Rust's `str` type. They are written inside of double quotes:
+
+```rust,ignore
+let s = "Hello, world!";
+```
+
+Strings support escapes:
+
+|            | result                   |
+| :--------- | :----------------------- |
+| `\n`       | newline                  |
+| `\r`       | carriage return          |
+| `\t`       | tab                      |
+| `\\`       | backslash                |
+| `\"`       | double quote             |
+| `\u{7FFF}` | unicode (up to 4 digits) |
+
+Strings can be concatenated using `+`:
+
+```rust,ignore
+let a = "Hello, ";
+let b = "world!";
+print(a + b); // prints `Hello, world!`
+```
+
+Each concatenation of two strings has to allocate a new string. You can use the built-in `str.builder` function to build up larger strings:
+
+```rust,ignore
+let mut s = str.builder();
+s.push("lorem ipsum");
+s.push("dolor sit amet");
+let s = s.build();
+```
+
+Strings can also be sliced, just like arrays:
+
+```rust,ignore
+let s = "Hello, world!";
+print(s[..]);
+```
+
+There is no need for a distinction between a string slice and a string (both are immutable and have fixed lengths), so a sliced `string` is still just a `string`.
