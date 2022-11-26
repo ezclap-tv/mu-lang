@@ -37,7 +37,7 @@ macro_rules! snapshot {
     if errors.is_empty() {
       insta::assert_debug_snapshot!(module);
     } else {
-      report_to_stderr(source, errors);
+      panic_report(source, errors);
     }
   };
   ($src:expr, $method:ident) => {{
@@ -46,12 +46,12 @@ macro_rules! snapshot {
     if errors.is_empty() {
       insta::assert_debug_snapshot!(node.unwrap())
     } else {
-      report_to_stderr(source, errors);
+      panic_report(source, errors);
     }
   }};
 }
 
-fn report_to_stderr(source: &str, errors: Vec<Error>) {
+fn panic_report(source: &str, errors: Vec<Error>) {
   let reports = errors
     .iter()
     .map(|e| diagnosis::ToReport::to_report(e, source.into()).unwrap());
@@ -62,6 +62,30 @@ fn report_to_stderr(source: &str, errors: Vec<Error>) {
     buf.clear();
   }
   panic!("Failed to parse source, see errors above.")
+}
+
+macro_rules! snapshot_err {
+  ($src:expr) => {
+    let source = $src;
+    let (module, errors) = parse!(source);
+    if errors.is_empty() {
+      eprintln!("{module:?}");
+      panic!("expected error, but module parsed succesfully");
+    } else {
+      insta::assert_debug_snapshot!(errors);
+    }
+  };
+  ($src:expr, $method:ident) => {{
+    let source = $src;
+    let (node, errors) = parse!(source, $method);
+    if errors.is_empty() {
+      let node = node.unwrap();
+      eprintln!("{node:?}");
+      panic!("expected error, but node parsed succesfully");
+    } else {
+      insta::assert_debug_snapshot!(errors);
+    }
+  }};
 }
 
 // TODO: test for errors
@@ -422,6 +446,26 @@ fn parse_expr_range() {
   snapshot!("0..1", parse_expr);
   snapshot!("a..b", parse_expr);
   snapshot!("a+b..c+d", parse_expr);
+  snapshot!("..", parse_expr);
+  snapshot!("..1", parse_expr);
+  snapshot!("1..", parse_expr);
+  snapshot!("..=1", parse_expr);
+  snapshot!("0..=1", parse_expr);
+}
+
+#[test]
+fn parse_expr_range_before_block() {
+  // exclusive
+  snapshot!("if .. { 0 }", parse_expr);
+  snapshot!("if 0.. { 0 }", parse_expr);
+  snapshot!("if ..1 { 0 }", parse_expr);
+  snapshot!("if 0..1 { 0 }", parse_expr);
+
+  // inclusive
+  snapshot_err!("if ..= { 0 }", parse_expr);
+  snapshot_err!("if 0..= { 0 }", parse_expr);
+  snapshot!("if ..=1 { 0 }", parse_expr);
+  snapshot!("if 0..=1 { 0 }", parse_expr);
 }
 
 #[test]

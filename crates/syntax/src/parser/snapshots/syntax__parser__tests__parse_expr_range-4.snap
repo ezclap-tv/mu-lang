@@ -1,0 +1,5 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: node.unwrap()
+---
+RangeFull

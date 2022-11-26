@@ -1,0 +1,12 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: errors
+---
+[
+    RangeInclusiveNoEnd(
+        Span {
+            start: 4,
+            end: 7,
+        },
+    ),
+]

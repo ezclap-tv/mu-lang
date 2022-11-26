@@ -3,11 +3,7 @@ source: crates/syntax/src/parser/tests.rs
 expression: node.unwrap()
 ---
 RangeEx(
-    Some(
-        Int {
-            value: 0,
-        },
-    ),
+    None,
     Some(
         Int {
             value: 1,

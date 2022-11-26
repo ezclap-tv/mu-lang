@@ -2,23 +2,27 @@
 source: crates/syntax/src/parser/tests.rs
 expression: node.unwrap()
 ---
-Range {
-    start: Binary {
-        op: Add,
-        left: GetVar {
-            name: "a",
+RangeEx(
+    Some(
+        Binary {
+            op: Add,
+            left: GetVar {
+                name: "a",
+            },
+            right: GetVar {
+                name: "b",
+            },
         },
-        right: GetVar {
-            name: "b",
+    ),
+    Some(
+        Binary {
+            op: Add,
+            left: GetVar {
+                name: "c",
+            },
+            right: GetVar {
+                name: "d",
+            },
         },
-    },
-    end: Binary {
-        op: Add,
-        left: GetVar {
-            name: "c",
-        },
-        right: GetVar {
-            name: "d",
-        },
-    },
-}
+    ),
+)

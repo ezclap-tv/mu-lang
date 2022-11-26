@@ -13,14 +13,18 @@ Module {
     top_level: [
         LoopFor {
             item: "_",
-            iter: Range {
-                start: Int {
-                    value: 0,
-                },
-                end: Int {
-                    value: 10,
-                },
-            },
+            iter: RangeEx(
+                Some(
+                    Int {
+                        value: 0,
+                    },
+                ),
+                Some(
+                    Int {
+                        value: 10,
+                    },
+                ),
+            ),
             body: Block {
                 items: [
                     Call {

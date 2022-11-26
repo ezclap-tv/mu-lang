@@ -1,0 +1,10 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: node.unwrap()
+---
+RangeInc(
+    None,
+    Int {
+        value: 1,
+    },
+)

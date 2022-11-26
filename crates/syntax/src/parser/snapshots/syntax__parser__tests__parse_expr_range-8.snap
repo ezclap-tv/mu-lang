@@ -2,15 +2,13 @@
 source: crates/syntax/src/parser/tests.rs
 expression: node.unwrap()
 ---
-RangeEx(
+RangeInc(
     Some(
         Int {
             value: 0,
         },
     ),
-    Some(
-        Int {
-            value: 1,
-        },
-    ),
+    Int {
+        value: 1,
+    },
 )

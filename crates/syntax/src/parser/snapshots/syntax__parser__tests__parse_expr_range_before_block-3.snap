@@ -1,0 +1,27 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: node.unwrap()
+---
+If {
+    branches: [
+        (
+            RangeEx(
+                None,
+                Some(
+                    Int {
+                        value: 1,
+                    },
+                ),
+            ),
+            Block {
+                items: [],
+                last: Some(
+                    Int {
+                        value: 0,
+                    },
+                ),
+            },
+        ),
+    ],
+    else_: None,
+}

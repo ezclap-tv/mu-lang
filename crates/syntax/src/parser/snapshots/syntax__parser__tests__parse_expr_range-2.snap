@@ -2,11 +2,15 @@
 source: crates/syntax/src/parser/tests.rs
 expression: node.unwrap()
 ---
-Range {
-    start: GetVar {
-        name: "a",
-    },
-    end: GetVar {
-        name: "b",
-    },
-}
+RangeEx(
+    Some(
+        GetVar {
+            name: "a",
+        },
+    ),
+    Some(
+        GetVar {
+            name: "b",
+        },
+    ),
+)
