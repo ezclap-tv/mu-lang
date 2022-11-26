@@ -299,6 +299,7 @@ dependencies = [
  "anyhow",
  "clap",
  "clearscreen",
+ "diagnosis",
  "libc",
  "num_cpus",
  "shell-escape",

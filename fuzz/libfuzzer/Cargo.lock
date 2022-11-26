@@ -46,6 +46,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "derive_utils"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7590f99468735a318c254ca9158d0c065aa9b5312896b5a043b5e39bc96f5fa2"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "diagnosis"
+version = "0.1.0"
+dependencies = [
+ "insta",
+ "owo-colors",
+ "span",
+ "thiserror",
+]
+
+[[package]]
 name = "encode_unicode"
 version = "0.3.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -143,6 +164,7 @@ dependencies = [
 name = "mu-fuzz"
 version = "0.0.0"
 dependencies = [
+ "diagnosis",
  "libfuzzer-sys",
  "syntax",
 ]
@@ -152,6 +174,12 @@ name = "once_cell"
 version = "1.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "18a6dbe30758c9f83eb00cbea4ac95966305f5a7772f3f42ebfc7fc7eddbd8e1"
+
+[[package]]
+name = "owo-colors"
+version = "3.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c1b04fb49957986fdce4d6ee7a65027d55d4b6d2265e5848bbb507b58ccfdb6f"
 
 [[package]]
 name = "proc-macro2"
@@ -213,6 +241,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "62ac7f900db32bf3fd12e0117dd3dc4da74bc52ebaac97f39668446d89694803"
 
 [[package]]
+name = "span"
+version = "0.1.0"
+
+[[package]]
 name = "stacker"
 version = "0.1.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -240,12 +272,22 @@ dependencies = [
 name = "syntax"
 version = "0.1.0"
 dependencies = [
+ "diagnosis",
  "indexmap",
  "insta",
  "logos",
  "serde",
+ "span",
  "stacker",
+ "syntax_derive",
  "thiserror",
+]
+
+[[package]]
+name = "syntax_derive"
+version = "0.0.0"
+dependencies = [
+ "derive_utils",
 ]
 
 [[package]]

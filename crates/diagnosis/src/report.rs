@@ -174,7 +174,6 @@ impl<'a> Report<'a> {
     };
 
     let snippet = Snippet::new(self.source.str(), self.span);
-
     let pipe = style.symbol("|");
 
     // {level}: {message}
@@ -219,10 +218,11 @@ impl<'a> Report<'a> {
         .find('\n')
         .map(|i| i + snippet.span.start)
         .unwrap_or(snippet.s.len());
-      let last_lf = snippet.s[snippet.span.start..snippet.span.end]
+      let last_lf = snippet.s[snippet.span.start..]
         .rfind('\n')
         .map(|i| i + snippet.span.start)
         .unwrap_or(snippet.s.len());
+
       // write the first line, this one contains both an "unspanned" fragment,
       // and a "spanned" fragment.
       // | {unspanned}{spanned}
@@ -237,7 +237,7 @@ impl<'a> Report<'a> {
         )
       )?;
 
-      // write the lines inbetween the first and the last.
+      // write the lines in between the first and the last.
       // it is separated like this because this part of the snippet is entirely
       // contained within the span, so all of it will be colored and underlined.
       match snippet.count {
@@ -255,7 +255,9 @@ impl<'a> Report<'a> {
           iter.next(); // skip line 1, because it's empty.
                        // this is safer than indexing `snippet.s` with `first_lf+1..last_lf`
           let first = iter.next().unwrap();
-          let last = iter.rev().next().unwrap();
+
+          let mut iter = iter.rev();
+          let last = iter.next().unwrap();
           let ws = leading_whitespace(first);
 
           // |   b: 0,
@@ -275,10 +277,10 @@ impl<'a> Report<'a> {
         "{} {}{}",
         pipe,
         style.span(
-          snippet.s[last_lf..snippet.span.end] // spanned
+          snippet.s[last_lf.min(snippet.span.end)..snippet.span.end] // spanned
             .trim()
         ),
-        &snippet.s[snippet.span.end..], // unspanned
+        &snippet.s[snippet.span.end..].trim(), // unspanned
       )?;
     } else {
       // single-line snippet
@@ -289,7 +291,7 @@ impl<'a> Report<'a> {
         pipe,
         &snippet.s[..snippet.span.start],
         style.span(&snippet.s[Range::from(snippet.span)]),
-        &snippet.s[snippet.span.end..]
+        &snippet.s[snippet.span.end..].trim()
       )?;
     }
     // empty line at the end for symmetry

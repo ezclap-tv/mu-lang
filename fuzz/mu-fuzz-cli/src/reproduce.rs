@@ -19,14 +19,18 @@ pub fn parser(input: &str) {
   match parse(input) {
     Ok(_) => println!("[REPRO] Gracefully parsed the input module."),
     Err(errors) => {
-      let errors = errors
-        .into_iter()
-        .filter(|e| !matches!(e, Error::Lexer(_, _)))
-        .collect::<Vec<_>>();
-      println!(
-        "[REPRO] Gracefully parsed the input module with errors (lexer errors filtered out):\n{:#?}",
-        errors
-      );
+      let mut buf = String::new();
+      errors
+        .iter()
+        .map(|e| diagnosis::ToReport::to_report(dbg!(e), input.into()).unwrap())
+        .for_each(|r| match r.emit(&mut buf) {
+          Ok(()) => (),
+          Err(e) => {
+            eprintln!("[REPRO] Warning: failed to report the error: {e}")
+          }
+        });
+
+      eprintln!("[REPRO] Gracefully parsed the input module with errors:\n{buf}");
     }
   }
 }

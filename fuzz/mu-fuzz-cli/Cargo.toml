@@ -11,10 +11,13 @@ thiserror = "1.0.37"
 anyhow = "1.0.66"
 shell-escape = "0.1.5"
 num_cpus = "1.14.0"
-clearscreen = { version = "1.0.10", features = ["windows-console"]}
+clearscreen = { version = "1.0.10", features = ["windows-console"] }
 
 [dependencies.syntax]
 path = "../../crates/syntax"
+
+[dependencies.diagnosis]
+path = "../../crates/diagnosis"
 
 [target.'cfg(not(windows))'.dependencies]
 libc = "0.2.137"

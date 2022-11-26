@@ -1557,7 +1557,7 @@ impl fmt::Display for DuplicateSymbol {
 
 #[derive(Clone, Debug, Error)]
 pub enum Error {
-  #[error("invalid character sequence `{0}`")]
+  #[error("invalid character sequence {0:?}")]
   Lexer(String, Span),
   #[error("unexpected visibility modifier")]
   UnexpectedVis(Span),
