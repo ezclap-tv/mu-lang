@@ -175,7 +175,49 @@ let t = ("a", "b", "c");
 t.3 = "d"; // error: tuple `t` only has 3 elements
 ```
 
-### Arrays, Ranges, and Slices
+### Ranges
+
+A range represents a contiguous set of integers:
+
+```rust,ignore
+// equivalent to the set {0, 1, 2, 3, 4}
+let r = 0..5;
+```
+
+Ranges may be inclusive, which means it will include the final integer:
+
+```rust,ignore
+// equivalent to the set {0, 1, 2, 3, 4, 5}
+let r = 0..=5
+```
+
+Ranges may also be open on either side. Being open on the left side implies a starting index of `0`:
+
+```rust,ignore
+let r = ..5; // same as 0..5
+```
+
+And being open on the right side implies an end index of infinity.
+
+```rust,ignore
+let r = 5..; // same as 5..∞
+// Note: `∞` is not a real syntax in Mu
+```
+
+Here is the full syntax table for ranges:
+
+| type                 | syntax                                                          |
+| :------------------- | :-------------------------------------------------------------- |
+| exclusive full       | `..`                                                            |
+| exclusive left-open  | `..n`                                                           |
+| exclusive right-open | `n..`                                                           |
+| exclusive closed     | `n..m`                                                          |
+| inclusive full       | (`..=`) - syntax error, inclusive ranges may not be right-open  |
+| inclusive left-open  | `..=n`                                                          |
+| inclusive right-open | (`n..=`) - syntax error, inclusive ranges may not be right-open |
+| inclusive closed     | `n..=m`                                                         |
+
+### Arrays, and Slices
 
 An array is a list of values which all have the same type:
 
@@ -201,13 +243,7 @@ print(a.pop()); // prints `c`
 print(a.len()); // prints `2`
 ```
 
-A range represents a start index, and an end index:
-
-```rust,ignore
-let r = 0..10;
-```
-
-They may be used to create slices out of arrays. A slice allows you to access a contiguous section of an array:
+A range may be used to slice arrays. A slice allows you to access a contiguous section of an array without copying the array:
 
 ```rust,ignore
 let a = ["a", "b", "c", "d", "e"];
@@ -223,7 +259,7 @@ let s = a[1..4];
 print(s[0..2]); // prints `["b", "c"]`
 ```
 
-Multiple slices may refer to the same array without each having its own copy of the elements. Any mutations to an array also affect any slices that refer to it:
+Any number of slices may refer to the same array. Any mutations to an array also affect any slices that refer to it:
 
 ```rust,ignore
 let mut a = ["a", "b", "c", "d", "e"];
@@ -295,3 +331,4 @@ print(s[..]);
 ```
 
 There is no need for a distinction between a string slice and a string (both are immutable and have fixed lengths), so a sliced `string` is still just a `string`.
+
