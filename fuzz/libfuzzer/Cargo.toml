@@ -13,6 +13,10 @@ libfuzzer-sys = "0.4"
 [dependencies.syntax]
 path = "../../crates/syntax"
 
+[dependencies.diagnosis]
+path = "../../crates/diagnosis"
+
+
 # Prevent this from interfering with workspaces
 [workspace]
 members = ["."]

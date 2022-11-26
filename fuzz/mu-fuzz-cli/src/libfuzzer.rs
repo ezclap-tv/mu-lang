@@ -35,6 +35,8 @@ pub fn run(target: crate::Target, cpus: Option<usize>) -> Result<(), crate::Erro
 
       let most_recent_crash = find_most_recent_crash(target_name, Some(start_time));
       if let Some(path) = most_recent_crash {
+        let path = try_minify_crash(target_name, &path).unwrap_or(path);
+
         let _ = clearscreen::clear(); // don't care if this fails
         eprintln!("[FUZZ] Reproduce this crash with:");
         eprintln!(
@@ -49,6 +51,25 @@ pub fn run(target: crate::Target, cpus: Option<usize>) -> Result<(), crate::Erro
   }
 
   Ok(())
+}
+
+fn try_minify_crash(target_name: &str, path: &Path) -> Option<PathBuf> {
+  let start_time = SystemTime::now();
+
+  let mut command = ProcessBuilder::new("cargo");
+  command
+    .cwd(get_libfuzzer_dir())
+    .arg("fuzz")
+    .arg("tmin")
+    .arg(target_name)
+    .args(&["--fuzz-dir", "."])
+    .arg(path);
+
+  if command.exec().is_ok() {
+    find_most_recent_crash(target_name, Some(start_time))
+  } else {
+    None
+  }
 }
 
 fn find_most_recent_crash(target_name: &str, start_time: Option<SystemTime>) -> Option<PathBuf> {

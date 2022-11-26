@@ -35,14 +35,32 @@ impl<'a> Snippet<'a> {
       .find('\n')
       .unwrap_or_else(|| src[span.end..].len())
       + span.end;
+    let original_trailing_whitespace_count = src[..span.end]
+      .chars()
+      .rev()
+      .take_while(|c| c.is_ascii_whitespace() || *c == '\n')
+      .count();
 
-    let s = src[start_line..end_line].trim_matches('\n');
+    let raw_snippet = &src[start_line..end_line];
+    let s = raw_snippet.trim_start_matches('\n');
+    let preceding_chars = raw_snippet.len() - s.len();
+    let s = s.trim_end_matches(|c: char| c == '\n' || c.is_ascii_whitespace());
+
     let line = src[..span.start].split('\n').count();
     let count = s.split('\n').count();
-    let span = Span {
-      start: span.start - start_line,
-      end: span.end - start_line,
+
+    let mut span = Span {
+      start: span
+        .start
+        .saturating_sub(start_line)
+        .saturating_sub(preceding_chars),
+      end: span
+        .end
+        .saturating_sub(start_line)
+        .saturating_sub(preceding_chars)
+        .saturating_sub(original_trailing_whitespace_count),
     };
+    span.start = span.start.min(span.end);
 
     Self {
       s: s.into(),
@@ -50,5 +68,10 @@ impl<'a> Snippet<'a> {
       count,
       span,
     }
+  }
+
+  #[cfg(test)]
+  pub fn highlight(&self) -> &str {
+    &self.s[self.span.start..self.span.end]
   }
 }

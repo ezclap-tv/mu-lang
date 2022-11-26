@@ -196,6 +196,7 @@ fn reproduce(module: Module, input: std::path::PathBuf, preview: bool) -> Result
   let content = std::fs::read_to_string(&input).map_err(Error::BadInput)?;
 
   if preview {
+    println!("INPUT (debug):{content:?}");
     println!("INPUT:`\n{content}\n`");
   }
 

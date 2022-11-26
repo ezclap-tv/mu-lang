@@ -22,7 +22,7 @@ pub struct Lexer<'a> {
 
 impl<'a> Lexer<'a> {
   pub fn new(source: &'a str) -> Self {
-    let end = source.len().saturating_sub(1);
+    let end = source.len();
     let eof = Token {
       lexeme: "".into(),
       span: (end..end).into(),
