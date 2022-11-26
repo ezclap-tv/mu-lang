@@ -36,6 +36,8 @@ ignored, unless explicitly notated as `NEWLINE` for `\n` or `WHITESPACE` for `\s
 
 *)
 
+(* TODO: slice type *)
+
 module = body:top_level* ;
 
 top_level =
