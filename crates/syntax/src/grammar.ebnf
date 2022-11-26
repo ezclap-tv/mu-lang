@@ -146,7 +146,12 @@ expr = expr_assign ;
       | expr_postfix field
       | expr_postfix index
       ;
-  expr_range = expr_binary (".." | "..=") expr_binary ;
+  expr_range =
+    | ".."
+    | expr_binary ".."
+    | (".." | "..=") expr_binary
+    | expr_binary (".." | "..=") expr_binary
+    ;
   expr_binary = expr_opt ;
     expr_opt = expr_or (("??") expr_or)* ;
     expr_or = expr_and (("||") expr_and)* ;

@@ -6,6 +6,7 @@
 //! The entrypoints for this module are:
 //! - [`Lexer`]
 //! - [`Token`]
+#![allow(clippy::match_like_matches_macro)]
 
 use std::borrow::Cow;
 use std::mem::discriminant;
@@ -111,12 +112,41 @@ impl<'a> Token<'a> {
     let d = discriminant(&self.kind);
     other.iter().any(|v| d == discriminant(v))
   }
+
+  pub fn can_begin_expr(&self) -> bool {
+    match self.kind {
+      TokenKind::Return => true,
+      TokenKind::Break => true,
+      TokenKind::Continue => true,
+      TokenKind::Throw => true,
+      TokenKind::If => true,
+      TokenKind::Try => true,
+      TokenKind::Spawn => true,
+      TokenKind::BraceL => true,
+      TokenKind::ParenL => true,
+      TokenKind::BracketL => true,
+      TokenKind::Range => true,
+      TokenKind::RangeInc => true,
+      TokenKind::Minus => true,
+      TokenKind::Bang => true,
+      TokenKind::Lambda => true,
+      TokenKind::Bool(_) => true,
+      TokenKind::Null => true,
+      TokenKind::Int => true,
+      TokenKind::Float => true,
+      TokenKind::String => true,
+      TokenKind::Ident => true,
+      _ => false,
+    }
+  }
 }
 
 pub const PARENS: (TokenKind, TokenKind) = (TokenKind::ParenL, TokenKind::ParenR);
 pub const BRACKETS: (TokenKind, TokenKind) = (TokenKind::BracketL, TokenKind::BracketR);
 pub const BRACES: (TokenKind, TokenKind) = (TokenKind::BraceL, TokenKind::BraceR);
 pub const ANGLES: (TokenKind, TokenKind) = (TokenKind::Less, TokenKind::More);
+
+// When adding new tokens, check if it should be added to `can_begin_expr`
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Logos)]
 pub enum TokenKind {
@@ -201,8 +231,8 @@ pub enum TokenKind {
   ArrowFat,
   #[token("..")]
   Range,
-  /* #[token("..=")]
-  RangeInc, */
+  #[token("..=")]
+  RangeInc,
   #[token("||")]
   PipePipe,
   #[token("&&")]
@@ -375,7 +405,7 @@ impl std::fmt::Display for TokenKind {
       TokenKind::ArrowThin => "->",
       TokenKind::ArrowFat => "=>",
       TokenKind::Range => "..",
-      /* TokenKind::RangeInc => "..=", */
+      TokenKind::RangeInc => "..=",
       TokenKind::PipePipe => "||",
       TokenKind::AndAnd => "&&",
       TokenKind::EqualEqual => "==",

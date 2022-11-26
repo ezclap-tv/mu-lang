@@ -495,16 +495,65 @@ impl<'a> Parser<'a> {
     Ok(expr)
   }
 
+  // expr_range
   fn parse_expr_range(&mut self) -> Result<ExprKind<'a>, Error> {
-    use TokenKind::Range;
+    use TokenKind::{Range, RangeInc};
+
+    if self.bump_if(Range) {
+      if self.can_parse_range_rhs() {
+        let right = self.span(Self::parse_expr_binary)?;
+        // `.. <expr>`
+        return Ok(expr::range_exclusive(None, Some(right)));
+      }
+      // `..`
+      return Ok(expr::range_full());
+    }
+
+    if self.bump_if(RangeInc) {
+      if !self.can_parse_range_rhs() {
+        // `..=` - error
+        return Err(Error::RangeInclusiveNoEnd(self.previous().span));
+      }
+      let right = self.span(Self::parse_expr_binary)?;
+      // `..= <expr>`
+      return Ok(expr::range_inclusive(None, right));
+    }
 
     let left = self.span(Self::parse_expr_binary)?;
+
     if self.bump_if(Range) {
+      if self.can_parse_range_rhs() {
+        let right = self.span(Self::parse_expr_binary)?;
+        // `<expr> .. <expr>`
+        return Ok(expr::range_exclusive(Some(left), Some(right)));
+      }
+      // `<expr> ..`
+      return Ok(expr::range_exclusive(Some(left), None));
+    }
+
+    if self.bump_if(RangeInc) {
+      if !self.can_parse_range_rhs() {
+        // `<expr> ..=` - error
+        return Err(Error::RangeInclusiveNoEnd(self.previous().span));
+      }
       let right = self.span(Self::parse_expr_binary)?;
-      return Ok(expr::range(left, right));
+      // `<expr> ..= <expr>`
+      return Ok(expr::range_inclusive(Some(left), right));
     }
 
     Ok(left.into_inner())
+  }
+
+  fn can_parse_range_rhs(&self) -> bool {
+    eprintln!("{:?}", self.current());
+    if self.current().can_begin_expr() {
+      if self.current().is(TokenKind::BraceL) {
+        return !self.ctx.expr_before_block;
+      }
+      true
+    } else {
+      false
+    }
   }
 
   fn parse_expr_binary(&mut self) -> Result<ExprKind<'a>, Error> {
@@ -1587,6 +1636,8 @@ pub enum Error {
   NestingLimitReached(Span),
   #[error("duplicate {0} `{1}`")]
   Duplicate(DuplicateSymbol, String, Span),
+  #[error("inclusive range must have end")]
+  RangeInclusiveNoEnd(Span),
 }
 
 impl diagnosis::ToReport for Error {
@@ -1612,6 +1663,7 @@ impl diagnosis::ToReport for Error {
       Error::ParseFloat(span, _) => report.span(*span),
       Error::NestingLimitReached(span) => report.span(*span),
       Error::Duplicate(_, _, span) => report.span(*span),
+      Error::RangeInclusiveNoEnd(span) => report.span(*span),
     }
     .build()
   }

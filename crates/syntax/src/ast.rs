@@ -517,14 +517,30 @@ pub mod expr {
   }
 
   #[derive(Clone, Debug)]
-  pub struct Range<'a> {
-    pub start: Expr<'a>,
-    pub end: Expr<'a>,
+  pub enum Range<'a> {
+    /// `..`
+    RangeFull,
+    /// `<expr> ..`
+    /// `.. <expr>`
+    /// `<expr> .. <expr>`
+    RangeEx(Option<Expr<'a>>, Option<Expr<'a>>),
+    /// `..= <expr>`
+    /// `<expr> ..= <expr>`
+    RangeInc(Option<Expr<'a>>, Expr<'a>),
   }
 
   #[inline]
-  pub fn range<'a>(start: Expr<'a>, end: Expr<'a>) -> ExprKind<'a> {
-    ExprKind::Range(Box::new(Range { start, end }))
+  pub fn range_full<'a>() -> ExprKind<'a> {
+    ExprKind::Range(Box::new(Range::RangeFull))
+  }
+  #[inline]
+  pub fn range_exclusive<'a>(start: Option<Expr<'a>>, end: Option<Expr<'a>>) -> ExprKind<'a> {
+    ExprKind::Range(Box::new(Range::RangeEx(start, end)))
+  }
+
+  #[inline]
+  pub fn range_inclusive<'a>(start: Option<Expr<'a>>, end: Expr<'a>) -> ExprKind<'a> {
+    ExprKind::Range(Box::new(Range::RangeInc(start, end)))
   }
 
   #[derive(Clone, Debug)]
