@@ -11,3 +11,6 @@ set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
 # Print the available fuzz targets and backends.
 @fuzz-targets:
   cargo run --quiet --bin mu-fuzz-cli info --list-backends --list-targets
+
+@serve-book:
+  mdbook serve --open ./site/book
