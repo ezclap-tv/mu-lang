@@ -1,5 +1,5 @@
 use syntax::lexer::Lexer;
-use syntax::parser::{parse, Error};
+use syntax::parser::parse;
 
 pub fn lexer(input: &str) {
   let tokens = Lexer::new(input).into_iter().collect::<Vec<_>>();

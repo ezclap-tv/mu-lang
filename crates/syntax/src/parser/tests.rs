@@ -374,6 +374,9 @@ fn parse_expr_postfix() {
   snapshot!("a?.(A)", parse_expr);
   snapshot!("a?.(A)?.(B)", parse_expr);
   snapshot!("a?.b?[c]?(d)?.(E)", parse_expr);
+
+  // tuple field
+  snapshot!("a.0", parse_expr);
 }
 
 #[test]

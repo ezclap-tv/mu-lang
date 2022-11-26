@@ -1,0 +1,11 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: node.unwrap()
+---
+GetField {
+    opt: false,
+    target: GetVar {
+        name: "a",
+    },
+    key: "0",
+}

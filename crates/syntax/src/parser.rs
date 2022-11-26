@@ -656,7 +656,7 @@ impl<'a> Parser<'a> {
   }
 
   fn parse_expr_postfix(&mut self) -> Result<ExprKind<'a>, Error> {
-    use TokenKind::{BraceL, BracketL, Colon, Comma, Dot, Less, Optional, ParenL};
+    use TokenKind::{BraceL, BracketL, Colon, Comma, Dot, Int, Less, Optional, ParenL};
 
     let mut expr = self.span(Self::parse_expr_primary)?;
     loop {
@@ -697,7 +697,11 @@ impl<'a> Parser<'a> {
             );
           } else {
             // expr_field
-            let key = self.parse_ident()?;
+            let key = if self.bump_if(Int) {
+              to_ident(self.previous())
+            } else {
+              self.parse_ident()?
+            };
             expr = Spanned::new(expr.span.join(key.span), expr::get_field(opt, expr, key));
           }
         }

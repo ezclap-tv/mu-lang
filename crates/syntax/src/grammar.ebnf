@@ -167,7 +167,7 @@ expr = expr_assign ;
       )* ;
       (* "?" means optional call, field access, index, or cast *)
       expr_call = "?"? "(" args:list{expr}? ")" ;
-      expr_field = "?"? "." name:ident ;
+      expr_field = "?"? "." name:(ident|int) ;
       expr_index = "?"? "[" key:expr "]" ;
       expr_cast = "?"? "." "(" ty:type ")" ;
 
