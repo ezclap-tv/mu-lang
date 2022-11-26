@@ -15,7 +15,7 @@ Note that while these may be viewed as downsides, these design decisions general
 
 - Type system is not as rigorous, but still very expressive. For example, the language has GATs from the very beginning.
 - The language has unchecked exceptions, but checked exceptions are planned for a future release. This will add some robustness back to the error handling approach of the language.
-- It is single-threaded, but it also has concurrency baked in with `spawn` and the standard `task` module. The VM is built for easy integration with async runtimes such as Tokio.
+- It is single-threaded, but it also has concurrency baked in with `spawn` and the built-in `task` module. The VM is built for easy integration with async runtimes such as Tokio.
 
 Hopefully this introduction has provided some insight into the design principles that the language is built upon. The rest of the book focuses on the syntax, semantics, and type system of the language.
 
