@@ -119,13 +119,12 @@ else { /*...*/ }
   let x = 0;
 } // x is not accessible after this point
 
-// the last expression in the body is the result
+// the last expression in the body of a block is the result
+let v = { 0 };
 let v0 = if v { "a" } else { "c" };
-// same for `do`:
-let v = do { 0 };
-// and `try`, which is introduced later:
+// also `try`, which is introduced later
+// `b` is returned if an exception is thrown from the call to `a`:
 let v = try { a() } catch (_) { b };
-// `b` is returned if an exception is thrown from the call to `a`
 ```
 
 Loops (for, while, loop), continue/break
