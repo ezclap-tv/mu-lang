@@ -415,11 +415,15 @@ fn parse_expr_class() {
   snapshot!("Foo.Bar { a: 0, }", parse_expr);
   snapshot!("Foo.Bar { a: 0, b: 1 }", parse_expr);
   snapshot!("Foo.Bar { a: 0, b: 1, }", parse_expr);
-  snapshot!("Foo.Bar.<int> {}", parse_expr);
-  snapshot!("Foo.Bar.<int> { a: 0 }", parse_expr);
-  snapshot!("Foo.Bar.<int> { a: 0, }", parse_expr);
-  snapshot!("Foo.Bar.<int> { a: 0, b: 1 }", parse_expr);
-  snapshot!("Foo.Bar.<int> { a: 0, b: 1, }", parse_expr);
+}
+
+#[test]
+fn parse_expr_inst() {
+  snapshot!("Foo<T> {}", parse_expr);
+  snapshot!("Foo<T>.Bar {}", parse_expr);
+  snapshot!("Foo<T>.Bar<U> {}", parse_expr);
+  snapshot!("foo<T>()", parse_expr);
+  snapshot!("foo<T>().bar<U>()", parse_expr);
 }
 
 #[test]

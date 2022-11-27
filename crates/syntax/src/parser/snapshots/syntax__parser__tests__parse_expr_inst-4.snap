@@ -1,0 +1,23 @@
+---
+source: crates/syntax/src/parser/tests.rs
+expression: node.unwrap()
+---
+Call {
+    opt: false,
+    target: Inst {
+        target: GetVar {
+            name: "foo",
+        },
+        args: [
+            Path {
+                segments: [
+                    Segment {
+                        ident: "T",
+                        generic_args: [],
+                    },
+                ],
+            },
+        ],
+    },
+    args: [],
+}

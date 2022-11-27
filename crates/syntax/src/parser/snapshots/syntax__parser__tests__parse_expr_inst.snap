@@ -7,15 +7,11 @@ Class {
         segments: [
             Segment {
                 ident: "Foo",
-                generic_args: [],
-            },
-            Segment {
-                ident: "Bar",
                 generic_args: [
                     Path {
                         segments: [
                             Segment {
-                                ident: "int",
+                                ident: "T",
                                 generic_args: [],
                             },
                         ],
@@ -24,18 +20,5 @@ Class {
             },
         ],
     },
-    fields: [
-        (
-            "a",
-            Int {
-                value: 0,
-            },
-        ),
-        (
-            "b",
-            Int {
-                value: 1,
-            },
-        ),
-    ],
+    fields: [],
 }
