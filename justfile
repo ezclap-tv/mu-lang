@@ -14,3 +14,6 @@ set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
 
 @serve-book:
   mdbook serve --open ./site/book
+
+@snap package *ARGS:
+  RUST_BACKTRACE=1 cargo insta test --review --delete-unreferenced-snapshots -p {{package}} {{ARGS}}
