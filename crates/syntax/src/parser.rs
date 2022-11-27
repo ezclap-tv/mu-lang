@@ -1135,31 +1135,32 @@ impl<'a> Parser<'a> {
   fn try_parse_expr_inst(&mut self) -> Option<impl FnOnce(Expr<'a>) -> Expr<'a>> {
     use TokenKind::{BraceL, BracketL, Comma, Dot, Optional, ParenL};
 
-    // store snapshot
     let snapshot = self.snapshot();
+
     // attempt to parse type args
     let args = self.span(|p| {
       let v = p.wrap_list(ANGLES, Comma, |p| p.span(Self::parse_type));
-      let Ok(v) = v else { return v };
       if !p
         .current()
         .is_any(&[Optional, BraceL, ParenL, BracketL, Dot])
       {
         return Err(Error::Unexpected(p.current().kind, p.current().span));
       }
-      Ok(v)
+      v
     });
-    // apply snapshot and bail in case of failure
-    let Ok(args) = args else {
-      snapshot.apply(self);
-      return None;
-    };
-    Some(|target: Expr<'a>| {
-      Spanned::new(
-        target.span.join(args.span),
-        expr::inst(target, args.into_inner()),
-      )
-    })
+
+    match args {
+      Err(_) => {
+        snapshot.apply(self);
+        None
+      }
+      Ok(args) => Some(|target: Expr<'a>| {
+        Spanned::new(
+          target.span.join(args.span),
+          expr::inst(target, args.into_inner()),
+        )
+      }),
+    }
   }
 
   fn parse_type(&mut self) -> Result<TypeKind<'a>, Error> {
