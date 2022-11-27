@@ -169,16 +169,18 @@ expr = expr_assign ;
         | expr_field
         | expr_index
         | expr_cast
-        | expr_inst
         | expr_class
       )* ;
       (* "?" means optional call, field access, index, or cast *)
       expr_call = "?"? "(" args:list{expr}? ")" ;
-      expr_field = "?"? "." name:(ident|int) ;
+      expr_field =
+        | "?"? "." name:(ident|int)
+        (* result is expr_inst(expr_field), see `expr_inst` below for an explanation *)
+        | "?"? "." name:ident type_args_list
+        ;
       expr_index = "?"? "[" key:expr "]" ;
       expr_cast = "?"? "." "(" ty:type ")" ;
 
-      expr_inst = "." "<" list{type} ">" ;
       (* expr_class is only valid in `expr_before_block` *)
       expr_class = "{" fields:list{ident ":" expr} "}" ;
   expr_primary =
@@ -187,6 +189,7 @@ expr = expr_assign ;
     | expr_bool
     | expr_string
     | expr_array
+    | expr_inst
     | expr_var
     | expr_ctrl
     | expr_block
@@ -207,6 +210,9 @@ expr = expr_assign ;
     float = "inf" | regex{"[0-9]+(\.[0-9]*)?([Ee][+-]?[0-9]+)?"} ;
   expr_string = '"' UTF8* '"' ;
   expr_array = "[" (list{expr} | expr ";" expr) "]" ;
+  (* `expr_inst` is ambiguous with `expr_comp` and is implemented using backtracking *)
+  (* may only be followed by expr_postfix (one of "?", "{", "(", "[", ".") *)
+  expr_inst = ident type_args_list ;
   expr_var = ident ;
   expr_ctrl =
     | "return" value:expr?
@@ -268,6 +274,8 @@ bound = ty:type ":" constraint:constraint ;
 
 type_params_list = "<" list{type_param} ">" ;
   type_param = name:ident ("=" default:type)? ;
+
+type_args_list = "<" list{type} ">" ;
 
 params_list = "(" list{param} ")" ;
   param = name:ident (":" type)? ("=" expr)? ;

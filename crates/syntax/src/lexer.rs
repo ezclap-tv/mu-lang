@@ -14,6 +14,7 @@ use std::mem::discriminant;
 use logos::{FilterResult, Logos};
 use span::Span;
 
+#[derive(Clone)]
 pub struct Lexer<'a> {
   inner: logos::Lexer<'a, TokenKind>,
   previous: Token<'a>,

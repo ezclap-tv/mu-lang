@@ -709,6 +709,7 @@ impl<'a> Parser<'a> {
 
     let mut expr = self.span(Self::parse_expr_primary)?;
     loop {
+      // each assignment to `expr` should be immediately followed by `continue`
       let opt = self.bump_if(Optional);
       match self.current().kind {
         // expr_call
@@ -718,6 +719,7 @@ impl<'a> Parser<'a> {
             expr.span.join(args.span),
             expr::call(opt, expr, args.into_inner()),
           );
+          continue;
         }
         // expr_index
         BracketL => {
@@ -726,8 +728,9 @@ impl<'a> Parser<'a> {
             expr.span.join(key.span),
             expr::get_index(opt, expr, key.into_inner()),
           );
+          continue;
         }
-        // expr_field, expr_cast, expr_inst
+        // expr_field, expr_cast
         Dot => {
           self.bump();
           if self.current().is(ParenL) {
@@ -737,21 +740,28 @@ impl<'a> Parser<'a> {
               expr.span.join(ty.span),
               expr::cast(opt, expr, ty.into_inner()),
             );
-          } else if !opt && self.current().is(Less) {
-            // expr_inst
-            let args = self.span(|p| p.wrap_list(ANGLES, Comma, |p| p.span(Self::parse_type)))?;
-            expr = Spanned::new(
-              expr.span.join(args.span),
-              expr::inst(expr, args.into_inner()),
-            );
+            continue;
           } else {
             // expr_field
-            let key = if self.bump_if(Int) {
-              to_ident(self.previous())
+            if self.bump_if(Int) {
+              let key = to_ident(self.previous());
+              expr = Spanned::new(expr.span.join(key.span), expr::get_field(opt, expr, key));
+              continue;
             } else {
-              self.parse_ident()?
+              let key = self.parse_ident()?;
+              let target = Spanned::new(key.span, expr::get_field(opt, expr, key));
+
+              // special case: `expr_inst(expr_field)`
+              if self.current().is(Less) {
+                if let Some(inst) = self.try_parse_expr_inst() {
+                  expr = inst(target);
+                  continue;
+                }
+              }
+
+              expr = target;
+              continue;
             };
-            expr = Spanned::new(expr.span.join(key.span), expr::get_field(opt, expr, key));
           }
         }
         // expr_class
@@ -771,6 +781,7 @@ impl<'a> Parser<'a> {
             expr.span.join(fields.span),
             expr::class(target, fields.into_inner()),
           );
+          continue;
         }
         _ if opt => {
           return Err(Error::InvalidOptional(
@@ -779,6 +790,7 @@ impl<'a> Parser<'a> {
         }
         _ => break,
       }
+      // any code here should remain unreachable
     }
     Ok(expr.into_inner())
   }
@@ -786,7 +798,8 @@ impl<'a> Parser<'a> {
   fn parse_expr_primary(&mut self) -> Result<ExprKind<'a>, Error> {
     use TokenKind::{
       Bool, BraceL, BraceR, BracketL, BracketR, Break, Catch, Comma, Continue, Else, Eof, Float,
-      Ident, If, Int, Lambda, Null, ParenL, ParenR, Return, Semicolon, Spawn, String, Throw, Try,
+      Ident, If, Int, Lambda, Less, Null, ParenL, ParenR, Return, Semicolon, Spawn, String, Throw,
+      Try,
     };
     check_recursion_limit(self.current().span)?;
 
@@ -860,9 +873,16 @@ impl<'a> Parser<'a> {
       return Ok(expr::array_list(items));
     }
 
-    // expr_var
+    // expr_var or expr_inst
     if self.bump_if(Ident) {
       let ident = to_ident(self.previous());
+      if self.current().is(Less) {
+        if let Some(inst) = self.try_parse_expr_inst() {
+          let target = Spanned::new(ident.span, expr::get_var(ident));
+          return Ok(inst(target).into_inner());
+        }
+      }
+      // expr_var
       return Ok(expr::get_var(ident));
     }
 
@@ -1079,6 +1099,67 @@ impl<'a> Parser<'a> {
     self.expect(BraceR)?;
 
     Ok(block)
+  }
+
+  /// This function attemps to parse `expr_inst`, and backtracks the parser if
+  /// it fails.
+  ///
+  /// It returns a function that produces an `expr_inst` when given some
+  /// target `Expr`:
+  ///
+  /// ```rust,ignore
+  /// if let Some(inst) = parser.try_parse_expr_inst() {
+  ///   return Ok(inst(make_target()))
+  /// }
+  /// ```
+  ///
+  /// ### In-depth explanation
+  ///
+  /// `expr_inst` is ambiguous with `expr_comp`, and to resolve this, we use
+  /// backtracking.
+  ///
+  /// The idea is to take a snapshot of the compiler's state, and attempt to
+  /// parse the type params.
+  ///
+  /// - If we parse without errors, we discard the snapshot and continue
+  ///   parsing.
+  /// - If we parse with errors, we ignore the errors, apply the snapshot, and
+  ///   continue parsing.
+  ///
+  /// This means that any syntax errors in the types inside of the type params
+  /// will not be correctly reported.
+  ///
+  /// We are making an assumption here: Syntax errors are rare and usually very
+  /// simple to resolve, so a few incorrectly reported syntax errors are not a
+  /// big usability issue.
+  fn try_parse_expr_inst(&mut self) -> Option<impl FnOnce(Expr<'a>) -> Expr<'a>> {
+    use TokenKind::{BraceL, BracketL, Comma, Dot, Optional, ParenL};
+
+    // store snapshot
+    let snapshot = self.snapshot();
+    // attempt to parse type args
+    let args = self.span(|p| {
+      let v = p.wrap_list(ANGLES, Comma, |p| p.span(Self::parse_type));
+      let Ok(v) = v else { return v };
+      if !p
+        .current()
+        .is_any(&[Optional, BraceL, ParenL, BracketL, Dot])
+      {
+        return Err(Error::Unexpected(p.current().kind, p.current().span));
+      }
+      Ok(v)
+    });
+    // apply snapshot and bail in case of failure
+    let Ok(args) = args else {
+      snapshot.apply(self);
+      return None;
+    };
+    Some(|target: Expr<'a>| {
+      Spanned::new(
+        target.span.join(args.span),
+        expr::inst(target, args.into_inner()),
+      )
+    })
   }
 
   fn parse_type(&mut self) -> Result<TypeKind<'a>, Error> {
@@ -1409,6 +1490,27 @@ impl<'a> Parser<'a> {
     let res = cons(self);
     std::mem::swap(&mut self.ctx, &mut prev_ctx);
     res
+  }
+}
+
+struct Snapshot<'a> {
+  lexer: Lexer<'a>,
+  ctx: Context,
+}
+
+impl<'a> Snapshot<'a> {
+  fn apply(self, parser: &mut Parser<'a>) {
+    parser.lexer = self.lexer;
+    parser.ctx = self.ctx;
+  }
+}
+
+impl<'a> Parser<'a> {
+  fn snapshot(&self) -> Snapshot<'a> {
+    Snapshot {
+      lexer: self.lexer.clone(),
+      ctx: self.ctx,
+    }
   }
 }
 
