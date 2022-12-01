@@ -116,7 +116,7 @@ Floats may be written using [e-notation](https://en.wikipedia.org/wiki/Scientifi
 let x = 1e-10;
 ```
 
-The syntax of floats is slightly stricter than Rust's. A decimal point must always be followed by at least one number:
+The syntax of floats is slightly stricter than Rust's. A decimal point must always be followed by at least one digit:
 
 ```rust,ignore
 let y = 1.; // invalid
